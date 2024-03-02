@@ -1,0 +1,6 @@
+/.internal
+/build
+.DS_Store
+Thumbs.db
+manifest.private.der
+manifest.public.der

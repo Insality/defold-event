@@ -1,0 +1,17 @@
+local logic = require("example.logic")
+
+local function on_change_data(self, counter)
+	print("Counter changed: " .. counter)
+	label.set_text("#label", "Label Counter: " .. counter)
+
+	local pos = go.get_position().y
+	go.animate(".", "position.y", go.PLAYBACK_ONCE_PINGPONG, pos + 50, go.EASING_OUTSINE, 0.3)
+end
+
+function init(self)
+	logic.on_change_data:subscribe(on_change_data, self)
+end
+
+function final(self)
+	logic.on_change_data:unsubscribe(on_change_data, self)
+end
