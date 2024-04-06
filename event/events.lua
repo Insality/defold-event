@@ -9,7 +9,7 @@ M.events = {}
 ---Throws the event
 ---@param event_name string Event name
 ---@vararg any @Event params
-function M.event(event_name, ...)
+function M.trigger(event_name, ...)
 	local event = M.events[event_name]
 
 	Event.logger:debug("Event " .. event_name, {

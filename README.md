@@ -239,10 +239,10 @@ Global events module requires careful management of subscriptions and unsubscrip
 local events = require("event.events")
 ```
 
-**events.event**
+**events.trigger**
 ---
 ```lua
-events.event(name, ...)
+events.trigger(name, ...)
 ```
 Throw a global event with the specified name. All subscribed callbacks will be executed.
 
@@ -253,7 +253,7 @@ Throw a global event with the specified name. All subscribed callbacks will be e
 - **Usage Example:**
 
 ```lua
-events.event("on_game_over", "arg1", "arg2")
+events.trigger("on_game_over", "arg1", "arg2")
 ```
 
 **events.clear**

@@ -10,7 +10,7 @@ function M.set_counter(self, counter)
 	M.on_change_data:trigger(counter)
 
 	timer.delay(1, false, function()
-		events.event("hehe", "arg1", "arg2", {"list", "of", "values"})
+		events.trigger("hehe", "arg1", "arg2", {"list", "of", "values"})
 	end)
 end
 
