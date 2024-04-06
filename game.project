@@ -16,9 +16,11 @@ title = Defold Event
 version = 1
 publisher = Insality
 developer = Maksim Tuprikov, Insality
+dependencies#0 = https://github.com/Insality/defold-log/archive/refs/tags/2.zip
 
 [library]
 include_dirs = event
 
 [event]
 memory_threshold_warning = 0
+

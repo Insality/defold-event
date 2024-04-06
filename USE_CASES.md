@@ -3,12 +3,12 @@
 
 This section illustrates practical examples of how to use the Event module in your Defold game development projects.
 
-### 1. Global Events Management
+### 1. Scope Events Management
 
-You can create a global event module that allows events to be triggered from anywhere within your game. This approach requires careful management of subscriptions and unsubscriptions to prevent errors.
+You can create a event module that allows events to be triggered from anywhere within your game. This approach requires careful management of subscriptions and unsubscriptions to prevent errors.
 
 ```lua
--- global_events.lua
+-- game_events.lua
 local event = require("event.event")
 local M = {}
 
@@ -21,7 +21,7 @@ return M
 **Usage:**
 
 ```lua
-local global_events = require("global_events")
+local game_events = require("game_events")
 
 local function on_game_start(self)
     -- Animate GUI elements somehow
@@ -32,13 +32,13 @@ local function on_game_over(self)
 end
 
 function init(self)
-    global_events.on_game_start:subscribe(on_game_start, self)
-    global_events.on_game_over:subscribe(on_game_over, self)
+    game_events.on_game_start:subscribe(on_game_start, self)
+    game_events.on_game_over:subscribe(on_game_over, self)
 end
 
 function final(self)
-    global_events.on_game_start:unsubscribe(on_game_start, self)
-    global_events.on_game_over:unsubscribe(on_game_over, self)
+    game_events.on_game_start:unsubscribe(on_game_start, self)
+    game_events.on_game_over:unsubscribe(on_game_over, self)
 end
 ```
 

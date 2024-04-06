@@ -15,6 +15,7 @@
 - **Event Management**: Create, subscribe, unsubscribe, and trigger events.
 - **Cross-Context**: You can subscribe to events from different scripts.
 - **Callback Management**: Attach callbacks to events with optional data.
+- **Global Events**: Create and subscribe global events that can be triggered from anywhere in your game.
 - **Logging**: Set a logger to log event activities.
 - **Memory Allocations Tracker**: Detects if an event callback causes a huge memory allocations.
 
@@ -25,10 +26,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Event v1](https://github.com/Insality/defold-event/archive/refs/tags/1.zip)**
+**[Event v2](https://github.com/Insality/defold-event/archive/refs/tags/2.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/1.zip
+https://github.com/Insality/defold-event/archive/refs/tags/2.zip
 ```
 
 Size: **2.26 KB**
@@ -133,6 +134,8 @@ Subscribe a callback to the event. The callback will be invoked whenever the eve
   - `callback`: The function to be executed when the event occurs.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
+- **Return Value:** `true` if the subscription was successful, `false` otherwise.
+
 - **Usage Example:**
 
 ```lua
@@ -149,6 +152,8 @@ Remove a previously subscribed callback from the event.
 - **Parameters:**
   - `callback`: The callback function to unsubscribe.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
+
+- **Return Value:** `true` if the unsubscription was successful, `false` otherwise.
 
 - **Usage Example:**
 
@@ -221,6 +226,124 @@ on_click_event:clear()
 This comprehensive API facilitates the creation and management of events within your projects, enhancing modularity and interaction between different components. Enjoy the power and flexibility of the Event library in your Lua projects!
 
 
+### Global Events Module
+
+The Event library comes with a global events module that allows you to create and manage global events that can be triggered from anywhere in your game. This is particularly useful for events that need to be handled by multiple scripts or systems.
+
+To start using the **Events** module in your project, you first need to import it. This can be done with the following line of code:
+
+Global events module requires careful management of subscriptions and unsubscriptions to prevent errors.
+
+
+```lua
+local events = require("event.events")
+```
+
+**events.event**
+---
+```lua
+events.event(name, ...)
+```
+Throw a global event with the specified name. All subscribed callbacks will be executed.
+
+- **Parameters:**
+  - `name`: The name of the global event to trigger.
+  - `...`: Any number of parameters to be passed to the subscribed callbacks.
+
+- **Usage Example:**
+
+```lua
+events.event("on_game_over", "arg1", "arg2")
+```
+
+**events.clear**
+---
+```lua
+events.clear(name)
+```
+Remove all callbacks subscribed to the specified global event.
+
+- **Parameters:**
+  - `name`: The name of the global event to clear.
+
+- **Usage Example:**
+
+```lua
+events.clear("on_game_over")
+```
+
+**events.clear_all**
+---
+```lua
+events.clear_all()
+```
+Remove all callbacks subscribed to all global events.
+
+- **Usage Example:**
+
+```lua
+events.clear_all()
+```
+
+**events.subscribe**
+---
+```lua
+events.subscribe(name, callback, callback_context)
+```
+Subscribe a callback to the specified global event.
+
+- **Parameters:**
+  - `name`: The name of the global event to subscribe to.
+  - `callback`: The function to be executed when the global event occurs.
+  - `callback_context` (optional): The first parameter to be passed to the callback function.
+
+- **Usage Example:**
+
+```lua
+events.subscribe("on_game_over", callback, self)
+```
+
+**events.unsubscribe**
+---
+```lua
+events.unsubscribe(name, callback, callback_context)
+```
+Remove a previously subscribed callback from the specified global event.
+
+- **Parameters:**
+  - `name`: The name of the global event to unsubscribe from.
+  - `callback`: The callback function to unsubscribe.
+  - `callback_context` (optional): The first parameter to be passed to the callback function.
+
+- **Usage Example:**
+
+```lua
+events.unsubscribe("on_game_over", callback, self)
+```
+
+**events.is_subscribed**
+---
+```lua
+events.is_subscribed(name, callback, callback_context)
+```
+Determine if a specific callback is currently subscribed to the specified global event.
+
+- **Parameters:**
+  - `name`: The name of the global event in question.
+  - `callback`: The callback function in question.
+  - `callback_context` (optional): The first parameter to be passed to the callback function.
+
+- **Return Value:** `true` if the callback is subscribed to the global event, `false` otherwise.
+
+- **Usage Example:**
+
+```lua
+local is_subscribed = events.is_subscribed("on_game_over", callback, self)
+```
+
+The **Events** module provides a powerful and flexible way to manage global events in your Defold projects. Use it to create modular and extensible systems that can respond to events from anywhere in your game.
+
+
 ## Use Cases
 
 Read the [Use Cases](USE_CASES.md) file to see several examples of how to use the Event module in your Defold game development projects.
@@ -237,6 +360,31 @@ Used libraries:
 ## Issues and suggestions
 
 If you have any issues, questions or suggestions please [create an issue](https://github.com/Insality/defold-event/issues).
+
+
+## 👏 Contributors
+
+<a href="https://github.com/Insality/defold-event/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=insality/defold-event"/>
+</a>
+
+
+## Changelog
+
+### **V1**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Initial release
+</details>
+
+### **V2**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Add global events module
+	- The `event:subscribe` and `event:unsubscribe` now return boolean value of success
+</details>
 
 
 ## ❤️ Support project ❤️

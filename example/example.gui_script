@@ -1,20 +1,19 @@
-local logic = require("example.logic")
+local log = require("log.log")
 local event = require("event.event")
+local events = require("event.events")
+
+local logic = require("example.logic")
+
 
 local function setup_logger()
-	event.set_logger({
-		trace = function(_, message) print("TRACE: " .. message) end,
-		debug = function(_, message, context) pprint("DEBUG: " .. message, context) end,
-		info = function(_, message, context) pprint("INFO: " .. message, context) end,
-		warn = function(_, message, context) pprint("WARN: " .. message, context) end,
-		error = function(_, message, context) pprint("ERROR: " .. message, context) end,
-		fatal = function(_, message, context) pprint("FATAL: " .. message, context) end,
-	})
+	event.set_logger(log.get_logger("event"))
 end
+
 
 local function on_click(self, counter)
 	print("Button clicked! Counter: " .. counter)
 end
+
 
 function init(self)
 	setup_logger()
@@ -25,7 +24,10 @@ function init(self)
 	self.on_click_event = event.create(on_click, self)
 
 	msg.post(".", "acquire_input_focus")
+
+	events.subscribe("hehe", function() print("global!", self.counter) end)
 end
+
 
 function on_input(self, action_id, action)
 	if gui.pick_node(self.text_ping, action.x, action.y) and action_id == hash("touch") and action.pressed then

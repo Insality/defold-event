@@ -5,9 +5,14 @@ if not IS_DEBUG then
 	MEMORY_THRESHOLD_WARNING = 0
 end
 
+---@class event @Event Module
+---@field callbacks table<number, table>
+local M = {}
+
 --- Use empty function to save a bit of memory
-local EMPTY_FUNCTION = function() end
-local logger = {
+local EMPTY_FUNCTION = function(_, message, context) end
+
+M.logger =  {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
@@ -15,14 +20,10 @@ local logger = {
 	error = EMPTY_FUNCTION,
 }
 
----@class event @Event Module
----@field callbacks table<number, table>
-local M = {}
-
 
 ---@param logger_instance logger
 function M.set_logger(logger_instance)
-	logger = logger_instance
+	M.logger = logger_instance
 end
 
 
@@ -49,12 +50,13 @@ end
 ---Subscribe to the event. If the callback is already subscribed, it will not be added again.
 ---@param callback function
 ---@param callback_context any|nil
+---@return boolean @True if event is subscribed
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	if self:is_subscribed(callback, callback_context) then
-		logger:error("Subscription attempt for an already subscribed event", debug.traceback())
-		return
+		M.logger:error("Subscription attempt for an already subscribed event", debug.traceback())
+		return false
 	end
 
 	local caller_info = debug.getinfo(2)
@@ -70,16 +72,22 @@ function M:subscribe(callback, callback_context)
 		callback = callback,
 		callback_context = callback_context,
 	})
+
+	return true
 end
 
 
 ---Unsubscribe from the event. If the callback is not subscribed, nothing will happen.
 ---@param callback function
 ---@param callback_context any|nil
+---@return boolean @True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
-	if not self.callbacks then
+	local is_subscribed = self:is_subscribed(callback, callback_context)
+
+	if not is_subscribed then
+		M.logger:error("Unsubscription attempt for an already unsubscribed event", debug.traceback())
 		return false
 	end
 
@@ -158,7 +166,7 @@ function M:trigger(a, b, c, d, e, f, g, h, i, j)
 
 		if not ok then
 			local traceback = debug.traceback()
-			logger:error("An error occurred during event processing", { errors = errors, traceback = traceback })
+			M.logger:error("An error occurred during event processing", { errors = errors, traceback = traceback })
 			-- Print again cause it's just better to see it in the console
 			print(traceback)
 		end
@@ -166,7 +174,7 @@ function M:trigger(a, b, c, d, e, f, g, h, i, j)
 		if MEMORY_THRESHOLD_WARNING > 0 then
 			local after_memory = collectgarbage("count")
 			if after_memory - last_used_memory > MEMORY_THRESHOLD_WARNING then
-				logger:warn("Detected huge memory allocation in event", {
+				M.logger:warn("Detected huge memory allocation in event", {
 					source = self._mapping[callback.callback],
 					memory = after_memory - last_used_memory,
 					index = index
