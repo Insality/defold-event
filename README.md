@@ -32,7 +32,15 @@ Open your `game.project` file and add the following line to the dependencies fie
 https://github.com/Insality/defold-event/archive/refs/tags/2.zip
 ```
 
-Size: **2.26 KB**
+### Library Size
+
+> **Note:** The library size is calculated based on the build report per platform
+
+| Platform         | Library Size |
+| ---------------- | ------------ |
+| HTML5            | **1.96 KB**  |
+| Desktop / Mobile | **3.35 KB**  |
+
 
 ### Lua Script Instance Compatibility
 
