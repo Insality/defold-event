@@ -122,5 +122,12 @@ return function()
 			local result = events.trigger("test")
 			assert(result == "result2")
 		end)
+
+		it("Unsubscribe unknown event", function()
+			local f = function() end
+
+			local is_unsubscribed = events.unsubscribe("unknown", f)
+			assert(is_unsubscribed == false)
+		end)
 	end)
 end
