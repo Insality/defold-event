@@ -19,15 +19,27 @@ return function()
 			assert(event.logger == logger)
 		end)
 
-		it("Subscribe and Unsubscribe", function()
+		it("Should handle error in callback", function()
+			local called = false
+
+			local EMPTY_FUNCTION = function(_, message, context) end
+			local logger =  {
+				trace = EMPTY_FUNCTION,
+				debug = EMPTY_FUNCTION,
+				info = EMPTY_FUNCTION,
+				warn = EMPTY_FUNCTION,
+				error = function() called = true end,
+			}
+			event.set_logger(logger)
+			assert(event.logger == logger)
+			
 			local test_event = event.create()
-			local f = function() end
+			local f = function() error("error") end
 
 			test_event:subscribe(f)
-			assert(#test_event.callbacks == 1)
+			test_event:trigger()
 
-			test_event:unsubscribe(f)
-			assert(#test_event.callbacks == 0)
+			assert(called == true)
 		end)
 	end)
 end
