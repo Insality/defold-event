@@ -1,8 +1,9 @@
 return function()
-	local events = require("event.events")
+	local events = {}
 
 	describe("Defold Events", function()
 		before(function()
+			events = require("event.events") --[[@as events]]
 			events.clear_all()
 		end)
 

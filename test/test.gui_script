@@ -2,6 +2,7 @@ local deftest = require("deftest.deftest")
 
 function init(self)
 	deftest.add(require("test.test_event"))
+	deftest.add(require("test.test_event_logger"))
 	deftest.add(require("test.test_events"))
 
 	local is_report = sys.get_config("test.report") == "1"

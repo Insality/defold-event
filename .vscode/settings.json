@@ -6,6 +6,7 @@
 		"describe",
 		"before",
 		"after",
-		"it"
+		"it",
+		"pprint"
 	]
 }
