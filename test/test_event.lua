@@ -1,6 +1,6 @@
-local event = require("event.event")
-
 return function()
+	local event = require("event.event")
+
 	describe("Defold Event", function()
 		it("Instantiate Event", function()
 			local test_event = event.create()

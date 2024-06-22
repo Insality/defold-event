@@ -1,6 +1,6 @@
-local events = require("event.events")
-
 return function()
+	local events = require("event.events")
+
 	describe("Defold Events", function()
 		before(function()
 			events.clear_all()
