@@ -9,6 +9,7 @@ M.events = {}
 ---Throws the event
 ---@param event_name string Event name
 ---@vararg any @Event params
+---@return any @Result of the last triggered callback
 function M.trigger(event_name, ...)
 	local event = M.events[event_name]
 
@@ -18,7 +19,7 @@ function M.trigger(event_name, ...)
 	})
 
 	if event then
-		event:trigger(...)
+		return event:trigger(...)
 	end
 end
 
@@ -84,6 +85,18 @@ function M.is_subscribed(event_name, callback, callback_context)
 	end
 
 	return M.events[event_name]:is_subscribed(callback, callback_context)
+end
+
+
+---Check if the event is empty
+---@param event_name string Event name
+---@return boolean @True if event is empty. If event is not exist, return true
+function M.is_empty(event_name)
+	if not M.events[event_name] then
+		return true
+	end
+
+	return M.events[event_name]:is_empty()
 end
 
 

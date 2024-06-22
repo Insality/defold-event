@@ -1,0 +1,11 @@
+{
+	"Lua.diagnostics.globals": [
+		"lua_script_instance",
+		"sys",
+		"init",
+		"describe",
+		"before",
+		"after",
+		"it"
+	]
+}

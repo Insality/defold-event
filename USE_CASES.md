@@ -42,6 +42,7 @@ function final(self)
 end
 ```
 
+
 ### 2. Component-specific Events
 
 Design components with built-in events, enabling customizable behavior for instances of the component. This is particularly useful for UI elements like buttons where you want to bind specific actions to events like clicks.
@@ -84,4 +85,29 @@ function init(self)
     myButton.on_click:trigger()
 end
 
+```
+
+
+### 3. Lua annotations
+
+You can use annotations to document your events and make them easier to understand.
+
+```lua
+---This event is triggered when the sound button is clicked.
+---@class event.on_sound_click: event
+---@field trigger fun(_, is_sound_on: boolean): boolean|nil
+---@field subscribe fun(_, callback: fun(is_sound_on: boolean): boolean, _): boolean
+
+local event = require("event.event")
+
+---@type event.on_sound_click
+local on_sound_click = event.create()
+
+-- This callback params will be checked by Lua linter
+on_sound_click:subscribe(function(is_sound_on)
+	print("Sound is on: ", is_sound_on)
+end)
+
+-- Trigger params will be checked by Lua linter
+on_sound_click:trigger(true)
 ```
