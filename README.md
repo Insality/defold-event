@@ -1,8 +1,10 @@
 ![](media/logo.png)
 
-[![Github-sponsors](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/insality) [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/insality) [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/insality)
-
 [![GitHub release (latest by date)](https://img.shields.io/github/v/tag/insality/defold-event?style=for-the-badge&label=Release)](https://github.com/Insality/defold-event/tags)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/insality/defold-event/ci-workflow.yml?branch=master&style=for-the-badge)](https://github.com/Insality/defold-event/actions)
+[![codecov](https://img.shields.io/codecov/c/github/Insality/defold-event?style=for-the-badge)](https://codecov.io/gh/Insality/defold-event)
+
+[![Github-sponsors](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/insality) [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/insality) [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/insality)
 
 
 # Event
@@ -26,7 +28,7 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Event v2](https://github.com/Insality/defold-event/archive/refs/tags/2.zip)**
+**[Event v3](https://github.com/Insality/defold-event/archive/refs/tags/2.zip)**
 
 ```
 https://github.com/Insality/defold-event/archive/refs/tags/2.zip
@@ -70,6 +72,7 @@ Memory allocation tracking is turned off in release builds, regardless of the `g
 ### Quick API Reference
 
 ```lua
+-- Event Module
 event.set_logger(logger)
 event.create(callback, [callback_context])
 event:subscribe(callback, [callback_context])
@@ -78,10 +81,13 @@ event:is_subscribed(callback, [callback_context])
 event:trigger(...)
 event:is_empty()
 event:clear()
+
+-- Global Events Module
 events.subscribe(name, callback, [callback_context])
 events.unsubscribe(name, callback, [callback_context])
 events.is_subscribed(name, callback, [callback_context])
 events.trigger(name, ...)
+events.is_empty(name)
 events.clear(name)
 events.clear_all()
 ```
@@ -228,6 +234,8 @@ Trigger the event, causing all subscribed callbacks to be executed.
 
 - **Parameters:** Any number of parameters to be passed to the subscribed callbacks.
 
+- **Return Value:** The return value of the last callback executed.
+
 - **Usage Example:**
 
 ```lua
@@ -351,6 +359,24 @@ Throw a global event with the specified name. All subscribed callbacks will be e
 events.trigger("on_game_over", "arg1", "arg2")
 ```
 
+**events.is_empty**
+---
+```lua
+events.is_empty(name)
+```
+Check if the specified global event has no subscribed callbacks.
+
+- **Parameters:**
+  - `name`: The name of the global event to check.
+
+- **Return Value:** `true` if the global event has no subscribed callbacks, `false` otherwise.
+
+- **Usage Example:**
+
+```lua
+local is_empty = events.is_empty("on_game_over")
+```
+
 **events.clear**
 ---
 ```lua
@@ -423,6 +449,15 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 	- Add global events module
 	- The `event:subscribe` and `event:unsubscribe` now return boolean value of success
+</details>
+
+### **V3**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Event Trigger now returns value of last executed callback
+	- Add `events.is_empty(name)` function
+	- Add tests for Event and Global Events modules
 </details>
 
 

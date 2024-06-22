@@ -5,13 +5,14 @@ if not IS_DEBUG then
 	MEMORY_THRESHOLD_WARNING = 0
 end
 
+
 ---@class event @Event Module
----@field callbacks table<number, table>
 local M = {}
 
 --- Use empty function to save a bit of memory
 local EMPTY_FUNCTION = function(_, message, context) end
 
+---@type event.logger
 M.logger =  {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
@@ -21,7 +22,7 @@ M.logger =  {
 }
 
 
----@param logger_instance logger
+---@param logger_instance event.logger
 function M.set_logger(logger_instance)
 	M.logger = logger_instance
 end
@@ -31,12 +32,13 @@ end
 ---Create new event instance. If callback is passed, it will be subscribed to the event.
 ---@param callback function|nil
 ---@param callback_context any|nil
+---@return event
 function M.create(callback, callback_context)
 	local instance = setmetatable({
 		_mapping = nil, -- Used for memory threshold warning, only in debug mode
 		callbacks = nil,
 	}, {
-		__index = M
+		__index = M,
 	})
 
 	if callback then
@@ -123,24 +125,19 @@ function M:is_subscribed(callback, callback_context)
 end
 
 
----Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
----@param a any
----@param b any
----@param c any
----@param d any
----@param e any
----@param f any
----@param g any
----@param h any
----@param i any
----@param j any
 local last_used_memory = 0
-function M:trigger(a, b, c, d, e, f, g, h, i, j)
+
+---Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
+---@vararg any
+---@return any @Result of the last triggered callback
+function M:trigger(...)
 	if not self.callbacks then
 		return
 	end
 
 	local current_script_context = lua_script_instance.Get()
+
+	local result = nil
 
 	for index = 1, #self.callbacks do
 		local callback = self.callbacks[index]
@@ -153,11 +150,11 @@ function M:trigger(a, b, c, d, e, f, g, h, i, j)
 			last_used_memory = collectgarbage("count")
 		end
 
-		local ok, errors
+		local ok, result_or_error
 		if callback.callback_context then
-			ok, errors = pcall(callback.callback, callback.callback_context, a, b, c, d, e, f, g, h, i, j)
+			ok, result_or_error = pcall(callback.callback, callback.callback_context, ...)
 		else
-			ok, errors = pcall(callback.callback, a, b, c, d, e, f, g, h, i, j)
+			ok, result_or_error = pcall(callback.callback, ...)
 		end
 
 		if current_script_context ~= callback.script_context then
@@ -166,9 +163,12 @@ function M:trigger(a, b, c, d, e, f, g, h, i, j)
 
 		if not ok then
 			local traceback = debug.traceback()
-			M.logger:error("An error occurred during event processing", { errors = errors, traceback = traceback })
+			M.logger:error("An error occurred during event processing", { errors = result_or_error, traceback = traceback })
 			-- Print again cause it's just better to see it in the console
-			print(traceback)
+			pprint(result_or_error)
+			pprint(traceback)
+		else
+			result = result_or_error
 		end
 
 		if MEMORY_THRESHOLD_WARNING > 0 then
@@ -182,6 +182,8 @@ function M:trigger(a, b, c, d, e, f, g, h, i, j)
 			end
 		end
 	end
+
+	return result
 end
 
 

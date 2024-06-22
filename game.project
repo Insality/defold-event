@@ -1,5 +1,5 @@
 [bootstrap]
-main_collection = /example/example.collectionc
+main_collection = /test/test.collectionc
 
 [script]
 shared_state = 1
@@ -13,10 +13,11 @@ input_method = HiddenInputField
 
 [project]
 title = Defold Event
-version = 1
+version = 3
 publisher = Insality
 developer = Maksim Tuprikov, Insality
 dependencies#0 = https://github.com/Insality/defold-log/archive/refs/tags/2.zip
+dependencies#1 = https://github.com/britzl/deftest/archive/refs/tags/2.8.0.zip
 
 [library]
 include_dirs = event
