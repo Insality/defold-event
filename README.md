@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Event v3](https://github.com/Insality/defold-event/archive/refs/tags/2.zip)**
+**[Event v3](https://github.com/Insality/defold-event/archive/refs/tags/3.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/2.zip
+https://github.com/Insality/defold-event/archive/refs/tags/3.zip
 ```
 
 ### Library Size
