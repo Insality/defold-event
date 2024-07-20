@@ -1,10 +1,27 @@
 return function()
-	local event = require("event.event")
+	local event = {} --[[@as event]]
 
 	describe("Defold Event", function()
+		before(function()
+			event = require("event.event")
+		end)
+		
 		it("Instantiate Event", function()
 			local test_event = event.create()
 			assert(test_event)
+		end)
+
+		it("Instantiate Event with callback", function()
+			local ctx = "some context"
+			local f = function(self, arg)
+				assert(self == "some context")
+				assert(arg == "arg")
+			end
+
+			local test_event = event.create(f, ctx)
+			assert(#test_event.callbacks == 1)
+
+			test_event:trigger("arg")
 		end)
 
 		it("Subscribe and Unsubscribe", function()

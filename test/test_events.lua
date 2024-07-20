@@ -1,8 +1,9 @@
 return function()
-	local events = require("event.events")
+	local events = {}
 
 	describe("Defold Events", function()
 		before(function()
+			events = require("event.events") --[[@as events]]
 			events.clear_all()
 		end)
 
@@ -120,6 +121,13 @@ return function()
 			events.subscribe("test", f2)
 			local result = events.trigger("test")
 			assert(result == "result2")
+		end)
+
+		it("Unsubscribe unknown event", function()
+			local f = function() end
+
+			local is_unsubscribed = events.unsubscribe("unknown", f)
+			assert(is_unsubscribed == false)
 		end)
 	end)
 end

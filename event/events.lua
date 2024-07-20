@@ -66,10 +66,6 @@ function M.unsubscribe(event_name, callback, callback_context)
 
 	local is_unsubscribed = M.events[event_name]:unsubscribe(callback, callback_context)
 
-	if not is_unsubscribed then
-		Event.logger:warn("Event is not unsubscribed", event_name)
-	end
-
 	return is_unsubscribed
 end
 
