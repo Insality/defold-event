@@ -61,18 +61,19 @@ return function()
 
 			local test_event = event.create()
 			local f = function(amount_of_tables)
-				-- One table is 40 bytes
-				-- To reach 10 bytes, we need ~256
+				-- One table should be 40 bytes
+				-- But experiments shows it takes 64 bytes
+				-- To reach 10 kb we need 160 tables
 				for index = 1, amount_of_tables do
 					local a = {}
 				end
 			end
 			test_event:subscribe(f)
 
-			test_event:trigger(1)
+			test_event:trigger(80)
 			assert(called == false)
 
-			test_event:trigger(512)
+			test_event:trigger(200)
 			assert(called == true)
 		end)
 	end)
