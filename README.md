@@ -57,6 +57,8 @@ memory_threshold_warning = 50
 
 - `memory_threshold_warning`: Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
 
+The event memory tracking is not 100% accurate and is used to check unexpected huge leaks in the event callbacks.
+
 **Release Build Behavior**
 
 Memory allocation tracking is turned off in release builds, regardless of the `game.project` settings.

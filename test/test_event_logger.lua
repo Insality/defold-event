@@ -43,7 +43,7 @@ return function()
 		end)
 
 		it("Should throw warn if subscribed callback consume more memory than threshold", function()
-			event.set_memory_threshold(5)
+			event.set_memory_threshold(10)
 			local called = false
 
 			local EMPTY_FUNCTION = function() end
@@ -62,17 +62,17 @@ return function()
 			local test_event = event.create()
 			local f = function(amount_of_tables)
 				-- One table is 40 bytes
-				-- To reach 5 kilobytes we need ~128
+				-- To reach 10 bytes, we need ~256
 				for index = 1, amount_of_tables do
 					local a = {}
 				end
 			end
 			test_event:subscribe(f)
 
-			test_event:trigger(16)
+			test_event:trigger(1)
 			assert(called == false)
 
-			test_event:trigger(128)
+			test_event:trigger(256)
 			assert(called == true)
 		end)
 	end)
