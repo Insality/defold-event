@@ -146,14 +146,17 @@ function M:trigger(...)
 	for index = 1, #self.callbacks do
 		local callback = self.callbacks[index]
 
+		-- Set context for the callback
 		if current_script_context ~= callback.script_context then
 			event_context_manager.set(callback.script_context)
 		end
 
+		-- Check memory allocation
 		if MEMORY_THRESHOLD_WARNING > 0 then
 			memory_before = collectgarbage("count")
 		end
 
+		-- Call callback
 		local ok, result_or_error
 		if callback.callback_context then
 			ok, result_or_error = pcall(callback.callback, callback.callback_context, ...)
@@ -161,10 +164,7 @@ function M:trigger(...)
 			ok, result_or_error = pcall(callback.callback, ...)
 		end
 
-		if current_script_context ~= callback.script_context then
-			event_context_manager.set(current_script_context)
-		end
-
+		-- Check memory allocation
 		if MEMORY_THRESHOLD_WARNING > 0 then
 			local memory_after = collectgarbage("count")
 			if memory_after - memory_before > MEMORY_THRESHOLD_WARNING then
@@ -178,6 +178,12 @@ function M:trigger(...)
 			end
 		end
 
+		-- Restore context
+		if current_script_context ~= callback.script_context then
+			event_context_manager.set(current_script_context)
+		end
+
+		-- Handle errors
 		if not ok then
 			local traceback = debug.traceback()
 			M.logger:error("An error occurred during event processing", { errors = result_or_error, traceback = traceback })
