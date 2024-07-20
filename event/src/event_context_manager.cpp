@@ -17,22 +17,14 @@ static int get_context(lua_State* L) {
 }
 
 static int set_context(lua_State* L) {
-	luaL_checktype(L, 1, LUA_TUSERDATA);
-
 	// Stack: { new_instance }
-	DM_LUA_STACK_CHECK(L, -1);
+	DM_LUA_STACK_CHECK(L, 0);
 
-	dmScript::GetInstance(L); // Stack: { new_instance, current_instance }
-	lua_insert(L, -2); // Stack: { current_instance, new_instance }
+	luaL_checktype(L, 1, LUA_TUSERDATA);
+	dmScript::SetInstance(L); // Stack: {}
+	lua_pushboolean(L, dmScript::IsInstanceValid(L));
 
-	dmScript::SetInstance(L); // Stack: { current_instance }
-	if (!dmScript::IsInstanceValid(L)) { // Check if new_instance is valid
-		dmScript::SetInstance(L); // Stack: {}
-		return DM_LUA_ERROR("Instance is not valid");
-	}
-
-	lua_pop(L, 1); // Stack: {}
-	return 0;
+	return 1;
 }
 
 // Functions exposed to Lua

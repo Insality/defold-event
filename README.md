@@ -484,6 +484,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 	- Rename `lua_script_instance` to `event_context_manager` to escape conflicts with `lua_script_instance` library
 	- Fix validate context in `event_context_manager.set`
+	- Better error messages in case of invalid context
 	- Refactor `event_context_manager`
 	- Add tests for changing context
 	- Add `event.set_memory_threshold` function. Works only in debug builds.

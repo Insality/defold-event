@@ -185,11 +185,12 @@ function M:trigger(...)
 
 		-- Handle errors
 		if not ok then
-			local traceback = debug.traceback()
-			M.logger:error("An error occurred during event processing", { errors = result_or_error, traceback = traceback })
-			-- Print again cause it's just better to see it in the console
-			pprint(result_or_error)
-			pprint(traceback)
+			local caller_info = debug.getinfo(2)
+			M.logger:error("An error occurred during event processing", {
+				trigger = caller_info.short_src .. ":" .. caller_info.currentline,
+				error = result_or_error,
+			})
+			M.logger:error("Traceback", debug.traceback())
 		else
 			result = result_or_error
 		end
