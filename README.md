@@ -40,8 +40,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/4.zip
 
 | Platform         | Library Size |
 | ---------------- | ------------ |
-| HTML5            | **2.04 KB**  |
-| Desktop / Mobile | **3.45 KB**  |
+| HTML5            | **2.02 KB**  |
+| Desktop / Mobile | **3.47 KB**  |
 
 
 ### Memory Allocation Tracking
