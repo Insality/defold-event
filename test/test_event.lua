@@ -5,7 +5,7 @@ return function()
 		before(function()
 			event = require("event.event")
 		end)
-		
+
 		it("Instantiate Event", function()
 			local test_event = event.create()
 			assert(test_event)
@@ -140,6 +140,14 @@ return function()
 			local test_event = event.create()
 			local result = test_event:trigger()
 			assert(result == nil)
+		end)
+
+		it("Should return false if unsubscribe not subscribed function", function()
+			local test_event = event.create()
+			local f = function() end
+
+			local is_unsubscribed = test_event:unsubscribe(f)
+			assert(is_unsubscribed == false)
 		end)
 	end)
 end

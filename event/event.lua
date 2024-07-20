@@ -1,13 +1,9 @@
 local IS_DEBUG = sys.get_engine_info().is_debug
-local MEMORY_THRESHOLD_WARNING = sys.get_config_int("event.memory_threshold_warning", 0)
-
-if not IS_DEBUG then
-	MEMORY_THRESHOLD_WARNING = 0
-end
-
+local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
 
 ---@class event @Event Module
 local M = {}
+
 
 --- Use empty function to save a bit of memory
 local EMPTY_FUNCTION = function(_, message, context) end
@@ -25,6 +21,15 @@ M.logger =  {
 ---@param logger_instance event.logger
 function M.set_logger(logger_instance)
 	M.logger = logger_instance
+end
+
+
+---@param value number
+function M.set_memory_threshold(value)
+	if not IS_DEBUG then
+		return
+	end
+	MEMORY_THRESHOLD_WARNING = value
 end
 
 
@@ -61,10 +66,9 @@ function M:subscribe(callback, callback_context)
 		return false
 	end
 
-	local caller_info = debug.getinfo(2)
-
 	if MEMORY_THRESHOLD_WARNING > 0 then
 		self._mapping = self._mapping or {}
+		local caller_info = debug.getinfo(2)
 		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
@@ -175,7 +179,7 @@ function M:trigger(...)
 			local after_memory = collectgarbage("count")
 			if after_memory - last_used_memory > MEMORY_THRESHOLD_WARNING then
 				M.logger:warn("Detected huge memory allocation in event", {
-					source = self._mapping[callback.callback],
+					source = self._mapping and self._mapping[callback.callback],
 					memory = after_memory - last_used_memory,
 					index = index
 				})

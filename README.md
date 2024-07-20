@@ -68,7 +68,6 @@ Memory allocation tracking is turned off in release builds, regardless of the `g
 
 ```lua
 -- Event Module
-event.set_logger(logger)
 event.create(callback, [callback_context])
 event:subscribe(callback, [callback_context])
 event:unsubscribe(callback, [callback_context])
@@ -76,6 +75,8 @@ event:is_subscribed(callback, [callback_context])
 event:trigger(...)
 event:is_empty()
 event:clear()
+event.set_logger(logger)
+event.set_memory_threshold(threshold)
 
 -- Global Events Module
 events.subscribe(name, callback, [callback_context])
@@ -93,48 +94,6 @@ To start using the Event module in your project, you first need to import it. Th
 
 ```lua
 local event = require("event.event")
-```
-
-### Configuration Functions
-
-**event.set_logger**
----
-Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger.
-
-```lua
-event.set_logger([logger_instance])
-```
-
-- **Parameters:**
-  - `logger_instance` (optional): A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
-
-- **Usage Example:**
-
-Using the [Defold Log](https://github.com/Insality/defold-log) module:
-```lua
--- Use defold-log module
-local log = require("log.log")
-local event = require("event.event")
-
-event.set_logger(log.get_logger("event"))
-```
-
-Creating a custom user logger:
-```lua
--- Create a custom logger
-local logger = {
-    trace = function(_, message, context) end,
-    debug = function(_, message, context) end,
-    info = function(_, message, context) end,
-    warn = function(_, message, context) end,
-    error = function(_, message, context) end
-}
-event.set_logger(logger)
-```
-
-Remove the default logger:
-```lua
-event.set_logger(nil)
 ```
 
 ### Core Functions
@@ -266,6 +225,67 @@ on_click_event:clear()
 ```
 
 This comprehensive API facilitates the creation and management of events within your projects, enhancing modularity and interaction between different components. Enjoy the power and flexibility of the Event library in your Lua projects!
+
+
+### Configuration Functions
+
+**event.set_logger**
+---
+Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger.
+
+```lua
+event.set_logger([logger_instance])
+```
+
+- **Parameters:**
+  - `logger_instance` (optional): A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
+
+- **Usage Example:**
+
+Using the [Defold Log](https://github.com/Insality/defold-log) module:
+```lua
+-- Use defold-log module
+local log = require("log.log")
+local event = require("event.event")
+
+event.set_logger(log.get_logger("event"))
+```
+
+Creating a custom user logger:
+```lua
+-- Create a custom logger
+local logger = {
+    trace = function(_, message, context) end,
+    debug = function(_, message, context) end,
+    info = function(_, message, context) end,
+    warn = function(_, message, context) end,
+    error = function(_, message, context) end
+}
+event.set_logger(logger)
+```
+
+Remove the default logger:
+```lua
+event.set_logger(nil)
+```
+
+**event.set_memory_threshold**
+---
+Set the threshold for logging warnings about memory allocations in event callbacks. Works only in debug builds.
+
+```lua
+event.set_memory_threshold(threshold)
+```
+
+- **Parameters:**
+  - `threshold`: Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
+
+- **Usage Example:**
+
+```lua
+event.set_memory_threshold(50)
+event.set_memory_threshold(0) -- Disable tracking
+```
 
 
 ### Global Events Module
@@ -464,6 +484,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Fix validate context in `event_context_manager.set`
 	- Refactor `event_context_manager`
 	- Add tests for changing context
+	- Add `event.set_memory_threshold` function. Works only in debug builds.
 
 
 ## ❤️ Support project ❤️
