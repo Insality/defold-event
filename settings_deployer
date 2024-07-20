@@ -12,3 +12,6 @@ use_latest_bob=false
 
 # Select Defold build server
 build_server="https://build.defold.com"
+
+# Is need to build html report
+is_build_html_report=true

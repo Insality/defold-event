@@ -1,6 +1,6 @@
 {
 	"Lua.diagnostics.globals": [
-		"lua_script_instance",
+		"event_context_manager",
 		"sys",
 		"init",
 		"describe",

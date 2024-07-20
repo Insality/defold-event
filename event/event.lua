@@ -1,13 +1,9 @@
 local IS_DEBUG = sys.get_engine_info().is_debug
-local MEMORY_THRESHOLD_WARNING = sys.get_config_int("event.memory_threshold_warning", 0)
-
-if not IS_DEBUG then
-	MEMORY_THRESHOLD_WARNING = 0
-end
-
+local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
 
 ---@class event @Event Module
 local M = {}
+
 
 --- Use empty function to save a bit of memory
 local EMPTY_FUNCTION = function(_, message, context) end
@@ -25,6 +21,15 @@ M.logger =  {
 ---@param logger_instance event.logger
 function M.set_logger(logger_instance)
 	M.logger = logger_instance
+end
+
+
+---@param value number
+function M.set_memory_threshold(value)
+	if not IS_DEBUG then
+		return
+	end
+	MEMORY_THRESHOLD_WARNING = value
 end
 
 
@@ -61,16 +66,15 @@ function M:subscribe(callback, callback_context)
 		return false
 	end
 
-	local caller_info = debug.getinfo(2)
-
 	if MEMORY_THRESHOLD_WARNING > 0 then
 		self._mapping = self._mapping or {}
+		local caller_info = debug.getinfo(2)
 		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
 	self.callbacks = self.callbacks or {}
 	table.insert(self.callbacks, {
-		script_context = lua_script_instance.Get(),
+		script_context = event_context_manager.get(),
 		callback = callback,
 		callback_context = callback_context,
 	})
@@ -125,7 +129,7 @@ function M:is_subscribed(callback, callback_context)
 end
 
 
-local last_used_memory = 0
+local memory_before = 0
 
 ---Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 ---@vararg any
@@ -135,21 +139,24 @@ function M:trigger(...)
 		return
 	end
 
-	local current_script_context = lua_script_instance.Get()
+	local current_script_context = event_context_manager.get()
 
 	local result = nil
 
 	for index = 1, #self.callbacks do
 		local callback = self.callbacks[index]
 
+		-- Set context for the callback
 		if current_script_context ~= callback.script_context then
-			lua_script_instance.Set(callback.script_context)
+			event_context_manager.set(callback.script_context)
 		end
 
+		-- Check memory allocation
 		if MEMORY_THRESHOLD_WARNING > 0 then
-			last_used_memory = collectgarbage("count")
+			memory_before = collectgarbage("count")
 		end
 
+		-- Call callback
 		local ok, result_or_error
 		if callback.callback_context then
 			ok, result_or_error = pcall(callback.callback, callback.callback_context, ...)
@@ -157,10 +164,26 @@ function M:trigger(...)
 			ok, result_or_error = pcall(callback.callback, ...)
 		end
 
-		if current_script_context ~= callback.script_context then
-			lua_script_instance.Set(current_script_context)
+		-- Check memory allocation
+		if MEMORY_THRESHOLD_WARNING > 0 then
+			local memory_after = collectgarbage("count")
+			if memory_after - memory_before > MEMORY_THRESHOLD_WARNING then
+				local caller_info = debug.getinfo(2)
+				M.logger:warn("Detected huge memory allocation in event", {
+					event = self._mapping and self._mapping[callback.callback],
+					trigger = caller_info.short_src .. ":" .. caller_info.currentline,
+					memory = memory_after - memory_before,
+					index = index
+				})
+			end
 		end
 
+		-- Restore context
+		if current_script_context ~= callback.script_context then
+			event_context_manager.set(current_script_context)
+		end
+
+		-- Handle errors
 		if not ok then
 			local traceback = debug.traceback()
 			M.logger:error("An error occurred during event processing", { errors = result_or_error, traceback = traceback })
@@ -169,17 +192,6 @@ function M:trigger(...)
 			pprint(traceback)
 		else
 			result = result_or_error
-		end
-
-		if MEMORY_THRESHOLD_WARNING > 0 then
-			local after_memory = collectgarbage("count")
-			if after_memory - last_used_memory > MEMORY_THRESHOLD_WARNING then
-				M.logger:warn("Detected huge memory allocation in event", {
-					source = self._mapping[callback.callback],
-					memory = after_memory - last_used_memory,
-					index = index
-				})
-			end
 		end
 	end
 
