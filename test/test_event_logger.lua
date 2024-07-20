@@ -46,12 +46,15 @@ return function()
 			event.set_memory_threshold(5)
 			local called = false
 
-			local EMPTY_FUNCTION = function(_, message, context) end
+			local EMPTY_FUNCTION = function() end
 			local logger =  {
 				trace = EMPTY_FUNCTION,
 				debug = EMPTY_FUNCTION,
 				info = EMPTY_FUNCTION,
-				warn = function() called = true end,
+				warn = function(_, message, context)
+					pprint(message, context)
+					called = true
+				end,
 				error = EMPTY_FUNCTION,
 			}
 			event.set_logger(logger)
