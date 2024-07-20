@@ -70,7 +70,7 @@ function M:subscribe(callback, callback_context)
 
 	self.callbacks = self.callbacks or {}
 	table.insert(self.callbacks, {
-		script_context = lua_script_instance.Get(),
+		script_context = event_context_manager.get(),
 		callback = callback,
 		callback_context = callback_context,
 	})
@@ -135,7 +135,7 @@ function M:trigger(...)
 		return
 	end
 
-	local current_script_context = lua_script_instance.Get()
+	local current_script_context = event_context_manager.get()
 
 	local result = nil
 
@@ -143,7 +143,7 @@ function M:trigger(...)
 		local callback = self.callbacks[index]
 
 		if current_script_context ~= callback.script_context then
-			lua_script_instance.Set(callback.script_context)
+			event_context_manager.set(callback.script_context)
 		end
 
 		if MEMORY_THRESHOLD_WARNING > 0 then
@@ -158,7 +158,7 @@ function M:trigger(...)
 		end
 
 		if current_script_context ~= callback.script_context then
-			lua_script_instance.Set(current_script_context)
+			event_context_manager.set(current_script_context)
 		end
 
 		if not ok then

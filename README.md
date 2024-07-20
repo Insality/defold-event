@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Event v3](https://github.com/Insality/defold-event/archive/refs/tags/2.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/4.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/2.zip
+https://github.com/Insality/defold-event/archive/refs/tags/4.zip
 ```
 
 ### Library Size
@@ -42,11 +42,6 @@ https://github.com/Insality/defold-event/archive/refs/tags/2.zip
 | ---------------- | ------------ |
 | HTML5            | **1.96 KB**  |
 | Desktop / Mobile | **3.35 KB**  |
-
-
-### Lua Script Instance Compatibility
-
-The project already includes the [Lua Script Instance](https://github.com/DanEngelbrecht/LuaScriptInstance/) library. If Lua Script Instance is listed in your project's dependencies, remove it to prevent duplication.
 
 
 ### Memory Allocation Tracking
@@ -459,6 +454,16 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Add `events.is_empty(name)` function
 	- Add tests for Event and Global Events modules
 </details>
+
+
+### **V4**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Rename `lua_script_instance` to `event_context_manager` to escape conflicts with `lua_script_instance` library
+	- Fix validate context in `event_context_manager.set`
+	- Refactor `event_context_manager`
+	- Add tests for changing context
 
 
 ## ❤️ Support project ❤️
