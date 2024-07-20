@@ -69,7 +69,7 @@ return function()
 			end
 			test_event:subscribe(f)
 
-			test_event:trigger(64)
+			test_event:trigger(16)
 			assert(called == false)
 
 			test_event:trigger(128)

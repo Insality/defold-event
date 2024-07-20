@@ -129,7 +129,7 @@ function M:is_subscribed(callback, callback_context)
 end
 
 
-local last_used_memory = 0
+local memory_before = 0
 
 ---Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 ---@vararg any
@@ -151,7 +151,7 @@ function M:trigger(...)
 		end
 
 		if MEMORY_THRESHOLD_WARNING > 0 then
-			last_used_memory = collectgarbage("count")
+			memory_before = collectgarbage("count")
 		end
 
 		local ok, result_or_error
@@ -166,11 +166,13 @@ function M:trigger(...)
 		end
 
 		if MEMORY_THRESHOLD_WARNING > 0 then
-			local after_memory = collectgarbage("count")
-			if after_memory - last_used_memory > MEMORY_THRESHOLD_WARNING then
+			local memory_after = collectgarbage("count")
+			if memory_after - memory_before > MEMORY_THRESHOLD_WARNING then
+				local caller_info = debug.getinfo(2)
 				M.logger:warn("Detected huge memory allocation in event", {
-					source = self._mapping and self._mapping[callback.callback],
-					memory = after_memory - last_used_memory,
+					event = self._mapping and self._mapping[callback.callback],
+					trigger = caller_info.short_src .. ":" .. caller_info.currentline,
+					memory = memory_after - memory_before,
 					index = index
 				})
 			end
