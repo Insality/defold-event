@@ -165,16 +165,6 @@ function M:trigger(...)
 			event_context_manager.set(current_script_context)
 		end
 
-		if not ok then
-			local traceback = debug.traceback()
-			M.logger:error("An error occurred during event processing", { errors = result_or_error, traceback = traceback })
-			-- Print again cause it's just better to see it in the console
-			pprint(result_or_error)
-			pprint(traceback)
-		else
-			result = result_or_error
-		end
-
 		if MEMORY_THRESHOLD_WARNING > 0 then
 			local after_memory = collectgarbage("count")
 			if after_memory - last_used_memory > MEMORY_THRESHOLD_WARNING then
@@ -184,6 +174,16 @@ function M:trigger(...)
 					index = index
 				})
 			end
+		end
+
+		if not ok then
+			local traceback = debug.traceback()
+			M.logger:error("An error occurred during event processing", { errors = result_or_error, traceback = traceback })
+			-- Print again cause it's just better to see it in the console
+			pprint(result_or_error)
+			pprint(traceback)
+		else
+			result = result_or_error
 		end
 	end
 
