@@ -491,13 +491,14 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Refactor `event_context_manager`
 	- Add tests for changing context
 	- Add `event.set_memory_threshold` function. Works only in debug builds.
-
+</details>
 
 ### **V5**
 <details>
 	<summary><b>Changelog</b></summary>
 
 	- The `event:trigger` can be called as `event(...)` via `__call` metamethod
+</details>
 
 ## ❤️ Support project ❤️
 
