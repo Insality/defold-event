@@ -28,7 +28,7 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/4.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/5.zip)**
 
 ```
 https://github.com/Insality/defold-event/archive/refs/tags/5.zip
