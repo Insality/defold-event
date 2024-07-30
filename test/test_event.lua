@@ -149,5 +149,30 @@ return function()
 			local is_unsubscribed = test_event:unsubscribe(f)
 			assert(is_unsubscribed == false)
 		end)
+
+		it("Event can be called with regular function syntax", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f)
+			test_event(1)
+			assert(counter == 1)
+
+			test_event(2)
+			assert(counter == 3)
+		end)
+
+		it("Print memory allocations per function", function()
+			local current_memory = collectgarbage("count")
+
+			for index = 1, 10000 do
+				event.create()
+			end
+
+			local new_memory = collectgarbage("count")
+			local memory_per_event = ((new_memory - current_memory) * 1024) / 10000
+			print("Memory allocations per function (Bytes): ", memory_per_event)
+		end)
 	end)
 end

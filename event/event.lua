@@ -44,6 +44,7 @@ function M.create(callback, callback_context)
 		callbacks = nil,
 	}, {
 		__index = M,
+		__call = M.trigger,
 	})
 
 	if callback then

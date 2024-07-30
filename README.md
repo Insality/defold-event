@@ -31,7 +31,7 @@ Open your `game.project` file and add the following line to the dependencies fie
 **[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/4.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/4.zip
+https://github.com/Insality/defold-event/archive/refs/tags/5.zip
 ```
 
 ### Library Size
@@ -40,8 +40,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/4.zip
 
 | Platform         | Library Size |
 | ---------------- | ------------ |
-| HTML5            | **2.02 KB**  |
-| Desktop / Mobile | **3.47 KB**  |
+| HTML5            | **2.03 KB**  |
+| Desktop / Mobile | **3.49 KB**  |
 
 
 ### Memory Allocation Tracking
@@ -186,7 +186,7 @@ local is_subscribed = on_click_event:is_subscribed(callback, self)
 ```lua
 event:trigger(...)
 ```
-Trigger the event, causing all subscribed callbacks to be executed.
+Trigger the event, causing all subscribed callbacks to be executed. Any parameters passed to `trigger` will be forwarded to the callbacks. The return value of the last executed callback is returned. The `event:trigger` can be called as `event(...)`.
 
 - **Parameters:** Any number of parameters to be passed to the subscribed callbacks.
 
@@ -196,6 +196,9 @@ Trigger the event, causing all subscribed callbacks to be executed.
 
 ```lua
 on_click_event:trigger("arg1", "arg2")
+
+-- The event can be triggered as a function
+on_click_event("arg1", "arg2")
 ```
 
 **event:is_empty**
@@ -489,6 +492,12 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Add tests for changing context
 	- Add `event.set_memory_threshold` function. Works only in debug builds.
 
+
+### **V5**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- The `event:trigger` can be called as `event(...)` via `__call` metamethod
 
 ## ❤️ Support project ❤️
 
