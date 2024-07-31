@@ -71,12 +71,18 @@ return function()
 			end
 			test_event:subscribe(f)
 
+			-- Stop collecting garbage
+			collectgarbage("stop")
+
 			-- Set low amount, due the test coverage big overhead
 			test_event:trigger(1)
 			assert(called == false)
 
 			test_event:trigger(4000)
 			assert(called == true)
+
+			-- Start collecting garbage
+			collectgarbage("restart")
 		end)
 	end)
 end
