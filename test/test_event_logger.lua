@@ -71,25 +71,12 @@ return function()
 			end
 			test_event:subscribe(f)
 
-			-- Stop collecting garbage
-			collectgarbage("stop")
-
-			local cur_memory = collectgarbage("count")
-			print("Memory before: " .. cur_memory)
-
 			-- Set low amount, due the test coverage big overhead
 			test_event:trigger(1)
 			assert(called == false)
 
-			print("Memory after 1: " .. collectgarbage("count") - cur_memory)
-
 			test_event:trigger(2000)
 			assert(called == true)
-
-			print("Memory after 2: " .. collectgarbage("count") - cur_memory)
-
-			-- Start collecting garbage
-			collectgarbage("restart")
 		end)
 	end)
 end
