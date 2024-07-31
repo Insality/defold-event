@@ -72,7 +72,7 @@ return function()
 			test_event:trigger(1)
 			assert(called == false)
 
-			test_event:trigger(1000)
+			test_event:trigger(3000)
 			assert(called == true)
 		end)
 	end)
