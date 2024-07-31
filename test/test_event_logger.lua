@@ -61,10 +61,9 @@ return function()
 
 			local test_event = event.create()
 			local f = function(amount_of_tables)
-				-- One table should be 40 bytes
-				-- To reach 10 kb we need 160 tables
+				local table = {}
 				for index = 1, amount_of_tables do
-					local a = {}
+					table.insert(table, {})
 				end
 			end
 			test_event:subscribe(f)
@@ -73,7 +72,7 @@ return function()
 			test_event:trigger(1)
 			assert(called == false)
 
-			test_event:trigger(800)
+			test_event:trigger(1000)
 			assert(called == true)
 		end)
 	end)
