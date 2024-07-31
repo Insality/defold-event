@@ -9,8 +9,6 @@ function init(self)
 
 	-- Ensure all other script init has been processed before
 	-- Required for context changing tests
-	timer.delay(0, false, function()
-		local is_report = sys.get_config("test.report") == "1"
-		deftest.run({ coverage = { enabled = is_report } })
-	end)
+	local is_report = sys.get_config("test.report") == "1"
+	deftest.run({ coverage = { enabled = is_report } })
 end
