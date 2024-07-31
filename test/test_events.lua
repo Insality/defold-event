@@ -3,7 +3,6 @@ return function()
 
 	describe("Defold Events", function()
 		before(function()
-			package.loaded["event.events"] = nil
 			events = require("event.events") --[[@as events]]
 		end)
 

@@ -3,7 +3,6 @@ return function()
 
 	describe("Defold Event", function()
 		before(function()
-			package.loaded["event.event"] = nil
 			event = require("event.event")
 		end)
 

@@ -1,0 +1,13 @@
+local events = require("event.events")
+
+local function get_size()
+	return gui.get_size(gui.get_node("box"))
+end
+
+function init(self)
+	events.subscribe("get_gui_size", get_size, self)
+end
+
+function final(self)
+	events.unsubscribe("get_gui_size", get_size, self)
+end

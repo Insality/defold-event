@@ -12,12 +12,12 @@ end
 
 function init(self)
 	self.value = "secret_value"
-	events.subscribe("get_go_position", get_position)
+	events.subscribe("get_go_position", get_position, self)
 	events.subscribe("get_go_value", get_value, self)
 end
 
 
 function final(self)
-	events.unsubscribe("get_go_position", get_position)
+	events.unsubscribe("get_go_position", get_position, self)
 	events.unsubscribe("get_go_value", get_value, self)
 end
