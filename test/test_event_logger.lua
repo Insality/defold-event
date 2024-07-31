@@ -43,7 +43,7 @@ return function()
 		end)
 
 		it("Should throw warn if subscribed callback consume more memory than threshold", function()
-			event.set_memory_threshold(5)
+			event.set_memory_threshold(50)
 			local called = false
 
 			local EMPTY_FUNCTION = function() end
@@ -83,7 +83,7 @@ return function()
 
 			print("Memory after 1: " .. collectgarbage("count") - cur_memory)
 
-			test_event:trigger(4000)
+			test_event:trigger(2000)
 			assert(called == true)
 
 			print("Memory after 2: " .. collectgarbage("count") - cur_memory)
