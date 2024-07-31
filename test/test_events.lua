@@ -4,7 +4,10 @@ return function()
 	describe("Defold Events", function()
 		before(function()
 			events = require("event.events") --[[@as events]]
-			events.clear_all()
+		end)
+
+		after(function()
+			events.clear("test")
 		end)
 
 		it("Events Subscribe and Unsubscribe", function()
@@ -74,7 +77,7 @@ return function()
 			events.trigger("test")
 			assert(counter == 1)
 
-			events.clear_all()
+			events.clear("test")
 			events.trigger("test")
 			assert(counter == 1)
 		end)

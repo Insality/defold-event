@@ -9,7 +9,7 @@ local M = {}
 local EMPTY_FUNCTION = function(_, message, context) end
 
 ---@type event.logger
-M.logger =  {
+M.empty_logger =  {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
@@ -17,10 +17,19 @@ M.logger =  {
 	error = EMPTY_FUNCTION,
 }
 
+---@type event.logger
+M.logger = {
+	trace = function(_, msg) print("TRACE: " .. msg) end,
+	debug = function(_, msg, data) pprint("DEBUG: " .. msg, data) end,
+	info = function(_, msg, data) pprint("INFO: " .. msg, data) end,
+	warn = function(_, msg, data) pprint("WARN: " .. msg, data) end,
+	error = function(_, msg, data) pprint("ERROR: " .. msg, data) end
+}
+
 
 ---@param logger_instance event.logger
 function M.set_logger(logger_instance)
-	M.logger = logger_instance
+	M.logger = logger_instance or M.empty_logger
 end
 
 
@@ -63,7 +72,7 @@ function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	if self:is_subscribed(callback, callback_context) then
-		M.logger:error("Subscription attempt for an already subscribed event", debug.traceback())
+		M.logger:warn("Subscription attempt for an already subscribed event", debug.traceback())
 		return false
 	end
 
@@ -94,7 +103,7 @@ function M:unsubscribe(callback, callback_context)
 	local is_subscribed = self:is_subscribed(callback, callback_context)
 
 	if not is_subscribed then
-		M.logger:error("Unsubscription attempt for an already unsubscribed event", debug.traceback())
+		M.logger:warn("Unsubscription attempt for an already unsubscribed event", debug.traceback())
 		return false
 	end
 

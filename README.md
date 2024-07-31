@@ -40,8 +40,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/5.zip
 
 | Platform         | Library Size |
 | ---------------- | ------------ |
-| HTML5            | **2.03 KB**  |
-| Desktop / Mobile | **3.49 KB**  |
+| HTML5            | **2.14 KB**  |
+| Desktop / Mobile | **3.71 KB**  |
 
 
 ### Memory Allocation Tracking
@@ -105,7 +105,7 @@ local event = require("event.event")
 ```lua
 event.create(callback, [callback_context])
 ```
-Generate a new event instance. This instance can then be used to subscribe to and trigger events.
+Generate a new event instance. This instance can then be used to subscribe to and trigger events. The `callback` function will be called when the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. Usually, it is used to pass the `self` instance.
 
 - **Parameters:**
   - `callback`: The function to be called when the event is triggered.
@@ -116,8 +116,13 @@ Generate a new event instance. This instance can then be used to subscribe to an
 - **Usage Example:**
 
 ```lua
-local callback = function(self) print("clicked!") end
-local on_click_event = event.create(callback, self)
+local function callback(self)
+	print("clicked!")
+end
+
+function init(self)
+	self.on_click_event = event.create(callback, self)
+end
 ```
 
 ### Event Instance Methods
@@ -129,7 +134,7 @@ Once an event instance is created, you can interact with it using the following 
 ```lua
 event:subscribe(callback, [callback_context])
 ```
-Subscribe a callback to the event. The callback will be invoked whenever the event is triggered.
+Subscribe a callback to the event. The callback will be invoked whenever the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. If the callback with context is already subscribed, the warning will be logged.
 
 - **Parameters:**
   - `callback`: The function to be executed when the event occurs.
@@ -148,7 +153,7 @@ on_click_event:subscribe(callback, self)
 ```lua
 event:unsubscribe(callback, [callback_context])
 ```
-Remove a previously subscribed callback from the event.
+Remove a previously subscribed callback from the event. The `callback_context` should be the same as the one used when subscribing the callback. If there is no `callback_context` provided, the warning will be logged.
 
 - **Parameters:**
   - `callback`: The callback function to unsubscribe.
@@ -167,7 +172,7 @@ on_click_event:unsubscribe(callback, self)
 ```lua
 event:is_subscribed(callback, [callback_context])
 ```
-Determine if a specific callback is currently subscribed to the event.
+Determine if a specific callback is currently subscribed to the event. The `callback_context` should be the same as the one used when subscribing the callback.
 
 - **Parameters:**
   - `callback`: The callback function in question.
@@ -186,7 +191,7 @@ local is_subscribed = on_click_event:is_subscribed(callback, self)
 ```lua
 event:trigger(...)
 ```
-Trigger the event, causing all subscribed callbacks to be executed. Any parameters passed to `trigger` will be forwarded to the callbacks. The return value of the last executed callback is returned. The `event:trigger` can be called as `event(...)`.
+Trigger the event, causing all subscribed callbacks to be executed. Any parameters passed to `trigger` will be forwarded to the callbacks. The return value of the last executed callback is returned. The `event:trigger(...)` can be called as `event(...)`.
 
 - **Parameters:** Any number of parameters to be passed to the subscribed callbacks.
 
@@ -229,14 +234,12 @@ Remove all callbacks subscribed to the event, effectively resetting it.
 on_click_event:clear()
 ```
 
-This comprehensive API facilitates the creation and management of events within your projects, enhancing modularity and interaction between different components. Enjoy the power and flexibility of the Event library in your Lua projects!
-
 
 ### Configuration Functions
 
 **event.set_logger**
 ---
-Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger.
+Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger. By default, the module uses the `pprint` logger.
 
 ```lua
 event.set_logger([logger_instance])
@@ -276,7 +279,7 @@ event.set_logger(nil)
 
 **event.set_memory_threshold**
 ---
-Set the threshold for logging warnings about memory allocations in event callbacks. Works only in debug builds.
+Set the threshold for logging warnings about memory allocations in event callbacks. Works only in debug builds. The threshold is in kilobytes. If the callback causes a memory allocation greater than the threshold, a warning will be logged.
 
 ```lua
 event.set_memory_threshold(threshold)
@@ -321,7 +324,9 @@ Subscribe a callback to the specified global event.
 - **Usage Example:**
 
 ```lua
-events.subscribe("on_game_over", callback, self)
+function init(self)
+	events.subscribe("on_game_over", callback, self)
+end
 ```
 
 **events.unsubscribe**
@@ -339,7 +344,9 @@ Remove a previously subscribed callback from the specified global event.
 - **Usage Example:**
 
 ```lua
-events.unsubscribe("on_game_over", callback, self)
+function final(self)
+	events.unsubscribe("on_game_over", callback, self)
+end
 ```
 
 **events.is_subscribed**
@@ -367,7 +374,7 @@ local is_subscribed = events.is_subscribed("on_game_over", callback, self)
 ```lua
 events.trigger(name, ...)
 ```
-Throw a global event with the specified name. All subscribed callbacks will be executed.
+Throw a global event with the specified name. All subscribed callbacks will be executed. Any parameters passed to `trigger` will be forwarded to the callbacks. The return value of the last executed callback is returned.
 
 - **Parameters:**
   - `name`: The name of the global event to trigger.
@@ -489,7 +496,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Fix validate context in `event_context_manager.set`
 	- Better error messages in case of invalid context
 	- Refactor `event_context_manager`
-	- Add tests for changing context
+	- Add tests for event_context_manager
 	- Add `event.set_memory_threshold` function. Works only in debug builds.
 </details>
 
@@ -497,7 +504,9 @@ If you have any issues, questions or suggestions please [create an issue](https:
 <details>
 	<summary><b>Changelog</b></summary>
 
-	- The `event:trigger` can be called as `event(...)` via `__call` metamethod
+	- The `event:trigger(...)` can be called as `event(...)` via `__call` metamethod
+	- Add default pprint logger. Remove or replace it with `event.set_logger()`
+	- Add tests for context changing
 </details>
 
 ## ❤️ Support project ❤️

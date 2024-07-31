@@ -111,3 +111,21 @@ end)
 -- Trigger params will be checked by Lua linter
 on_sound_click:trigger(true)
 ```
+
+
+### 4. Using Global Events to extend single callback Defold messages
+
+You can use global events to extend single callback Defold messages. This is useful when you need to add multiple callbacks to a single message.
+
+```lua
+function init(self)
+    -- The window set_listener function allows to set only one callback, so we can use global events to extend it
+    window.set_listener(function(_, event, data)
+        events.trigger("window_event", event, data)
+    end)
+
+    -- Now we can subscribe to the window event at any place in the code
+    events.subscribe("window_event", function(event, data)
+        print("Window event: ", event, data)
+    end)
+end

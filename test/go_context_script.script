@@ -1,0 +1,23 @@
+local events = require("event.events")
+
+local function get_position()
+	return go.get_position()
+end
+
+
+local function get_value(self, value)
+	return self.value .. "_" .. value
+end
+
+
+function init(self)
+	self.value = "secret_value"
+	events.subscribe("get_go_position", get_position)
+	events.subscribe("get_go_value", get_value, self)
+end
+
+
+function final(self)
+	events.unsubscribe("get_go_position", get_position)
+	events.unsubscribe("get_go_value", get_value, self)
+end
