@@ -9,7 +9,7 @@ local M = {}
 local EMPTY_FUNCTION = function(_, message, context) end
 
 ---@type event.logger
-M.empty_logger =  {
+M.empty_logger = {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
