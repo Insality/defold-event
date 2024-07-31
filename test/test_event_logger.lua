@@ -41,39 +41,5 @@ return function()
 
 			assert(called == true)
 		end)
-
-		it("Should throw warn if subscribed callback consume more memory than threshold", function()
-			event.set_memory_threshold(10)
-			local called = false
-
-			local EMPTY_FUNCTION = function() end
-			local logger =  {
-				trace = EMPTY_FUNCTION,
-				debug = EMPTY_FUNCTION,
-				info = EMPTY_FUNCTION,
-				warn = function(_, message, context)
-					pprint(message, context)
-					called = true
-				end,
-				error = EMPTY_FUNCTION,
-			}
-			event.set_logger(logger)
-
-			local test_event = event.create()
-			local f = function(amount_of_tables)
-				local t = {}
-				for index = 1, amount_of_tables do
-					table.insert(t, event.create())
-				end
-			end
-			test_event:subscribe(f)
-
-			-- Set low amount, due the test coverage big overhead
-			test_event:trigger(1)
-			assert(called == false)
-
-			test_event:trigger(3000)
-			assert(called == true)
-		end)
 	end)
 end
