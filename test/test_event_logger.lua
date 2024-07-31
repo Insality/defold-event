@@ -63,7 +63,7 @@ return function()
 			local f = function(amount_of_tables)
 				local t = {}
 				for index = 1, amount_of_tables do
-					table.insert(t, {})
+					table.insert(t, event.create())
 				end
 			end
 			test_event:subscribe(f)
