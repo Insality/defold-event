@@ -4,6 +4,15 @@ local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_t
 ---@class event @Event Module
 local M = {}
 
+-- Forward declaration
+local EVENT_METATABLE
+
+-- Local versions
+local set_context = event_context_manager.set
+local get_context = event_context_manager.get
+local pcall = pcall
+local tinsert = table.insert
+local tremove = table.remove
 
 --- Use empty function to save a bit of memory
 local EMPTY_FUNCTION = function(_, message, context) end
@@ -49,12 +58,8 @@ end
 ---@return event
 function M.create(callback, callback_context)
 	local instance = setmetatable({
-		_mapping = nil, -- Used for memory threshold warning, only in debug mode
 		callbacks = nil,
-	}, {
-		__index = M,
-		__call = M.trigger,
-	})
+	}, EVENT_METATABLE)
 
 	if callback then
 		instance:subscribe(callback, callback_context)
@@ -83,8 +88,8 @@ function M:subscribe(callback, callback_context)
 	end
 
 	self.callbacks = self.callbacks or {}
-	table.insert(self.callbacks, {
-		script_context = event_context_manager.get(),
+	tinsert(self.callbacks, {
+		script_context = get_context(),
 		callback = callback,
 		callback_context = callback_context,
 	})
@@ -110,7 +115,7 @@ function M:unsubscribe(callback, callback_context)
 	for index = 1, #self.callbacks do
 		local cb = self.callbacks[index]
 		if cb.callback == callback and cb.callback_context == callback_context then
-			table.remove(self.callbacks, index)
+			tremove(self.callbacks, index)
 			return true
 		end
 	end
@@ -149,16 +154,15 @@ function M:trigger(...)
 		return
 	end
 
-	local current_script_context = event_context_manager.get()
-
 	local result = nil
+	local current_script_context = get_context()
 
 	for index = 1, #self.callbacks do
 		local callback = self.callbacks[index]
 
 		-- Set context for the callback
 		if current_script_context ~= callback.script_context then
-			event_context_manager.set(callback.script_context)
+			set_context(callback.script_context)
 		end
 
 		-- Check memory allocation
@@ -190,7 +194,7 @@ function M:trigger(...)
 
 		-- Restore context
 		if current_script_context ~= callback.script_context then
-			event_context_manager.set(current_script_context)
+			set_context(current_script_context)
 		end
 
 		-- Handle errors
@@ -222,5 +226,10 @@ function M:clear()
 	self.callbacks = nil
 end
 
+-- Construct event metatable
+EVENT_METATABLE = {
+	__index = M,
+	__call = M.trigger,
+}
 
 return M

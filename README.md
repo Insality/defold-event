@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/5.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/6.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/5.zip
+https://github.com/Insality/defold-event/archive/refs/tags/6.zip
 ```
 
 ### Library Size
@@ -57,9 +57,7 @@ memory_threshold_warning = 50
 
 - `memory_threshold_warning`: Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
 
-The event memory tracking is not 100% accurate and is used to check unexpected huge leaks in the event callbacks.
-
-**Release Build Behavior**
+The event memory tracking is not 100% accurate and is used to check unexpected huge leaks in the event callbacks. The memory tracking applied additional memory allocations for tracking purposes.
 
 Memory allocation tracking is turned off in release builds, regardless of the `game.project` settings.
 
@@ -507,6 +505,14 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- The `event:trigger(...)` can be called as `event(...)` via `__call` metamethod
 	- Add default pprint logger. Remove or replace it with `event.set_logger()`
 	- Add tests for context changing
+</details>
+
+### **V6**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Optimize memory allocations per event instance
+	- Localize functions in the event module for better performance
 </details>
 
 ## ❤️ Support project ❤️

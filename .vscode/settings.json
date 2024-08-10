@@ -14,5 +14,6 @@
 		"factory",
 		"vmath",
 		"gui"
-	]
+	],
+	"Lua.completion.autoRequire": false
 }
