@@ -61,8 +61,7 @@ return function()
 
 			local test_event = event.create()
 			local f = function(amount_of_tables)
-				-- One table should be 40 bytes
-				-- To reach 10 kb we need 160 tables
+				-- One event should be 64 bytes
 				local t = {}
 				for index = 1, amount_of_tables do
 					local e = event.create()
@@ -71,12 +70,16 @@ return function()
 			end
 			test_event:subscribe(f)
 
+			collectgarbage("stop")
+
 			-- Set low amount, due the test coverage big overhead
 			test_event:trigger(1)
 			assert(called == false)
 
 			test_event:trigger(2000)
 			assert(called == true)
+
+			collectgarbage("restart")
 		end)
 	end)
 end
