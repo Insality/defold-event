@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/6.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/7.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/6.zip
+https://github.com/Insality/defold-event/archive/refs/tags/7.zip
 ```
 
 ### Library Size
@@ -513,6 +513,14 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 	- Optimize memory allocations per event instance
 	- Localize functions in the event module for better performance
+</details>
+
+### **V7**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Optimize memory allocations per event instance
+	- Default logger now empty except for errors
 </details>
 
 ## ❤️ Support project ❤️

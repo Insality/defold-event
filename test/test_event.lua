@@ -168,13 +168,31 @@ return function()
 
 			local current_memory = collectgarbage("count")
 
+			for _ = 1, 1 do
+				event.create()
+			end
+
+			local new_memory = collectgarbage("count")
+			local memory_per_event = ((new_memory - current_memory) * 1024) / 1
+			print("(1) Memory allocations per function (Bytes): ", memory_per_event)
+			current_memory = new_memory
+
+			for _ = 1, 100 do
+				event.create()
+			end
+
+			local new_memory = collectgarbage("count")
+			local memory_per_event = ((new_memory - current_memory) * 1024) / 100
+			print("(100) Memory allocations per function (Bytes): ", memory_per_event)
+			current_memory = new_memory
+
 			for _ = 1, 10000 do
 				event.create()
 			end
 
 			local new_memory = collectgarbage("count")
 			local memory_per_event = ((new_memory - current_memory) * 1024) / 10000
-			print("Memory allocations per function (Bytes): ", memory_per_event)
+			print("(10000) Memory allocations per function (Bytes): ", memory_per_event)
 
 			collectgarbage("restart")
 		end)
