@@ -1,5 +1,5 @@
 return function()
-	local events = {} --[[@as events]]
+	local events = {}
 
 	describe("Event Context Change", function()
 		before(function()

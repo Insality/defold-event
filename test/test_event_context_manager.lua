@@ -1,5 +1,5 @@
 return function()
-	local event = {} --[[@as event]]
+	local event = {}
 
 	describe("Event Context Manager", function()
 		before(function()

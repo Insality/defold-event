@@ -12,12 +12,6 @@ M.events = {}
 ---@return any @Result of the last triggered callback
 function M.trigger(event_name, ...)
 	local event = M.events[event_name]
-
-	Event.logger:debug("Event " .. event_name, {
-		params = { ... },
-		listeners = event and #event.callbacks or nil,
-	})
-
 	if event then
 		return event:trigger(...)
 	end
@@ -64,9 +58,7 @@ function M.unsubscribe(event_name, callback, callback_context)
 		return false
 	end
 
-	local is_unsubscribed = M.events[event_name]:unsubscribe(callback, callback_context)
-
-	return is_unsubscribed
+	return M.events[event_name]:unsubscribe(callback, callback_context)
 end
 
 
