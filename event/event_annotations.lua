@@ -16,6 +16,11 @@
 ---@field clear_all fun(): nil
 ---@field is_empty fun(name: string): boolean
 
+---@class event.callback_data
+---@field script_context any
+---@field callback fun()
+---@field callback_context any
+
 ---@class event.logger
 ---@field trace fun(logger: event.logger, message: string, data: any|nil)
 ---@field debug fun(logger: event.logger, message: string, data: any|nil)

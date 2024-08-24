@@ -1,5 +1,5 @@
 return function()
-	local event = {} --[[@as event]]
+	local event = {}
 
 	describe("Defold Event", function()
 		before(function()
@@ -19,7 +19,7 @@ return function()
 			end
 
 			local test_event = event.create(f, ctx)
-			assert(#test_event.callbacks == 1)
+			assert(#test_event == 1)
 
 			test_event:trigger("arg")
 		end)
@@ -29,10 +29,10 @@ return function()
 			local f = function() end
 
 			test_event:subscribe(f)
-			assert(#test_event.callbacks == 1)
+			assert(#test_event == 1)
 
 			test_event:unsubscribe(f)
-			assert(#test_event.callbacks == 0)
+			assert(#test_event == 0)
 		end)
 
 		it("Trigger", function()
@@ -71,7 +71,7 @@ return function()
 
 			is_subscribed = test_event:subscribe(f)
 			assert(is_subscribed == false)
-			assert(#test_event.callbacks == 1)
+			assert(#test_event == 1)
 		end)
 
 		it("Event is_subscribed", function()
@@ -164,15 +164,19 @@ return function()
 		end)
 
 		it("Print memory allocations per function", function()
+			collectgarbage("stop")
+
 			local current_memory = collectgarbage("count")
 
-			for index = 1, 10000 do
+			for _ = 1, 10000 do
 				event.create()
 			end
 
 			local new_memory = collectgarbage("count")
 			local memory_per_event = ((new_memory - current_memory) * 1024) / 10000
 			print("Memory allocations per function (Bytes): ", memory_per_event)
+
+			collectgarbage("restart")
 		end)
 	end)
 end

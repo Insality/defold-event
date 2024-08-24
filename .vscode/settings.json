@@ -13,7 +13,11 @@
 		"timer",
 		"factory",
 		"vmath",
-		"gui"
+		"gui",
+		"msg",
+		"hash",
+		"on_input",
+		"label"
 	],
 	"Lua.completion.autoRequire": false
 }

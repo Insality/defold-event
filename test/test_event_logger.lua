@@ -1,5 +1,5 @@
 return function()
-	local event = {} --[[@as event]]
+	local event = {}
 
 	describe("Defold Event", function()
 		before(function()
