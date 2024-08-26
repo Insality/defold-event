@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/7.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/8.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/7.zip
+https://github.com/Insality/defold-event/archive/refs/tags/8.zip
 ```
 
 ### Library Size
@@ -40,8 +40,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/7.zip
 
 | Platform         | Library Size |
 | ---------------- | ------------ |
-| HTML5            | **2.03 KB**  |
-| Desktop / Mobile | **3.55 KB**  |
+| HTML5            | **2.07 KB**  |
+| Desktop / Mobile | **3.54 KB**  |
 
 
 ### Memory Allocation Tracking
@@ -103,13 +103,13 @@ local event = require("event.event")
 ```lua
 event.create(callback, [callback_context])
 ```
-Generate a new event instance. This instance can then be used to subscribe to and trigger events. The `callback` function will be called when the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. Usually, it is used to pass the `self` instance.
+Generate a new event instance. This instance can then be used to subscribe to and trigger events. The `callback` function will be called when the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. Usually, it is used to pass the `self` instance. Allocate `64` bytes per instance.
 
 - **Parameters:**
   - `callback`: The function to be called when the event is triggered.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
-- **Return Value:** A new event instance. Allocate 64 bytes per instance.
+- **Return Value:** A new event instance.
 
 - **Usage Example:**
 
@@ -132,7 +132,7 @@ Once an event instance is created, you can interact with it using the following 
 ```lua
 event:subscribe(callback, [callback_context])
 ```
-Subscribe a callback to the event. The callback will be invoked whenever the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. If the callback with context is already subscribed, the warning will be logged.
+Subscribe a callback to the event. The callback will be invoked whenever the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. If the callback with context is already subscribed, the warning will be logged. Allocate `160` bytes per first subscription and `104` bytes per next subscriptions.
 
 - **Parameters:**
   - `callback`: The function to be executed when the event occurs.
@@ -521,6 +521,13 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 	- Optimize memory allocations per event instance
 	- Default logger now empty except for errors
+</details>
+
+### **V8**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Optimize memory allocations per subscription (~35% less)
 </details>
 
 ## ❤️ Support project ❤️
