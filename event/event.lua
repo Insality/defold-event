@@ -6,6 +6,7 @@ local M = {}
 
 -- Forward declaration
 local EVENT_METATABLE
+local MEMORY_BEFORE_VALUE
 
 -- Local versions
 local set_context = event_context_manager.set
@@ -87,11 +88,7 @@ function M:subscribe(callback, callback_context)
 		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
-	local callback_data = {
-		script_context = get_context(),
-		callback = callback,
-		callback_context = callback_context,
-	}
+	local callback_data = { callback, callback_context, get_context() }
 	tinsert(self, callback_data)
 
 	return true
@@ -105,45 +102,36 @@ end
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
-	local is_subscribed = self:is_subscribed(callback, callback_context)
-	if not is_subscribed then
+	local _, event_index = self:is_subscribed(callback, callback_context)
+	if not event_index then
 		M.logger:warn("Unsubscription attempt for an already unsubscribed event", debug.traceback())
 		return false
 	end
 
-	for index = 1, #self do
-		local cb = self[index]
-		if cb.callback == callback and cb.callback_context == callback_context then
-			tremove(self, index)
-			return true
-		end
-	end
-
-	return false
+	tremove(self, event_index --[[@as number]])
+	return true
 end
 
 
 ---Check is event subscribed.
 ---@param callback function
 ---@param callback_context any|nil
----@return boolean @Is event subscribed
+---@return boolean, number @Is event subscribed, return index of callback in event
 function M:is_subscribed(callback, callback_context)
 	if #self == 0 then
-		return false
+		return false, nil
 	end
 
 	for index = 1, #self do
 		local cb = self[index]
-		if cb.callback == callback and cb.callback_context == callback_context then
-			return true
+		if cb[1] == callback and cb[2] == callback_context then
+			return true, index
 		end
 	end
 
-	return false
+	return false, nil
 end
 
-
-local memory_before = 0
 
 ---Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 ---@vararg any
@@ -156,8 +144,9 @@ function M:trigger(...)
 	local result = nil
 	local current_script_context = get_context()
 
+	local call_callback = self.call_callback
 	for index = 1, #self do
-		result = self:call_callback(self[index], current_script_context, ...)
+		result = call_callback(self, self[index], current_script_context, ...)
 	end
 
 	return result
@@ -170,39 +159,43 @@ end
 ---@param ... any
 ---@return any|nil
 function M:call_callback(callback, current_script_context, ...)
+	local event_callback = callback[1]
+	local event_callback_context = callback[2]
+	local event_script_context = callback[3]
+
 	-- Set context for the callback
-	if current_script_context ~= callback.script_context then
-		set_context(callback.script_context)
+	if current_script_context ~= event_script_context then
+		set_context(event_script_context)
 	end
 
 	-- Check memory allocation
 	if MEMORY_THRESHOLD_WARNING > 0 then
-		memory_before = collectgarbage("count")
+		MEMORY_BEFORE_VALUE = collectgarbage("count")
 	end
 
 	-- Call callback
 	local ok, result_or_error
-	if callback.callback_context then
-		ok, result_or_error = pcall(callback.callback, callback.callback_context, ...)
+	if event_callback_context then
+		ok, result_or_error = pcall(event_callback, event_callback_context, ...)
 	else
-		ok, result_or_error = pcall(callback.callback, ...)
+		ok, result_or_error = pcall(event_callback, ...)
 	end
 
 	-- Check memory allocation
 	if MEMORY_THRESHOLD_WARNING > 0 then
 		local memory_after = collectgarbage("count")
-		if memory_after - memory_before > MEMORY_THRESHOLD_WARNING then
+		if memory_after - MEMORY_BEFORE_VALUE > MEMORY_THRESHOLD_WARNING then
 			local caller_info = debug.getinfo(2)
 			M.logger:warn("Detected huge memory allocation in event", {
-				event = self._mapping and self._mapping[callback.callback],
+				event = self._mapping and self._mapping[event_callback],
 				trigger = caller_info.short_src .. ":" .. caller_info.currentline,
-				memory = memory_after - memory_before,
+				memory = memory_after - MEMORY_BEFORE_VALUE,
 			})
 		end
 	end
 
 	-- Restore context
-	if current_script_context ~= callback.script_context then
+	if current_script_context ~= event_script_context then
 		set_context(current_script_context)
 	end
 

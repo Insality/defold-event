@@ -109,7 +109,7 @@ Generate a new event instance. This instance can then be used to subscribe to an
   - `callback`: The function to be called when the event is triggered.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
-- **Return Value:** A new event instance.
+- **Return Value:** A new event instance. Allocate 64 bytes per instance.
 
 - **Usage Example:**
 

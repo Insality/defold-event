@@ -17,7 +17,8 @@
 		"msg",
 		"hash",
 		"on_input",
-		"label"
+		"label",
+		"socket"
 	],
 	"Lua.completion.autoRequire": false
 }

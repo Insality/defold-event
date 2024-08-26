@@ -164,10 +164,21 @@ return function()
 		end)
 
 		it("Print memory allocations per function", function()
+			local EMPTY_FUNCTION = function() end
+			local logger =  {
+				trace = EMPTY_FUNCTION,
+				debug = EMPTY_FUNCTION,
+				info = EMPTY_FUNCTION,
+				warn = function(_, message, context)
+					pprint(message, context)
+				end,
+				error = EMPTY_FUNCTION,
+			}
+			event.set_logger(logger)
+
 			collectgarbage("stop")
 
 			local current_memory = collectgarbage("count")
-
 			for _ = 1, 10000 do
 				event.create()
 			end
@@ -175,9 +186,89 @@ return function()
 			local new_memory = collectgarbage("count")
 			local memory_per_event = ((new_memory - current_memory) * 1024) / 10000
 			print("Event instance should be around 64 bytes, but on CI with code debug coverage it will be much more")
-			print("Memory allocations per function (Bytes): ", memory_per_event)
+			print("Memory allocations per instance (Bytes): ", memory_per_event)
+
+			local e = event.create()
+			current_memory = collectgarbage("count")
+			e:subscribe(function() end)
+			new_memory = collectgarbage("count")
+			local memory_per_subscribe = ((new_memory - current_memory) * 1024)
+			print("Memory allocations per first subscribe (Bytes): ", memory_per_subscribe)
+
+			local functions_memory = 40 * 1000 / 1024 -- kbytes
+			current_memory = collectgarbage("count")
+			for i_ndex = 1, 1000 do
+				e:subscribe(function() end)
+			end
+			new_memory = collectgarbage("count") - functions_memory
+			local memory_per_subscribe = ((new_memory - current_memory) * 1024) / 1000
+			print("Memory allocations per subscribe (Bytes): ", memory_per_subscribe)
 
 			collectgarbage("restart")
 		end)
+
+		--[[
+		it("Print execution time per function", function()
+			local test_time = function(c)
+				local start_time = socket.gettime() * 1000
+				c()
+				local end_time = socket.gettime() * 1000
+				return end_time - start_time
+			end
+
+			local EMPTY_FUNCTION = function() end
+			local logger =  {
+				trace = EMPTY_FUNCTION,
+				debug = EMPTY_FUNCTION,
+				info = EMPTY_FUNCTION,
+				warn = function(_, message, context)
+					pprint(message, context)
+				end,
+				error = EMPTY_FUNCTION,
+			}
+			event.set_logger(logger)
+
+			local times = 100000
+
+			local start = socket.gettime() * 1000
+			for _ = 1, times do
+				event.create()
+			end
+			local finish = socket.gettime() * 1000
+			local create_time_per_instance = (finish - start) / times
+			print("Create time per instance (ms): ", create_time_per_instance)
+
+			start = socket.gettime() * 1000
+			for index = 1, 1000 do
+				event.create():subscribe(function() end)
+			end
+			finish = socket.gettime() * 1000
+			print("Subscribe time per 1000 callbacks on new event (ms): ", (finish - start) / 1000 - create_time_per_instance)
+
+			local e = event.create()
+			start = socket.gettime() * 1000
+			for index = 1, 1000 do
+				e:subscribe(function() end)
+			end
+			finish = socket.gettime() * 1000
+			print("Subscribe time per 1000 callbacks on one event (ms): ", (finish - start) / 1000)
+
+			start = socket.gettime() * 1000
+			for index = 1, times do
+				e:trigger(1, 2, 3)
+			end
+			finish = socket.gettime() * 1000
+			print("Trigger time per instance with 1000 callbacks (ms): ", (finish - start) / times)
+
+			e:clear()
+			e:subscribe(function() end)
+			start = socket.gettime() * 1000
+			for index = 1, times do
+				e:trigger(1, 2, 3)
+			end
+			finish = socket.gettime() * 1000
+			print("Trigger time per instance with 1 callback (ms): ", (finish - start) / times)
+		end)
+		--]]
 	end)
 end

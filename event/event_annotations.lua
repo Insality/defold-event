@@ -2,7 +2,7 @@
 ---@field create fun(callback: function|nil, callback_context: any|nil): event
 ---@field subscribe fun(self: event, callback: function, callback_context: any|nil): boolean
 ---@field unsubscribe fun(self: event, callback: function, callback_context: any|nil): boolean
----@field is_subscribed fun(self: event, callback: function, callback_context: any|nil): boolean
+---@field is_subscribed fun(self: event, callback: function, callback_context: any|nil): boolean, number|nil
 ---@field trigger fun(self: event, a: any, b: any, c: any, d: any, e: any, f: any, g: any, h: any, i: any, j: any): nil
 ---@field clear fun(self: event): nil
 ---@field is_empty fun(self: event): boolean
@@ -10,7 +10,7 @@
 ---@class events
 ---@field subscribe fun(event_name: string, callback: function, callback_context: any|nil): boolean
 ---@field unsubscribe fun(event_name: string, callback: function, callback_context: any|nil): boolean
----@field is_subscribed fun(event_name: string, callback: function, callback_context: any|nil): boolean
+---@field is_subscribed fun(event_name: string, callback: function, callback_context: any|nil): boolean, number|nil
 ---@field trigger fun(event_name: string, ...: any): any @Result of the last callback
 ---@field clear fun(name: string): nil
 ---@field clear_all fun(): nil
