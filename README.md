@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/8.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/9.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/8.zip
+https://github.com/Insality/defold-event/archive/refs/tags/9.zip
 ```
 
 ### Library Size
@@ -528,6 +528,15 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	<summary><b>Changelog</b></summary>
 
 	- Optimize memory allocations per subscription (~35% less)
+</details>
+
+
+### **V9**
+<details>
+	<summary><b>Changelog</b></summary>
+
+	- Better error tracebacks in case of error in subscription callback
+	- Update annotations
 </details>
 
 ## ❤️ Support project ❤️

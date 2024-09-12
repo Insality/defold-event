@@ -1,7 +1,10 @@
 local IS_DEBUG = sys.get_engine_info().is_debug
 local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
 
----@class event @Event Module
+---@class event.callback_data: table
+
+---@class event @Event module
+---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 local M = {}
 
 -- Forward declaration
@@ -11,7 +14,7 @@ local MEMORY_BEFORE_VALUE
 -- Local versions
 local set_context = event_context_manager.set
 local get_context = event_context_manager.get
-local pcall = pcall
+local xpcall = xpcall
 local tinsert = table.insert
 local tremove = table.remove
 
@@ -33,19 +36,24 @@ M.logger = {
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
 	warn = EMPTY_FUNCTION,
-	error = function(_, message, context)
-		error(context.error or "")
+	error = function(_, message)
+		pprint("ERROR:", message)
 	end,
 }
 
 
----@param logger_instance event.logger
+---Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger. By default, the module uses the `pprint` logger for errors.
+---@static
+---@param logger_instance event.logger A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
 function M.set_logger(logger_instance)
 	M.logger = logger_instance or empty_logger
 end
 
 
----@param value number
+
+---Set the threshold for logging warnings about memory allocations in event callbacks. Works only in debug builds. The threshold is in kilobytes. If the callback causes a memory allocation greater than the threshold, a warning will be logged.
+---@static
+---@param value number Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
 function M.set_memory_threshold(value)
 	if not IS_DEBUG then
 		return
@@ -54,11 +62,12 @@ function M.set_memory_threshold(value)
 end
 
 
----@static
 ---Create new event instance. If callback is passed, it will be subscribed to the event.
----@param callback function|nil
----@param callback_context any|nil
----@return event
+---@static
+---@param callback function|nil The function to be called when the event is triggered.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
+---@return event A new event instance.
+---@nodiscard
 function M.create(callback, callback_context)
 	local instance = setmetatable({}, EVENT_METATABLE)
 
@@ -71,9 +80,9 @@ end
 
 
 ---Subscribe to the event. If the callback is already subscribed, it will not be added again.
----@param callback function
----@param callback_context any|nil
----@return boolean @True if event is subscribed
+---@param callback function The function to be executed when the event occurs.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
+---@return boolean is_subscribed True if event is subscribed
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
@@ -88,17 +97,15 @@ function M:subscribe(callback, callback_context)
 		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
-	local callback_data = { callback, callback_context, get_context() }
-	tinsert(self, callback_data)
-
+	tinsert(self, { callback, callback_context, get_context() })
 	return true
 end
 
 
 ---Unsubscribe from the event. If the callback is not subscribed, nothing will happen.
----@param callback function
----@param callback_context any|nil
----@return boolean @True if event is unsubscribed
+---@param callback function The callback function to unsubscribe.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
+---@return boolean is_unsubscribed True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
@@ -108,15 +115,16 @@ function M:unsubscribe(callback, callback_context)
 		return false
 	end
 
-	tremove(self, event_index --[[@as number]])
+	tremove(self, event_index)
 	return true
 end
 
 
----Check is event subscribed.
----@param callback function
----@param callback_context any|nil
----@return boolean, number @Is event subscribed, return index of callback in event
+---Check if the callback is subscribed to the event.
+---@param callback function The callback function in question.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
+---@return boolean is_subscribed True if the callback is subscribed to the event
+---@return number|nil index Index of callback in event if subscribed
 function M:is_subscribed(callback, callback_context)
 	if #self == 0 then
 		return false, nil
@@ -133,9 +141,17 @@ function M:is_subscribed(callback, callback_context)
 end
 
 
----Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
----@vararg any
----@return any @Result of the last triggered callback
+---Error handler for event callbacks.
+---@param error_message string Error message
+---@return string Error message with stack trace
+local function event_error_handler(error_message)
+	return debug.traceback(error_message, 2)
+end
+
+
+---Trigger the event and call all subscribed callbacks. Returns the result of the last callback. If no callbacks are subscribed, nothing will happen.
+---@vararg any Any number of parameters to be passed to the subscribed callbacks.
+---@return any result Result of the last triggered callback
 function M:trigger(...)
 	if #self == 0 then
 		return
@@ -144,89 +160,75 @@ function M:trigger(...)
 	local result = nil
 	local current_script_context = get_context()
 
-	local call_callback = self.call_callback
 	for index = 1, #self do
-		result = call_callback(self, self[index], current_script_context, ...)
+		local callback = self[index]
+		local event_callback = callback[1]
+		local event_callback_context = callback[2]
+		local event_script_context = callback[3]
+
+		-- Set context for the callback
+		if current_script_context ~= event_script_context then
+			set_context(event_script_context)
+		end
+
+		-- Check memory allocation
+		if MEMORY_THRESHOLD_WARNING > 0 then
+			MEMORY_BEFORE_VALUE = collectgarbage("count")
+		end
+
+		-- Call callback
+		local ok, result_or_error
+		if event_callback_context then
+			ok, result_or_error = xpcall(event_callback, event_error_handler, event_callback_context, ...)
+		else
+			ok, result_or_error = xpcall(event_callback, event_error_handler, ...)
+		end
+
+		-- Check memory allocation
+		if MEMORY_THRESHOLD_WARNING > 0 then
+			local memory_after = collectgarbage("count")
+			if memory_after - MEMORY_BEFORE_VALUE > MEMORY_THRESHOLD_WARNING then
+				local caller_info = debug.getinfo(2)
+				M.logger:warn("Detected huge memory allocation in event", {
+					event = self._mapping and self._mapping[event_callback],
+					trigger = caller_info.short_src .. ":" .. caller_info.currentline,
+					memory = memory_after - MEMORY_BEFORE_VALUE,
+				})
+			end
+		end
+
+		-- Restore context
+		if current_script_context ~= event_script_context then
+			set_context(current_script_context)
+		end
+
+		-- Handle errors
+		if not ok then
+			M.logger:error(result_or_error)
+			break -- TODO: Is it necessary to stop the event if one of the callbacks failed?
+		end
+
+		result = result_or_error
 	end
 
 	return result
 end
 
 
----@private
----@param callback event.callback_data
----@param current_script_context userdata
----@param ... any
----@return any|nil
-function M:call_callback(callback, current_script_context, ...)
-	local event_callback = callback[1]
-	local event_callback_context = callback[2]
-	local event_script_context = callback[3]
-
-	-- Set context for the callback
-	if current_script_context ~= event_script_context then
-		set_context(event_script_context)
-	end
-
-	-- Check memory allocation
-	if MEMORY_THRESHOLD_WARNING > 0 then
-		MEMORY_BEFORE_VALUE = collectgarbage("count")
-	end
-
-	-- Call callback
-	local ok, result_or_error
-	if event_callback_context then
-		ok, result_or_error = pcall(event_callback, event_callback_context, ...)
-	else
-		ok, result_or_error = pcall(event_callback, ...)
-	end
-
-	-- Check memory allocation
-	if MEMORY_THRESHOLD_WARNING > 0 then
-		local memory_after = collectgarbage("count")
-		if memory_after - MEMORY_BEFORE_VALUE > MEMORY_THRESHOLD_WARNING then
-			local caller_info = debug.getinfo(2)
-			M.logger:warn("Detected huge memory allocation in event", {
-				event = self._mapping and self._mapping[event_callback],
-				trigger = caller_info.short_src .. ":" .. caller_info.currentline,
-				memory = memory_after - MEMORY_BEFORE_VALUE,
-			})
-		end
-	end
-
-	-- Restore context
-	if current_script_context ~= event_script_context then
-		set_context(current_script_context)
-	end
-
-	-- Handle errors
-	if not ok then
-		local caller_info = debug.getinfo(2)
-		M.logger:error("An error occurred during event processing", {
-			trigger = caller_info.short_src .. ":" .. caller_info.currentline,
-			error = result_or_error,
-		})
-		M.logger:error("Traceback", debug.traceback())
-		return nil
-	end
-
-	return result_or_error
-end
-
-
----Check is event instance has no callbacks.
----@return boolean
+---Check if the event has any subscribed callbacks.
+---@return boolean True if the event has any subscribed callbacks
 function M:is_empty()
 	return #self == 0
 end
 
 
----Clear all event instance callbacks.
+---Clear all subscribed callbacks.
 function M:clear()
 	for index = #self, 1, -1 do
 		self[index] = nil
 	end
 end
+
 
 -- Construct event metatable
 EVENT_METATABLE = {
