@@ -20,5 +20,9 @@
 		"label",
 		"socket"
 	],
-	"Lua.completion.autoRequire": false
+	"Lua.completion.autoRequire": false,
+	"Lua.workspace.ignoreDir": [
+		".vscode",
+		"event/annotations"
+	]
 }
