@@ -1,4 +1,4 @@
----@meta events
+---@diagnostic disable: duplicate-set-field, missing-return
 ---@class events
 local events = {}
 
@@ -41,3 +41,5 @@ function events.clear_all() end
 ---@param name string The name of the global event to check.
 ---@return boolean is_empty True if the global event has no subscribed callbacks
 function events.is_empty(name) end
+
+return events

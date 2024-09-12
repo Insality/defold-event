@@ -1,4 +1,4 @@
----@meta
+---@diagnostic disable: duplicate-set-field, missing-return
 ---@class event
 local event = {}
 
@@ -55,3 +55,5 @@ function event:is_empty() end
 ---@field info fun(logger: event.logger, message: string, data: any|nil) @Log an info message.
 ---@field warn fun(logger: event.logger, message: string, data: any|nil) @Log a warning message.
 ---@field error fun(logger: event.logger, message: string, data: any|nil) @Log an error message.
+
+return event
