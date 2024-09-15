@@ -1,7 +1,15 @@
 local IS_DEBUG = sys.get_engine_info().is_debug
 local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
 
+---Contains each item[1] - callback, item[2] - callback_context, item[3] - script_context
 ---@class event.callback_data: table
+
+---@class event.logger
+---@field trace fun(logger: event.logger, message: string, data: any|nil) @Log a trace message.
+---@field debug fun(logger: event.logger, message: string, data: any|nil) @Log a debug message.
+---@field info fun(logger: event.logger, message: string, data: any|nil) @Log an info message.
+---@field warn fun(logger: event.logger, message: string, data: any|nil) @Log a warning message.
+---@field error fun(logger: event.logger, message: string, data: any|nil) @Log an error message.
 
 ---@class event @Event module
 ---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
