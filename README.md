@@ -68,15 +68,16 @@ Memory allocation tracking is turned off in release builds, regardless of the `g
 
 ```lua
 local event = require("event.event")
-event.create(callback, [callback_context])
-event:subscribe(callback, [callback_context])
-event:unsubscribe(callback, [callback_context])
-event:is_subscribed(callback, [callback_context])
-event:trigger(...)
-event:is_empty()
-event:clear()
 event.set_logger(logger)
 event.set_memory_threshold(threshold)
+
+local event_instance = event.create(callback, [callback_context])
+event_instance:subscribe(callback, [callback_context])
+event_instance:unsubscribe(callback, [callback_context])
+event_instance:is_subscribed(callback, [callback_context])
+event_instance:trigger(...)
+event_instance:is_empty()
+event_instance:clear()
 
 local events = require("event.events")
 events.subscribe(name, callback, [callback_context])
