@@ -21,9 +21,6 @@
 		"socket"
 	],
 	"Lua.completion.autoRequire": false,
-	"Lua.workspace.library": [
-		"~/Library/Application Support/Code/User/workspaceStorage/ac07c8aee1c361dc3b09cd3c42fcca08/astronachos.defold"
-	],
 	"Lua.workspace.ignoreDir": [
 		".vscode",
 		"annotations"

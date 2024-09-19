@@ -3,7 +3,7 @@ return function()
 
 	describe("Defold Event", function()
 		before(function()
-			event = require("event.event")
+			event = require("event.event") --[[@as event]]
 		end)
 
 		it("Event Set logger", function()
