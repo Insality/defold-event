@@ -6,11 +6,12 @@ local logic = require("example.logic")
 
 
 local function setup_logger()
-	event.set_logger(log.get_logger("event"))
+	event.set_logger(log.get_logger("event") --[[@as event.logger]])
 end
 
 
 local function on_click(self, counter)
+	print("on click", self, counter)
 	print("Button clicked! Counter: " .. counter)
 end
 

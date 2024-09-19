@@ -67,7 +67,7 @@ Memory allocation tracking is turned off in release builds, regardless of the `g
 ### Quick API Reference
 
 ```lua
--- Event Module
+local event = require("event.event")
 event.create(callback, [callback_context])
 event:subscribe(callback, [callback_context])
 event:unsubscribe(callback, [callback_context])
@@ -78,7 +78,7 @@ event:clear()
 event.set_logger(logger)
 event.set_memory_threshold(threshold)
 
--- Global Events Module
+local events = require("event.events")
 events.subscribe(name, callback, [callback_context])
 events.unsubscribe(name, callback, [callback_context])
 events.is_subscribed(name, callback, [callback_context])
