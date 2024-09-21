@@ -88,14 +88,19 @@ end
 
 
 ---Subscribe to the event. If the callback is already subscribed, it will not be added again.
----@param callback function The function to be executed when the event occurs.
----@param callback_context any|nil The first parameter to be passed to the callback function.
----@return boolean is_subscribed True if event is subscribed
+---@param callback function|event The function to be executed when the event occurs.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
+---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
+	-- If callback is an event, subscribe to it and return
+	if type(callback) == "table" and callback.trigger then
+		return self:subscribe(callback.trigger, callback)
+	end
+
+	---@cast callback function
 	if self:is_subscribed(callback, callback_context) then
-		M.logger:warn("Subscription attempt for an already subscribed event", debug.traceback())
 		return false
 	end
 
@@ -111,15 +116,20 @@ end
 
 
 ---Unsubscribe from the event. If the callback is not subscribed, nothing will happen.
----@param callback function The callback function to unsubscribe.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param callback function|event The callback function to unsubscribe.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
+	-- If callback is an event, unsubscribe from it and return
+	if type(callback) == "table" and callback.trigger then
+		return self:unsubscribe(callback.trigger, callback)
+	end
+
+	---@cast callback function
 	local _, event_index = self:is_subscribed(callback, callback_context)
 	if not event_index then
-		M.logger:warn("Unsubscription attempt for an already unsubscribed event", debug.traceback())
 		return false
 	end
 
@@ -129,7 +139,7 @@ end
 
 
 ---Check if the callback is subscribed to the event.
----@param callback function The callback function in question.
+---@param callback function|event The callback function in question.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if the callback is subscribed to the event
 ---@return number|nil index Index of callback in event if subscribed
@@ -138,6 +148,12 @@ function M:is_subscribed(callback, callback_context)
 		return false, nil
 	end
 
+	-- If callback is an event, check if it is subscribed
+	if type(callback) == "table" and callback.trigger then
+		return self:is_subscribed(callback.trigger, callback)
+	end
+
+	---@cast callback function
 	for index = 1, #self do
 		local cb = self[index]
 		if cb[1] == callback and cb[2] == callback_context then
@@ -231,11 +247,14 @@ function M:clear()
 	end
 end
 
-
 -- Construct event metatable
 EVENT_METATABLE = {
 	__index = M,
 	__call = M.trigger,
 }
 
-return M
+return setmetatable(M--[[@as table]], {
+	__call = function(_, ...)
+		return M.create(...)
+	end,
+})

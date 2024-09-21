@@ -163,6 +163,57 @@ return function()
 			assert(counter == 3)
 		end)
 
+		it("Event can be created with regular function syntax", function()
+			local counter = 0
+			local f = function(amount) counter = counter + amount end
+
+			local test_event = event(f)
+			test_event(1)
+			assert(counter == 1)
+
+			test_event(2)
+			assert(counter == 3)
+		end)
+
+		it("Event can be subscribed on each other", function()
+			local test_event1 = event.create()
+			local test_event2 = event.create()
+			local counter = 0
+			local f1 = function() counter = counter + 1 end
+
+			test_event1:subscribe(f1)
+
+			-- So test_event2 will trigger test_event1
+			test_event2:subscribe(test_event1)
+			test_event2:trigger()
+			assert(counter == 1)
+
+			test_event2:trigger()
+			assert(counter == 2)
+
+			-- Unsubscribe test_event1 from test_event2
+			test_event2:unsubscribe(test_event1)
+			test_event2:trigger()
+			assert(counter == 2)
+		end)
+
+		it("Event can be checked if øther event is subscribed", function()
+			local test_event1 = event.create()
+			local test_event2 = event.create()
+			local counter = 0
+			local f1 = function() counter = counter + 1 end
+
+			test_event1:subscribe(f1)
+
+			-- So test_event2 will trigger test_event1
+			test_event2:subscribe(test_event1)
+			assert(test_event2:is_subscribed(test_event1) == true)
+
+			-- Unsubscribe test_event1 from test_event2
+			test_event2:unsubscribe(test_event1)
+			assert(test_event2:is_subscribed(test_event1) == false)
+		end)
+
 		it("Print memory allocations per function", function()
 			local EMPTY_FUNCTION = function() end
 			local logger =  {
