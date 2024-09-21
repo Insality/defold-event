@@ -72,8 +72,8 @@ end
 
 ---Create new event instance. If callback is passed, it will be subscribed to the event.
 ---@static
----@param callback function|nil The function to be called when the event is triggered.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param callback function|event|nil The function to be called when the event is triggered. It will trigger the event if it is an event.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
 ---@return event A new event instance.
 ---@nodiscard
 function M.create(callback, callback_context)
