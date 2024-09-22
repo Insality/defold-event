@@ -22,7 +22,7 @@ local MEMORY_BEFORE_VALUE
 -- Local versions
 local set_context = event_context_manager.set
 local get_context = event_context_manager.get
-local xpcall = xpcall
+local pcall = pcall
 local tinsert = table.insert
 local tremove = table.remove
 
@@ -253,8 +253,4 @@ EVENT_METATABLE = {
 	__call = M.trigger,
 }
 
-return setmetatable(M--[[@as table]], {
-	__call = function(_, ...)
-		return M.create(...)
-	end,
-})
+return M
