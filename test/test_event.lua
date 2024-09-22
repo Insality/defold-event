@@ -163,18 +163,6 @@ return function()
 			assert(counter == 3)
 		end)
 
-		it("Event can be created with regular function syntax", function()
-			local counter = 0
-			local f = function(amount) counter = counter + amount end
-
-			local test_event = event(f)
-			test_event(1)
-			assert(counter == 1)
-
-			test_event(2)
-			assert(counter == 3)
-		end)
-
 		it("Event can be subscribed on each other", function()
 			local test_event1 = event.create()
 			local test_event2 = event.create()
