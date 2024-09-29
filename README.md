@@ -107,7 +107,7 @@ event.create(callback, [callback_context])
 Generate a new event instance. This instance can then be used to subscribe to and trigger events. The `callback` function will be called when the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. Usually, it is used to pass the `self` instance. Allocate `64` bytes per instance.
 
 - **Parameters:**
-  - `callback`: The function to be called when the event is triggered.
+  - `callback`: The function to be called when the event is triggered. Or the event instance to subscribe.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
 - **Return Value:** A new event instance.
@@ -133,11 +133,19 @@ Once an event instance is created, you can interact with it using the following 
 ```lua
 event:subscribe(callback, [callback_context])
 ```
-Subscribe a callback to the event. The callback will be invoked whenever the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. If the callback with context is already subscribed, the warning will be logged. Allocate `160` bytes per first subscription and `104` bytes per next subscriptions.
+Subscribe a callback to the event or other event. The callback will be invoked whenever the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. If the callback with context is already subscribed, the warning will be logged. Allocate `160` bytes per first subscription and `104` bytes per next subscriptions.
+
+You can subscribe an other event instance to be triggered by the event. Example:
+```lua
+event_1 = event.create(callback)
+event_2 = event.create()
+event_2:subscribe(event_1) -- Now event2 will trigger event1
+event_2:trigger() -- callback from event1 will be called
+```
 
 - **Parameters:**
-  - `callback`: The function to be executed when the event occurs.
-  - `callback_context` (optional): The first parameter to be passed to the callback function.
+  - `callback`: The function to be executed when the event occurs, or another event instance.
+  - `callback_context` (optional): The first parameter to be passed to the callback function. Not used for event instance.
 
 - **Return Value:** `true` if the subscription was successful, `false` otherwise.
 
@@ -155,7 +163,7 @@ event:unsubscribe(callback, [callback_context])
 Remove a previously subscribed callback from the event. The `callback_context` should be the same as the one used when subscribing the callback. If there is no `callback_context` provided, the warning will be logged.
 
 - **Parameters:**
-  - `callback`: The callback function to unsubscribe.
+  - `callback`: The callback function to unsubscribe. Or the event instance to unsubscribe.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
 - **Return Value:** `true` if the unsubscription was successful, `false` otherwise.
@@ -174,7 +182,7 @@ event:is_subscribed(callback, [callback_context])
 Determine if a specific callback is currently subscribed to the event. The `callback_context` should be the same as the one used when subscribing the callback.
 
 - **Parameters:**
-  - `callback`: The callback function in question.
+  - `callback`: The callback function in question. Or the event instance to check.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
 - **Return Value:** `true` if the callback is subscribed to the event, `false` otherwise.
