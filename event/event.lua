@@ -43,7 +43,9 @@ M.logger = {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
-	warn = EMPTY_FUNCTION,
+	warn = function(_, message)
+		pprint("WARN:", message)
+	end,
 	error = function(_, message)
 		pprint("ERROR:", message)
 	end,
@@ -52,7 +54,7 @@ M.logger = {
 
 ---Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger. By default, the module uses the `pprint` logger for errors.
 ---@static
----@param logger_instance event.logger A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
+---@param logger_instance event.logger|table|nil A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
 function M.set_logger(logger_instance)
 	M.logger = logger_instance or empty_logger
 end
@@ -101,6 +103,7 @@ function M:subscribe(callback, callback_context)
 
 	---@cast callback function
 	if self:is_subscribed(callback, callback_context) then
+		M.logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
 	end
 
@@ -117,7 +120,7 @@ end
 
 ---Unsubscribe from the event. If the callback is not subscribed, nothing will happen.
 ---@param callback function|event The callback function to unsubscribe.
----@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event. If context is nil it will unsubscribe all callbacks with the same function.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
@@ -128,13 +131,17 @@ function M:unsubscribe(callback, callback_context)
 	end
 
 	---@cast callback function
-	local _, event_index = self:is_subscribed(callback, callback_context)
-	if not event_index then
-		return false
+
+	local is_removed = false
+	for index = #self, 1, -1 do
+		local cb = self[index]
+		if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
+			tremove(self, index)
+			is_removed = true
+		end
 	end
 
-	tremove(self, event_index)
-	return true
+	return is_removed
 end
 
 
@@ -142,7 +149,7 @@ end
 ---@param callback function|event The callback function in question.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if the callback is subscribed to the event
----@return number|nil index Index of callback in event if subscribed
+---@return number|nil index Index of callback in event if subscribed (return first found index)
 function M:is_subscribed(callback, callback_context)
 	if #self == 0 then
 		return false, nil
@@ -154,6 +161,7 @@ function M:is_subscribed(callback, callback_context)
 	end
 
 	---@cast callback function
+
 	for index = 1, #self do
 		local cb = self[index]
 		if cb[1] == callback and cb[2] == callback_context then

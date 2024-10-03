@@ -246,6 +246,95 @@ return function()
 			collectgarbage("restart")
 		end)
 
+		it("Event should unsubscribe all callbacks by passin unsubscribe without context", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f1, 2)
+			test_event:subscribe(f1, 3)
+			test_event:subscribe(f1, 7)
+
+			test_event:trigger()
+			assert(counter == 12)
+
+			local is_unsubscribed = test_event:unsubscribe(f1, 2)
+			test_event:trigger()
+			assert(counter == 22)
+			assert(is_unsubscribed == true)
+
+			is_unsubscribed = test_event:unsubscribe(f1)
+			test_event:trigger()
+			assert(counter == 22)
+			assert(is_unsubscribed == true)
+
+			is_unsubscribed = test_event:unsubscribe(f1, 7)
+			test_event:trigger()
+			assert(counter == 22)
+			assert(is_unsubscribed == false)
+		end)
+
+		it("Event without context and with context should be able to subscribe", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f1)
+			test_event:subscribe(f1, 2)
+
+			test_event:trigger(1)
+			assert(counter == 3)
+
+			-- Should unsubscribe both
+			test_event:unsubscribe(f1)
+
+			-- Other order should works too. Check it due the nil context unsubscribe feature
+			assert(test_event:subscribe(f1, 2))
+			assert(test_event:subscribe(f1))
+
+			test_event:trigger(1)
+			assert(counter == 6)
+		end)
+
+		it("Event should allow unsubscribe events with different context and without it", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f1)
+			test_event:subscribe(f1, 2)
+
+			-- Should unsubscribe only with context
+			assert(test_event:unsubscribe(f1, 2))
+			assert(#test_event == 1)
+
+			assert(test_event:unsubscribe(f1))
+			assert(#test_event == 0)
+
+			test_event:subscribe(f1)
+			test_event:subscribe(f1, 2)
+
+			assert(test_event:unsubscribe(f1))
+			assert(#test_event == 0)
+		end)
+
+		it("Event should return count of subscribers by length property", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			assert(#test_event == 0)
+
+			test_event:subscribe(f1)
+			assert(#test_event == 1)
+
+			test_event:subscribe(f1, 2)
+			assert(#test_event == 2)
+
+			test_event:unsubscribe(f1)
+			assert(#test_event == 0)
+		end)
+
 		--[[
 		it("Print execution time per function", function()
 			local test_time = function(c)

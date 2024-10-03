@@ -28,10 +28,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/9.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/10.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/9.zip
+https://github.com/Insality/defold-event/archive/refs/tags/10.zip
 ```
 
 ### Library Size
@@ -135,14 +135,6 @@ event:subscribe(callback, [callback_context])
 ```
 Subscribe a callback to the event or other event. The callback will be invoked whenever the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. If the callback with context is already subscribed, the warning will be logged. Allocate `160` bytes per first subscription and `104` bytes per next subscriptions.
 
-You can subscribe an other event instance to be triggered by the event. Example:
-```lua
-event_1 = event.create(callback)
-event_2 = event.create()
-event_2:subscribe(event_1) -- Now event2 will trigger event1
-event_2:trigger() -- callback from event1 will be called
-```
-
 - **Parameters:**
   - `callback`: The function to be executed when the event occurs, or another event instance.
   - `callback_context` (optional): The first parameter to be passed to the callback function. Not used for event instance.
@@ -155,16 +147,24 @@ event_2:trigger() -- callback from event1 will be called
 on_click_event:subscribe(callback, self)
 ```
 
+You can subscribe an other event instance to be triggered by the event. Example:
+```lua
+event_1 = event.create(callback)
+event_2 = event.create()
+event_2:subscribe(event_1) -- Now event2 will trigger event1
+event_2:trigger() -- callback from event1 will be called
+```
+
 **event:unsubscribe**
 ---
 ```lua
 event:unsubscribe(callback, [callback_context])
 ```
-Remove a previously subscribed callback from the event. The `callback_context` should be the same as the one used when subscribing the callback. If there is no `callback_context` provided, the warning will be logged.
+Remove a previously subscribed callback from the event. The `callback_context` should be the same as the one used when subscribing the callback. If there is no `callback_context` provided, all callbacks with the same function will be unsubscribed.
 
 - **Parameters:**
-  - `callback`: The callback function to unsubscribe. Or the event instance to unsubscribe.
-  - `callback_context` (optional): The first parameter to be passed to the callback function.
+  - `callback`: The callback function to unsubscribe, or the event instance to unsubscribe.
+  - `callback_context` (optional): The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function. Not used for event instances.
 
 - **Return Value:** `true` if the unsubscription was successful, `false` otherwise.
 
@@ -341,12 +341,12 @@ end
 ```lua
 events.unsubscribe(name, callback, [callback_context])
 ```
-Remove a previously subscribed callback from the specified global event.
+Remove a previously subscribed callback from the specified global event. The `callback_context` should be the same as the one used when subscribing the callback. If there is no `callback_context` provided, all callbacks with the same function will be unsubscribed.
 
 - **Parameters:**
   - `name`: The name of the global event to unsubscribe from.
   - `callback`: The callback function to unsubscribe.
-  - `callback_context` (optional): The first parameter to be passed to the callback function.
+  - `callback_context` (optional): The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function.
 
 - **Usage Example:**
 
@@ -470,82 +470,53 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 ## Changelog
 
-### **V1**
 <details>
-	<summary><b>Changelog</b></summary>
 
+### **V1**
 	- Initial release
-</details>
 
 ### **V2**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Add global events module
 	- The `event:subscribe` and `event:unsubscribe` now return boolean value of success
-</details>
 
 ### **V3**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Event Trigger now returns value of last executed callback
 	- Add `events.is_empty(name)` function
 	- Add tests for Event and Global Events modules
-</details>
 
 
 ### **V4**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Rename `lua_script_instance` to `event_context_manager` to escape conflicts with `lua_script_instance` library
 	- Fix validate context in `event_context_manager.set`
 	- Better error messages in case of invalid context
 	- Refactor `event_context_manager`
 	- Add tests for event_context_manager
 	- Add `event.set_memory_threshold` function. Works only in debug builds.
-</details>
 
 ### **V5**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- The `event:trigger(...)` can be called as `event(...)` via `__call` metamethod
 	- Add default pprint logger. Remove or replace it with `event.set_logger()`
 	- Add tests for context changing
-</details>
 
 ### **V6**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Optimize memory allocations per event instance
 	- Localize functions in the event module for better performance
-</details>
 
 ### **V7**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Optimize memory allocations per event instance
 	- Default logger now empty except for errors
-</details>
 
 ### **V8**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Optimize memory allocations per subscription (~35% less)
-</details>
-
 
 ### **V9**
-<details>
-	<summary><b>Changelog</b></summary>
-
 	- Better error tracebacks in case of error in subscription callback
 	- Update annotations
+
+### **V10**
+	- The `event:unsubscribe` now removes all subscriptions with the same function if `callback_context` is not provided
+	- You can use events instead callbacks in `event:subscribe` and `event:unsubscribe`. The subcribed event will be triggered by the parent event trigger.
+	- Update docs and API reference
 </details>
 
 ## ❤️ Support project ❤️
