@@ -36,15 +36,10 @@ end
 ---@param event_name string The name of the global event to subscribe to.
 ---@param callback function The callback function to be executed when the global event occurs.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
----@return boolean is_subscribed True if event is subscribed
+---@return boolean is_subscribed True if event is subscribed (Will return false if callback is already subscribed)
 function M.subscribe(event_name, callback, callback_context)
 	M.events[event_name] = M.events[event_name] or Event.create()
 	local is_subscribed = M.events[event_name]:subscribe(callback, callback_context)
-
-	if not is_subscribed then
-		Event.logger:warn("Event is not subscribed", event_name)
-	end
-
 	return is_subscribed
 end
 
@@ -52,7 +47,7 @@ end
 ---Remove a previously subscribed callback from the specified global event.
 ---@param event_name string The name of the global event to unsubscribe from.
 ---@param callback function The callback function to unsubscribe.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param callback_context any|nil The first parameter to be passed to the callback function. If not provided, all callbacks with the same function will be unsubscribed.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M.unsubscribe(event_name, callback, callback_context)
 	if not M.events[event_name] then

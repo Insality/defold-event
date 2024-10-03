@@ -163,6 +163,45 @@ return function()
 			assert(counter == 3)
 		end)
 
+		it("Event can be subscribed on each other", function()
+			local test_event1 = event.create()
+			local test_event2 = event.create()
+			local counter = 0
+			local f1 = function() counter = counter + 1 end
+
+			test_event1:subscribe(f1)
+
+			-- So test_event2 will trigger test_event1
+			test_event2:subscribe(test_event1)
+			test_event2:trigger()
+			assert(counter == 1)
+
+			test_event2:trigger()
+			assert(counter == 2)
+
+			-- Unsubscribe test_event1 from test_event2
+			test_event2:unsubscribe(test_event1)
+			test_event2:trigger()
+			assert(counter == 2)
+		end)
+
+		it("Event can be checked if øther event is subscribed", function()
+			local test_event1 = event.create()
+			local test_event2 = event.create()
+			local counter = 0
+			local f1 = function() counter = counter + 1 end
+
+			test_event1:subscribe(f1)
+
+			-- So test_event2 will trigger test_event1
+			test_event2:subscribe(test_event1)
+			assert(test_event2:is_subscribed(test_event1) == true)
+
+			-- Unsubscribe test_event1 from test_event2
+			test_event2:unsubscribe(test_event1)
+			assert(test_event2:is_subscribed(test_event1) == false)
+		end)
+
 		it("Print memory allocations per function", function()
 			local EMPTY_FUNCTION = function() end
 			local logger =  {
@@ -205,6 +244,95 @@ return function()
 			print("Memory allocations per subscribe (Bytes): ", memory_per_subscribe)
 
 			collectgarbage("restart")
+		end)
+
+		it("Event should unsubscribe all callbacks by passin unsubscribe without context", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f1, 2)
+			test_event:subscribe(f1, 3)
+			test_event:subscribe(f1, 7)
+
+			test_event:trigger()
+			assert(counter == 12)
+
+			local is_unsubscribed = test_event:unsubscribe(f1, 2)
+			test_event:trigger()
+			assert(counter == 22)
+			assert(is_unsubscribed == true)
+
+			is_unsubscribed = test_event:unsubscribe(f1)
+			test_event:trigger()
+			assert(counter == 22)
+			assert(is_unsubscribed == true)
+
+			is_unsubscribed = test_event:unsubscribe(f1, 7)
+			test_event:trigger()
+			assert(counter == 22)
+			assert(is_unsubscribed == false)
+		end)
+
+		it("Event without context and with context should be able to subscribe", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f1)
+			test_event:subscribe(f1, 2)
+
+			test_event:trigger(1)
+			assert(counter == 3)
+
+			-- Should unsubscribe both
+			test_event:unsubscribe(f1)
+
+			-- Other order should works too. Check it due the nil context unsubscribe feature
+			assert(test_event:subscribe(f1, 2))
+			assert(test_event:subscribe(f1))
+
+			test_event:trigger(1)
+			assert(counter == 6)
+		end)
+
+		it("Event should allow unsubscribe events with different context and without it", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			test_event:subscribe(f1)
+			test_event:subscribe(f1, 2)
+
+			-- Should unsubscribe only with context
+			assert(test_event:unsubscribe(f1, 2))
+			assert(#test_event == 1)
+
+			assert(test_event:unsubscribe(f1))
+			assert(#test_event == 0)
+
+			test_event:subscribe(f1)
+			test_event:subscribe(f1, 2)
+
+			assert(test_event:unsubscribe(f1))
+			assert(#test_event == 0)
+		end)
+
+		it("Event should return count of subscribers by length property", function()
+			local test_event = event.create()
+			local counter = 0
+			local f1 = function(amount) counter = counter + amount end
+
+			assert(#test_event == 0)
+
+			test_event:subscribe(f1)
+			assert(#test_event == 1)
+
+			test_event:subscribe(f1, 2)
+			assert(#test_event == 2)
+
+			test_event:unsubscribe(f1)
+			assert(#test_event == 0)
 		end)
 
 		--[[

@@ -22,7 +22,7 @@ local MEMORY_BEFORE_VALUE
 -- Local versions
 local set_context = event_context_manager.set
 local get_context = event_context_manager.get
-local xpcall = xpcall
+local pcall = pcall
 local tinsert = table.insert
 local tremove = table.remove
 
@@ -43,7 +43,9 @@ M.logger = {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
-	warn = EMPTY_FUNCTION,
+	warn = function(_, message)
+		pprint("WARN:", message)
+	end,
 	error = function(_, message)
 		pprint("ERROR:", message)
 	end,
@@ -52,7 +54,7 @@ M.logger = {
 
 ---Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger. By default, the module uses the `pprint` logger for errors.
 ---@static
----@param logger_instance event.logger A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
+---@param logger_instance event.logger|table|nil A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
 function M.set_logger(logger_instance)
 	M.logger = logger_instance or empty_logger
 end
@@ -72,8 +74,8 @@ end
 
 ---Create new event instance. If callback is passed, it will be subscribed to the event.
 ---@static
----@param callback function|nil The function to be called when the event is triggered.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param callback function|event|nil The function to be called when the event is triggered. It will trigger the event if it is an event.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
 ---@return event A new event instance.
 ---@nodiscard
 function M.create(callback, callback_context)
@@ -88,14 +90,20 @@ end
 
 
 ---Subscribe to the event. If the callback is already subscribed, it will not be added again.
----@param callback function The function to be executed when the event occurs.
----@param callback_context any|nil The first parameter to be passed to the callback function.
----@return boolean is_subscribed True if event is subscribed
+---@param callback function|event The function to be executed when the event occurs.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
+---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
+	-- If callback is an event, subscribe to it and return
+	if type(callback) == "table" and callback.trigger then
+		return self:subscribe(callback.trigger, callback)
+	end
+
+	---@cast callback function
 	if self:is_subscribed(callback, callback_context) then
-		M.logger:warn("Subscription attempt for an already subscribed event", debug.traceback())
+		M.logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
 	end
 
@@ -111,32 +119,48 @@ end
 
 
 ---Unsubscribe from the event. If the callback is not subscribed, nothing will happen.
----@param callback function The callback function to unsubscribe.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param callback function|event The callback function to unsubscribe.
+---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event. If context is nil it will unsubscribe all callbacks with the same function.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
-	local _, event_index = self:is_subscribed(callback, callback_context)
-	if not event_index then
-		M.logger:warn("Unsubscription attempt for an already unsubscribed event", debug.traceback())
-		return false
+	-- If callback is an event, unsubscribe from it and return
+	if type(callback) == "table" and callback.trigger then
+		return self:unsubscribe(callback.trigger, callback)
 	end
 
-	tremove(self, event_index)
-	return true
+	---@cast callback function
+
+	local is_removed = false
+	for index = #self, 1, -1 do
+		local cb = self[index]
+		if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
+			tremove(self, index)
+			is_removed = true
+		end
+	end
+
+	return is_removed
 end
 
 
 ---Check if the callback is subscribed to the event.
----@param callback function The callback function in question.
+---@param callback function|event The callback function in question.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if the callback is subscribed to the event
----@return number|nil index Index of callback in event if subscribed
+---@return number|nil index Index of callback in event if subscribed (return first found index)
 function M:is_subscribed(callback, callback_context)
 	if #self == 0 then
 		return false, nil
 	end
+
+	-- If callback is an event, check if it is subscribed
+	if type(callback) == "table" and callback.trigger then
+		return self:is_subscribed(callback.trigger, callback)
+	end
+
+	---@cast callback function
 
 	for index = 1, #self do
 		local cb = self[index]
@@ -230,7 +254,6 @@ function M:clear()
 		self[index] = nil
 	end
 end
-
 
 -- Construct event metatable
 EVENT_METATABLE = {

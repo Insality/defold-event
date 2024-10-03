@@ -6,7 +6,6 @@ local function on_change_data(self, counter)
 
 	local pos = go.get_position().y
 	go.animate(".", "position.y", go.PLAYBACK_ONCE_PINGPONG, pos + 50, go.EASING_OUTSINE, 0.3)
-	logic.call_error:trigger()
 end
 
 function init(self)

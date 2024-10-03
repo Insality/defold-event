@@ -69,11 +69,12 @@ return Button
 
 ```lua
 local button = require("button")
+
 function init(self)
-    local myButton = Button.create()
+    local my_button = button.create()
 
     -- Subscribe to the button's on_click event
-    myButton.on_click:subscribe(function()
+    my_button.on_click:subscribe(function()
         print("Button clicked!")
     end)
 
@@ -82,7 +83,7 @@ function init(self)
     -- Cause the event will be destroyed with the button
 
     -- Simulate a button click
-    myButton.on_click:trigger()
+    my_button.on_click:trigger()
 end
 
 ```
@@ -129,3 +130,53 @@ function init(self)
         print("Window event: ", event, data)
     end)
 end
+```
+
+### 5. Wrap GUI/GO functions to call it anywhere
+
+You can wrap a functions to remember it's context. As an example, in GUI we can wrap `gui.set_text` function to call it from attached GO script.
+
+> For example I use "global" table to store all wrapped functions, but you can use any other way to store and pass it.
+
+> Instead GUI functions it can be any other your custom function, like "widget:set_color" for your UI components and you will able to call it directly with "Go to Reference" feature in your IDE.
+
+```lua
+-- GUI script
+local event = require("event.event")
+local global = require("global.data")
+
+function init(self)
+	global.gui_set_text = event.create(gui.set_text)
+	global.gui_get_node = event.create(gui.get_node)
+end
+```
+
+
+```lua
+-- GO script
+local global = require("global.data")
+
+function init(self)
+	local node = global.gui_get_node("text")
+	global.gui_set_text(node, "Hello, World!")
+end
+```
+
+This one can be useful when you want to make some workarounds or any things what you want will fit in your game architecture. This is not a usual "Defold" way, but it can be useful in some cases.
+
+
+### 6. Get the Event subscribers count
+
+You can get the count of the events to check if there are any subscribers or for debugging purposes.
+
+```lua
+local event = require("event.event")
+
+local my_event = event.create()
+
+print(#my_event) -- 0
+print(my_event:is_empty()) -- true
+print(my_event:subscribe(function() end)) -- true
+print(#my_event) -- 1
+print(my_event:is_empty()) -- false
+```
