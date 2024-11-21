@@ -11,3 +11,4 @@ deployer_version_settings.txt
 bob.jar
 deployer_build_stats.csv
 dist
+/.editor_settings
