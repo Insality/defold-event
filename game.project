@@ -24,4 +24,4 @@ include_dirs = event
 
 [event]
 memory_threshold_warning = 0
-
+use_xpcall = 0
