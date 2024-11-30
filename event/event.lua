@@ -1,5 +1,6 @@
 local IS_DEBUG = sys.get_engine_info().is_debug
 local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
+local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 
 ---Contains each item[1] - callback, item[2] - callback_context, item[3] - script_context
 ---@class event.callback_data: table
@@ -173,6 +174,14 @@ function M:is_subscribed(callback, callback_context)
 end
 
 
+---Error handler for event callbacks.
+---@param error_message string Error message
+---@return string Error message with stack trace
+local function event_error_handler(error_message)
+	return debug.traceback(error_message, 2)
+end
+
+
 ---Trigger the event and call all subscribed callbacks. Returns the result of the last callback. If no callbacks are subscribed, nothing will happen.
 ---@vararg any Any number of parameters to be passed to the subscribed callbacks.
 ---@return any result Result of the last triggered callback
@@ -203,9 +212,28 @@ function M:trigger(...)
 		-- Call callback
 		local ok, result_or_error
 		if event_callback_context then
-			ok, result_or_error = pcall(event_callback, event_callback_context, ...)
+			if not USE_XPCALL then
+				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
+			else
+				-- This one should be used for find exact error place, since with pcall
+				-- I can't figure out how to get a full traceback
+				-- Not should be cause of memory allocations (it's more 100 bytes!
+
+				-- Using closue due the lua5.1 in HTML don't allow pass args in xpcall as 3rd+ arguments
+				local args = { event_callback_context, ... }
+				ok, result_or_error = xpcall(function()
+					return event_callback(unpack(args))
+				end, event_error_handler)
+			end
 		else
-			ok, result_or_error = pcall(event_callback, ...)
+			if not USE_XPCALL then
+				ok, result_or_error = pcall(event_callback, ...)
+			else
+				local args = { ... }
+				ok, result_or_error = xpcall(function()
+					return event_callback(unpack(args))
+				end, event_error_handler)
+			end
 		end
 
 		-- Check memory allocation
@@ -230,7 +258,7 @@ function M:trigger(...)
 		if not ok then
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
-			M.logger:error("Error in trigger event", place)
+			M.logger:error("Error in trigger event: " .. place, result_or_error)
 			M.logger:error(debug.traceback(result_or_error, 2))
 		end
 

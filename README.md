@@ -62,6 +62,18 @@ The event memory tracking is not 100% accurate and is used to check unexpected h
 Memory allocation tracking is turned off in release builds, regardless of the `game.project` settings.
 
 
+### Using `xpcall` to get detailed tracebacks
+
+You can use `xpcall` to get detailed tracebacks in case of an error in the event callback. Usually, in case of an error, you will get a line with `event.trigger` and traceback ended in event module. To get a detailed traceback to help with debug, you can use `use_xpcall`:
+
+```ini
+[event]
+use_xpcall = 1
+```
+
+In this case, you will get a detailed traceback with the exact line of the error in the event callback. But the drawback of it is memory allocations per `event:trigger` call. Should be used only for debugging purposes.
+
+
 ## API Reference
 
 ### Quick API Reference
