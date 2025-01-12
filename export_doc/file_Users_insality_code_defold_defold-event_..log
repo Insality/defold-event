@@ -1,0 +1,131 @@
+[17:04:19.935][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:68]: Lua Lsp startup, root: 	/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:69]: ROOT:	/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:70]: LOGPATH:	export_doc/
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:71]: METAPATH:	/Users/insality/.cache/lua-language-server/meta
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:72]: VERSION:	<Unknown>
+[17:04:19.992][info] [#0:script/language.lua:137]: VSC language: nil
+[17:04:19.992][info] [#0:script/language.lua:138]: LS  language: en-us
+[17:04:19.992][info] [#0:script/client.lua:657]: Client init	{
+  capabilities = {
+    textDocument = {
+      completion = {
+        completionItem = {
+          tagSupport = {
+            valueSet = { 1, 2 }
+          }
+        }
+      }
+    }
+  },
+  initializationOptions = {
+    changeConfiguration = true,
+    trustByClient = true,
+    useSemanticByRange = true,
+    viewDocument = true
+  },
+  rootUri = "file:///Users/insality/code/defold/defold-event/."
+}
+[17:04:19.992][info] [#0:script/language.lua:137]: VSC language: nil
+[17:04:19.992][info] [#0:script/language.lua:138]: LS  language: en-us
+[17:04:19.992][info] [#0:script/workspace/workspace.lua:38]: Workspace init root: 	file:///Users/insality/code/defold/defold-event/.
+[17:04:19.992][info] [#0:script/workspace/workspace.lua:42]: Log path: 	export_doc/file_Users_insality_code_defold_defold-event_..log
+[17:04:19.993][info] [#0:script/workspace/workspace.lua:48]: Workspace create: 	file:///Users/insality/code/defold/defold-event/.
+[17:04:19.994][warn] [#0:script/config/loader.lua:116]: No config?	nil
+[17:04:19.994][warn] [#0:script/config/loader.lua:116]: No config?	nil
+[17:04:19.994][info] [#0:script/provider/provider.lua:61]: Load config from client	fallback
+[17:04:19.994][info] [#0:script/provider/provider.lua:62]: nil
+[17:04:19.994][info] [#0:script/library.lua:212]: Init builtin library at:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.017][info] [#0:script/library.lua:212]: Init builtin library at:	nil
+[17:04:20.022][info] [#0:script/workspace/workspace.lua:324]: Preload start:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.024][info] [#0:script/workspace/workspace.lua:330]: Scan files at:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.025][info] [#0:script/workspace/workspace.lua:324]: Preload start:	<fallback>
+[17:04:20.026][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/builtin.lua
+[17:04:20.026][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/package.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/utf8.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/string.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/debug.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/os.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/table.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/coroutine.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/math.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/io.lua
+[17:04:20.027][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/basic.lua
+[17:04:20.028][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/builtin.lua
+[17:04:20.028][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/package.lua
+[17:04:20.028][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/utf8.lua
+[17:04:20.028][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/string.lua
+[17:04:20.028][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/debug.lua
+[17:04:20.028][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/os.lua
+[17:04:20.029][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/table.lua
+[17:04:20.029][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/coroutine.lua
+[17:04:20.029][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/math.lua
+[17:04:20.029][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/io.lua
+[17:04:20.029][info] [#0:script/workspace/workspace.lua:353]: Scan library at:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/basic.lua
+[17:04:20.029][info] [#0:script/workspace/workspace.lua:379]: Found 11 files at:	<fallback>
+[17:04:20.029][info] [#0:script/workspace/loading.lua:161]: Load files from disk:	<fallback>
+[17:04:20.029][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/basic.lua , size = 15.971 KB
+[17:04:20.035][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/basic.lua
+[17:04:20.035][info] [#0:script/workspace/workspace.lua:379]: Found 21 files at:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.035][info] [#0:script/workspace/loading.lua:161]: Load files from disk:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.035][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/basic.lua
+[17:04:20.035][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/basic.lua
+[17:04:20.035][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/io.lua , size = 6.566 KB
+[17:04:20.037][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/io.lua
+[17:04:20.037][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/io.lua
+[17:04:20.037][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/io.lua
+[17:04:20.037][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/math.lua , size = 8.825 KB
+[17:04:20.041][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/math.lua
+[17:04:20.041][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/math.lua
+[17:04:20.041][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/math.lua
+[17:04:20.041][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/coroutine.lua , size = 2.669 KB
+[17:04:20.042][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/coroutine.lua
+[17:04:20.042][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/coroutine.lua
+[17:04:20.042][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/coroutine.lua
+[17:04:20.042][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/table.lua , size = 4.341 KB
+[17:04:20.043][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/table.lua
+[17:04:20.043][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/table.lua
+[17:04:20.043][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/table.lua
+[17:04:20.043][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/os.lua , size = 5.863 KB
+[17:04:20.045][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/os.lua
+[17:04:20.045][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/os.lua
+[17:04:20.045][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/os.lua
+[17:04:20.045][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/debug.lua , size = 7.812 KB
+[17:04:20.047][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/debug.lua
+[17:04:20.047][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/debug.lua
+[17:04:20.047][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/debug.lua
+[17:04:20.047][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/string.lua , size = 6.547 KB
+[17:04:20.050][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/string.lua
+[17:04:20.050][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/string.lua
+[17:04:20.050][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/string.lua
+[17:04:20.050][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/utf8.lua , size = 2.447 KB
+[17:04:20.051][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/utf8.lua
+[17:04:20.051][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/utf8.lua
+[17:04:20.051][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/utf8.lua
+[17:04:20.051][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/package.lua , size = 3.050 KB
+[17:04:20.052][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/package.lua
+[17:04:20.052][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/package.lua
+[17:04:20.052][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/package.lua
+[17:04:20.052][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/builtin.lua , size = 0.302 KB
+[17:04:20.053][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/builtin.lua
+[17:04:20.053][info] [#0:script/workspace/loading.lua:89]: Skip loaded file: file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/builtin.lua
+[17:04:20.053][info] [#0:script/workspace/loading.lua:113]: ++++As library of:	file:///Users/insality/.cache/lua-language-server/meta/Lua%205.4%20en-us%20utf8/builtin.lua
+[17:04:20.053][info] [#0:script/workspace/loading.lua:173]: Loaded files takes [0.024] sec: <fallback>
+[17:04:20.053][info] [#0:script/workspace/loading.lua:182]: Compile files takes [0.000] sec: <fallback>
+[17:04:20.053][info] [#0:script/workspace/loading.lua:183]: Loaded finish:	<fallback>
+[17:04:20.053][info] [#0:script/workspace/workspace.lua:381]: Preload finish at:	<fallback>
+[17:04:20.054][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./ldoc_exporter/ldoc_exporter.lua , size = 1.416 KB
+[17:04:20.054][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./ldoc_exporter/json.lua , size = 9.412 KB
+[17:04:20.058][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./test/test_event_logger.lua , size = 1.943 KB
+[17:04:20.059][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./test/test_events.lua , size = 3.187 KB
+[17:04:20.060][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./test/test_event_context_change.lua , size = 1.001 KB
+[17:04:20.060][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./test/test_event_context_manager.lua , size = 0.629 KB
+[17:04:20.061][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./test/test_event.lua , size = 10.532 KB
+[17:04:20.064][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./example/logic.lua , size = 0.348 KB
+[17:04:20.064][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./event/event.lua , size = 8.748 KB
+[17:04:20.068][info] [#0:script/workspace/loading.lua:101]: Preload file at: file:///Users/insality/code/defold/defold-event/./event/events.lua , size = 3.115 KB
+[17:04:20.069][info] [#0:script/workspace/loading.lua:173]: Loaded files takes [0.034] sec: file:///Users/insality/code/defold/defold-event/.
+[17:04:20.069][info] [#0:script/workspace/loading.lua:182]: Compile files takes [0.000] sec: file:///Users/insality/code/defold/defold-event/.
+[17:04:20.069][info] [#0:script/workspace/loading.lua:183]: Loaded finish:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.069][info] [#0:script/workspace/workspace.lua:381]: Preload finish at:	file:///Users/insality/code/defold/defold-event/.
+[17:04:20.070][info] [#0:script/provider/diagnostic.lua:560]: Diagnostics scope [file:///Users/insality/code/defold/defold-event/.], files count:[21]
+[17:04:20.115][info] [#0:script/provider/diagnostic.lua:577]: Diagnostics scope [file:///Users/insality/code/defold/defold-event/.] finished, takes [0.038] sec.

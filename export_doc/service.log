@@ -1,0 +1,31 @@
+[17:04:19.935][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:68]: Lua Lsp startup, root: 	/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:69]: ROOT:	/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:70]: LOGPATH:	export_doc/
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:71]: METAPATH:	/Users/insality/.cache/lua-language-server/meta
+[17:04:19.936][info] [#0:/opt/homebrew/Cellar/lua-language-server/3.10.5/libexec/main.lua:72]: VERSION:	<Unknown>
+[17:04:19.992][info] [#0:script/language.lua:137]: VSC language: nil
+[17:04:19.992][info] [#0:script/language.lua:138]: LS  language: en-us
+[17:04:19.992][info] [#0:script/client.lua:657]: Client init	{
+  capabilities = {
+    textDocument = {
+      completion = {
+        completionItem = {
+          tagSupport = {
+            valueSet = { 1, 2 }
+          }
+        }
+      }
+    }
+  },
+  initializationOptions = {
+    changeConfiguration = true,
+    trustByClient = true,
+    useSemanticByRange = true,
+    viewDocument = true
+  },
+  rootUri = "file:///Users/insality/code/defold/defold-event/."
+}
+[17:04:19.992][info] [#0:script/language.lua:137]: VSC language: nil
+[17:04:19.992][info] [#0:script/language.lua:138]: LS  language: en-us
+[17:04:19.992][info] [#0:script/workspace/workspace.lua:38]: Workspace init root: 	file:///Users/insality/code/defold/defold-event/.
+[17:04:19.992][info] [#0:script/workspace/workspace.lua:42]: Log path: 	export_doc/file_Users_insality_code_defold_defold-event_..log
