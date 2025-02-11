@@ -83,7 +83,7 @@ local event = require("event.event")
 event.set_logger(logger)
 event.set_memory_threshold(threshold)
 
-local event_instance = event.create(callback, [callback_context])
+local event_instance = event.create([callback], [callback_context])
 event_instance:subscribe(callback, [callback_context])
 event_instance:unsubscribe(callback, [callback_context])
 event_instance:is_subscribed(callback, [callback_context])
@@ -114,12 +114,12 @@ local event = require("event.event")
 **event.create**
 ---
 ```lua
-event.create(callback, [callback_context])
+event.create([callback], [callback_context])
 ```
 Generate a new event instance. This instance can then be used to subscribe to and trigger events. The `callback` function will be called when the event is triggered. The `callback_context` parameter is optional and will be passed as the first parameter to the callback function. Usually, it is used to pass the `self` instance. Allocate `64` bytes per instance.
 
 - **Parameters:**
-  - `callback`: The function to be called when the event is triggered. Or the event instance to subscribe.
+  - `callback` (optional): The function to be called when the event is triggered. Or the event instance to subscribe.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
 - **Return Value:** A new event instance.
