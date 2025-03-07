@@ -1,18 +1,23 @@
 local IS_DEBUG = sys.get_engine_info().is_debug
 local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
+
+---Xpcall is used to get the exact error place, but calls with xpcall are slower and use more memory.
+---Used mostly for debug
 local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 
----Contains each item[1] - callback, item[2] - callback_context, item[3] - script_context
+---Array of next items: { callback, callback_context, script_context }
 ---@class event.callback_data: table
 
+---A logger object for event module should match the following interface
 ---@class event.logger
----@field trace fun(logger: event.logger, message: string, data: any|nil) @Log a trace message.
----@field debug fun(logger: event.logger, message: string, data: any|nil) @Log a debug message.
----@field info fun(logger: event.logger, message: string, data: any|nil) @Log an info message.
----@field warn fun(logger: event.logger, message: string, data: any|nil) @Log a warning message.
----@field error fun(logger: event.logger, message: string, data: any|nil) @Log an error message.
+---@field trace fun(logger: event.logger, message: string, data: any|nil) Log a trace message.
+---@field debug fun(logger: event.logger, message: string, data: any|nil) Log a debug message.
+---@field info fun(logger: event.logger, message: string, data: any|nil) Log an info message.
+---@field warn fun(logger: event.logger, message: string, data: any|nil) Log a warning message.
+---@field error fun(logger: event.logger, message: string, data: any|nil) Log an error message.
 
----@class event @Event module
+---The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
+---@class event
 ---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 local M = {}
 
@@ -24,8 +29,8 @@ local MEMORY_BEFORE_VALUE
 local set_context = event_context_manager.set
 local get_context = event_context_manager.get
 local pcall = pcall
-local tinsert = table.insert
-local tremove = table.remove
+local table_insert = table.insert
+local table_remove = table.remove
 
 --- Use empty function to save a bit of memory
 local EMPTY_FUNCTION = function(_, message, context) end
@@ -40,7 +45,7 @@ local empty_logger = {
 }
 
 ---@type event.logger
-M.logger = {
+local logger = {
 	trace = EMPTY_FUNCTION,
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
@@ -54,16 +59,14 @@ M.logger = {
 
 
 ---Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger. By default, the module uses the `pprint` logger for errors.
----@static
 ---@param logger_instance event.logger|table|nil A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
 function M.set_logger(logger_instance)
-	M.logger = logger_instance or empty_logger
+	logger = logger_instance or empty_logger
 end
 
 
 
 ---Set the threshold for logging warnings about memory allocations in event callbacks. Works only in debug builds. The threshold is in kilobytes. If the callback causes a memory allocation greater than the threshold, a warning will be logged.
----@static
 ---@param value number Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
 function M.set_memory_threshold(value)
 	if not IS_DEBUG then
@@ -74,7 +77,6 @@ end
 
 
 ---Create new event instance. If callback is passed, it will be subscribed to the event.
----@static
 ---@param callback function|event|nil The function to be called when the event is triggered. It will trigger the event if it is an event.
 ---@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
 ---@return event A new event instance.
@@ -104,7 +106,7 @@ function M:subscribe(callback, callback_context)
 
 	---@cast callback function
 	if self:is_subscribed(callback, callback_context) then
-		M.logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
+		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
 	end
 
@@ -114,7 +116,7 @@ function M:subscribe(callback, callback_context)
 		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
-	tinsert(self, { callback, callback_context, get_context() })
+	table_insert(self, { callback, callback_context, get_context() })
 	return true
 end
 
@@ -137,7 +139,7 @@ function M:unsubscribe(callback, callback_context)
 	for index = #self, 1, -1 do
 		local cb = self[index]
 		if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
-			tremove(self, index)
+			table_remove(self, index)
 			is_removed = true
 		end
 	end
@@ -241,7 +243,7 @@ function M:trigger(...)
 			local memory_after = collectgarbage("count")
 			if memory_after - MEMORY_BEFORE_VALUE > MEMORY_THRESHOLD_WARNING then
 				local caller_info = debug.getinfo(2)
-				M.logger:warn("Detected huge memory allocation in event", {
+				logger:warn("Detected huge memory allocation in event", {
 					event = self._mapping and self._mapping[event_callback],
 					trigger = caller_info.short_src .. ":" .. caller_info.currentline,
 					memory = memory_after - MEMORY_BEFORE_VALUE,
@@ -258,8 +260,8 @@ function M:trigger(...)
 		if not ok then
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
-			M.logger:error("Error in trigger event: " .. place, result_or_error)
-			M.logger:error(debug.traceback(result_or_error, 2))
+			logger:error("Error in trigger event: " .. place, result_or_error)
+			logger:error(debug.traceback(result_or_error, 2))
 		end
 
 		result = result_or_error
