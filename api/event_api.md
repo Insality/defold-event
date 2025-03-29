@@ -1,6 +1,6 @@
 # Event API Reference
 
-The Event module provides a way to create and manage events. Events are used to trigger callbacks when certain actions occur. Events can be used to trigger callbacks when certain actions occur.
+The Event module provides a way to create and manage events. Events are used to trigger callbacks when certain actions occur.
 
 To start using the **Event** module in your project, you first need to import it:
 
