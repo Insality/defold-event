@@ -84,13 +84,13 @@ end
 **defer.process**
 ---
 ```lua
-defer.process(event_id, [handler], [context])
+defer.process(event_id, handler, [context])
 ```
-Process all events of a specific type immediately. If a specific handler is provided, only that handler will be used. Otherwise, all subscribed handlers will be used. This is useful for manually handling events without subscribing.
+Process all events of a specific type immediately with the provided handler. Subscribers will not be called in this function. This is useful for manually handling events without affecting subscribed handlers.
 
 - **Parameters:**
   - `event_id`: The unique identifier for the event type.
-  - `handler` (optional): Specific handler to process the events. If nil, all subscribed handlers will be used.
+  - `handler`: The handler function to process the events. Return a non-nil value from the handler to mark the event as handled.
   - `context` (optional): The context to be passed to the handler.
 
 - **Usage Example:**
@@ -103,9 +103,6 @@ local function special_handler(achievement_data)
 end
 
 defer.process("new_achievement", special_handler)
-
--- Or process with all subscribed handlers
-defer.process("new_achievement")
 ```
 
 **defer.get_events**
@@ -159,4 +156,18 @@ Clear all subscribers for a specific event type.
 ```lua
 -- Clear all subscribers for new_achievement events
 defer.clear_subscribers("new_achievement")
+```
+
+**defer.clear_all**
+---
+```lua
+defer.clear_all()
+```
+Clear all pending events and handlers. Useful for cleanup or at soft reboot.
+
+- **Usage Example:**
+
+```lua
+-- Clear all pending events and handlers
+defer.clear_all()
 ```

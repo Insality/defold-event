@@ -14,28 +14,30 @@ local table_remove = table.remove
 local deferred_events = {}
 
 ---Storage for all event handlers organized by event_id
----@type table<string, table<number, {handler:function, context:any, callback:function}>>
+---@type table<string, table<number, event>>
 local handlers = {}
+
 
 ---Push a new event to the deferred queue. The event will exist until it's handled by a subscriber.
 ---If there are already subscribers for this event_id, they will be called immediately.
+---If multiple subscribers handle the event, all subscribers will still be called. The on_handle callback
+---will be called for each subscriber that handles the event.
 ---@param event_id string The unique identifier for the event type.
 ---@param data any The data associated with the event.
 ---@param on_handle function|nil Callback function to be called when the event is handled.
----@param context any|nil The context to be passed as the first parameter to the on_handle function.
+---@param context any|nil The context to be passed as the first parameter to the on_handle function when the event is handled.
 function M.push(event_id, data, on_handle, context)
 	deferred_events[event_id] = deferred_events[event_id] or {}
 
 	local event_data = {
 		data = data,
-		on_handle = on_handle and event.create(on_handle, context),
+		on_handle = on_handle and event.create(on_handle, context)
 	}
 
-	-- Add to queue
 	table_insert(deferred_events[event_id], event_data)
-
-	M._process_handlers(event_id)
+	M._check_subscribers(event_id)
 end
+
 
 ---Subscribe a handler to a specific event type. When an event of this type is pushed,
 ---the handler will be called. If there are already events in the queue for this event_id,
@@ -53,13 +55,9 @@ function M.subscribe(event_id, handler, context)
 	handlers[event_id] = handlers[event_id] or {}
 
 	-- Add the handler
-	table_insert(handlers[event_id], {
-		handler = handler,
-		context = context,
-		callback = event.create(handler, context)
-	})
+	table_insert(handlers[event_id], event.create(handler, context))
 
-	M._process_handlers(event_id)
+	M._check_subscribers(event_id)
 
 	return true
 end
@@ -78,10 +76,10 @@ function M.unsubscribe(event_id, handler, context)
 	end
 
 	local is_removed = false
-	for i = #handlers[event_id], 1, -1 do
-		local handler_data = handlers[event_id][i]
-		if handler_data.handler == handler and (context == nil or handler_data.context == context) then
-			table_remove(handlers[event_id], i)
+	for index = #handlers[event_id], 1, -1 do
+		local handler_event = handlers[event_id][index]
+		if handler_event:is_subscribed(handler, context) then
+			table_remove(handlers[event_id], index)
 			is_removed = true
 		end
 	end
@@ -107,8 +105,8 @@ function M.is_subscribed(event_id, handler, context)
 	end
 
 	for index = 1, #handlers[event_id] do
-		local handler_data = handlers[event_id][index]
-		if handler_data.handler == handler and handler_data.context == context then
+		local handler_event = handlers[event_id][index]
+		if handler_event:is_subscribed(handler, context) then
 			return true, index
 		end
 	end
@@ -117,12 +115,10 @@ function M.is_subscribed(event_id, handler, context)
 end
 
 
----Process all events of a specific type immediately.
----If a specific handler is provided, only that handler will be used.
----Otherwise, all subscribed handlers will be used.
----Return true from the handler to mark the event as handled.
+---Process all events of a specific type immediately. Subscribers will be not called in this function.
+---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 ---@param event_id string The unique identifier for the event type.
----@param event_handler function|nil Specific handler to process the events. If nil, all subscribed handlers will be used.
+---@param event_handler function Specific handler to process the events
 ---@param context any|nil The context to be passed to the handler.
 function M.process(event_id, event_handler, context)
 	if not deferred_events[event_id] or #deferred_events[event_id] == 0 then
@@ -179,9 +175,19 @@ function M.clear_subscribers(event_id)
 end
 
 
----Process all handlers for a specific event type.
+---Clear all pending events and handlers.
+function M.clear_all()
+	deferred_events = {}
+	handlers = {}
+end
+
+
+---Process the events if there are subscribers for the event.
+---If event is handled, it will be removed from the queue.
+---All subscribers will be called for each event, even if it's already been handled.
+---@private
 ---@param event_id string The unique identifier for the event type.
-function M._process_handlers(event_id)
+function M._check_subscribers(event_id)
 	local events = deferred_events[event_id]
 	if not events or #events == 0 then
 		return
@@ -199,12 +205,13 @@ function M._process_handlers(event_id)
 		for index = 1, #event_handlers do
 			local event_handler = event_handlers[index]
 
-			local handle_result = event_handler.callback(event_data.data)
+			local handle_result = event_handler:trigger(event_data.data)
 			if handle_result ~= nil then
 				if event_data.on_handle then
 					event_data.on_handle(handle_result)
 				end
 				is_handled = true
+				-- No break here, continue processing all subscribers
 			end
 		end
 

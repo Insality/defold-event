@@ -218,6 +218,144 @@ local function test_defer()
 			-- Event should still be in queue
 			assert(#defer.get_events(TEST_EVENT) == 1)
 		end)
+
+		it("Should call subscribers in the order they were subscribed", function()
+			local test_data = "test_data"
+			local call_order = {}
+			local handler1_called = false
+			local handler2_called = false
+			local handler3_called = false
+
+			-- Subscribe handlers in specific order
+			defer.subscribe(TEST_EVENT, function(data)
+				handler1_called = true
+				table.insert(call_order, 1)
+				return nil -- Don't handle it yet
+			end)
+
+			defer.subscribe(TEST_EVENT, function(data)
+				handler2_called = true
+				table.insert(call_order, 2)
+				return nil -- Don't handle it yet
+			end)
+
+			defer.subscribe(TEST_EVENT, function(data)
+				handler3_called = true
+				table.insert(call_order, 3)
+				return true -- Handle it
+			end)
+
+			-- Push event after all subscriptions
+			defer.push(TEST_EVENT, test_data)
+
+			-- Verify handlers were called in the correct order
+			assert(handler1_called == true)
+			assert(handler2_called == true)
+			assert(handler3_called == true)
+			assert(call_order[1] == 1)
+			assert(call_order[2] == 2)
+			assert(call_order[3] == 3)
+			assert(#call_order == 3)
+
+			-- Event should be removed now
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
+
+		it("Should call all subscribers and handle the event if any returns non-nil", function()
+			local test_data = "test_data"
+			local handler1_called = false
+			local handler2_called = false
+
+			-- Subscribe handlers
+			defer.subscribe(TEST_EVENT, function(data)
+				handler1_called = true
+				return true -- Handle it
+			end)
+
+			defer.subscribe(TEST_EVENT, function(data)
+				handler2_called = true
+				return true -- Also handle it
+			end)
+
+			-- Push event
+			defer.push(TEST_EVENT, test_data)
+
+			-- Both handlers should be called
+			assert(handler1_called == true)
+			assert(handler2_called == true)
+
+			-- Event should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+
+			-- Reset and test with multiple events
+			reset()
+			handler1_called = false
+			handler2_called = false
+
+			-- Push two events
+			defer.push(TEST_EVENT, "event1")
+			defer.push(TEST_EVENT, "event2")
+
+			-- Subscribe handlers
+			defer.subscribe(TEST_EVENT, function(data)
+				handler1_called = true
+				if data == "event1" then
+					return true -- Handle first event
+				end
+				return nil -- Don't handle second event
+			end)
+
+			defer.subscribe(TEST_EVENT, function(data)
+				handler2_called = true
+				return true -- Handle all events
+			end)
+
+			-- Both handlers should be called for both events
+			assert(handler1_called == true)
+			assert(handler2_called == true)
+
+			-- Both events should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
+
+		it("Should call all subscribers and call on_handle for each subscriber that handles the event", function()
+			local test_data = "test_data"
+			local handler1_called = false
+			local handler2_called = false
+			local handler3_called = false
+			local on_handle_results = {}
+
+			-- Subscribe handlers
+			defer.subscribe(TEST_EVENT, function(data)
+				handler1_called = true
+				return "result1"
+			end)
+
+			defer.subscribe(TEST_EVENT, function(data)
+				handler2_called = true
+			end)
+
+			defer.subscribe(TEST_EVENT, function(data)
+				handler3_called = true
+				return "result3"
+			end)
+
+			-- Push event with on_handle callback
+			defer.push(TEST_EVENT, test_data, function(result)
+				table.insert(on_handle_results, result)
+			end)
+
+			-- Both handlers should be called
+			assert(handler1_called == true)
+			assert(handler2_called == true)
+			assert(handler3_called == true)
+			-- on_handle should be called with the first result
+			assert(on_handle_results[1] == "result1")
+			assert(on_handle_results[2] == "result3")
+
+			-- Event should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
 	end)
 end
 
