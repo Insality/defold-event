@@ -246,12 +246,17 @@ function M:trigger(...)
 			if not USE_XPCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
 			else
-				-- This one should be used for find exact error place, since with pcall
-				-- I can't figure out how to get a full traceback
-				-- Not should be cause of memory allocations (it's more 100 bytes!
+				-- Create a table with the context as the first element
+				local args = { event_callback_context }
 
-				-- Using closue due the lua5.1 in HTML don't allow pass args in xpcall as 3rd+ arguments
-				local args = { event_callback_context, ... }
+				-- Note: Most more oblivious ways to do this is not working
+				-- because of the way Lua handles varargs and closures.
+				-- This way seems okay
+				local n = select("#", ...)
+				for i = 1, n do
+					args[i+1] = select(i, ...)
+				end
+
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args))
 				end, event_error_handler)
@@ -260,7 +265,15 @@ function M:trigger(...)
 			if not USE_XPCALL then
 				ok, result_or_error = pcall(event_callback, ...)
 			else
-				local args = { ... }
+				-- Create a new args table with the proper count
+				local args = {}
+				local n = select("#", ...)
+
+				-- Add each argument individually
+				for i = 1, n do
+					args[i] = select(i, ...)
+				end
+
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args))
 				end, event_error_handler)
