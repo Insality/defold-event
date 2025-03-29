@@ -8,6 +8,18 @@ To start using the **Defer** module in your project, you first need to import it
 local defer = require("event.defer")
 ```
 
+# Table of Contents
+
+- [defer.push](#deferpush)
+- [defer.subscribe](#defersubscribe)
+- [defer.unsubscribe](#deferunsubscribe)
+- [defer.process](#deferprocess)
+- [defer.get_events](#deferget_events)
+- [defer.clear_events](#deferclear_events)
+- [defer.clear_subscribers](#deferclear_subscribers)
+- [defer.clear_all](#deferclear_all)
+
+
 ## API Reference
 
 **defer.push**
@@ -124,7 +136,7 @@ local pending_achievements = defer.get_events("new_achievement")
 print("Pending achievements:", #pending_achievements)
 ```
 
-**defer.clear**
+**defer.clear_events**
 ---
 ```lua
 defer.clear_events(event_id)

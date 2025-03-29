@@ -1,5 +1,25 @@
 # Event API Reference
 
+The Event module provides a way to create and manage events. Events are used to trigger callbacks when certain actions occur. Events can be used to trigger callbacks when certain actions occur.
+
+To start using the **Event** module in your project, you first need to import it:
+
+```lua
+local event = require("event.event")
+```
+
+# Table of Contents
+
+- [event.create](#eventcreate)
+- [event:subscribe](#eventsubscribe)
+- [event:unsubscribe](#eventunsubscribe)
+- [event:trigger](#eventtrigger)
+- [event:is_empty](#eventisempty)
+- [event:clear](#eventclear)
+- [event.set_logger](#eventset_logger)
+- [event.set_memory_threshold](#eventset_memory_threshold)
+
+
 ## Core Functions
 
 **event.create**

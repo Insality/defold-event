@@ -10,6 +10,16 @@ Global events module requires careful management of subscriptions and unsubscrip
 local events = require("event.events")
 ```
 
+# Table of Contents
+
+- [events.subscribe](#eventsubscribe)
+- [events.unsubscribe](#eventsunsubscribe)
+- [events.is_subscribed](#eventsissubscribed)
+- [events.trigger](#eventstrigger)
+- [events.is_empty](#eventsisempty)
+- [events.clear](#eventsclear)
+- [events.clear_all](#eventsclearall)
+
 ## API Reference
 
 **events.subscribe**
