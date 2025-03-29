@@ -519,6 +519,89 @@ local function test_defer()
 			-- Event should be removed
 			assert(#defer.get_events(TEST_EVENT) == 0)
 		end)
+
+		it("Should call on_handle callback when processing with custom handler", function()
+			local test_data = "test_data"
+			local on_handle_called = false
+			local expected_result = "processed_result"
+			local actual_result = nil
+
+			-- Push event with on_handle callback
+			defer.push(TEST_EVENT, test_data, function(result)
+				on_handle_called = true
+				actual_result = result
+			end)
+
+			-- Event should be in queue
+			assert(#defer.get_events(TEST_EVENT) == 1)
+
+			-- Process with custom handler
+			defer.process(TEST_EVENT, function(data)
+				assert(data == test_data)
+				return expected_result
+			end)
+
+			-- Verify on_handle callback was called with the result
+			assert(on_handle_called == true)
+			assert(actual_result == expected_result)
+
+			-- Event should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
+
+		it("Should process events with custom handler and context", function()
+			local test_data = "test_data"
+			local context = { value = "context_value" }
+			local context_received = nil
+
+			-- Push event
+			defer.push(TEST_EVENT, test_data)
+
+			-- Process with custom handler and context
+			defer.process(TEST_EVENT, function(self, data)
+				context_received = self
+				assert(data == test_data)
+				return true
+			end, context)
+
+			-- Verify context was passed to handler
+			assert(context_received == context)
+
+			-- Event should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
+
+		it("Should call on_handle callback with context when processing with custom handler", function()
+			local test_data = "test_data"
+			local handler_context = { value = "handler_context" }
+			local on_handle_context = { value = "on_handle_context" }
+			local handler_context_received = nil
+			local on_handle_called = false
+			local expected_result = "processed_result"
+			local actual_result = nil
+
+			-- Push event with on_handle callback and context
+			defer.push(TEST_EVENT, test_data, function(self, result)
+				on_handle_called = true
+				assert(self == on_handle_context)
+				actual_result = result
+			end, on_handle_context)
+
+			-- Process with custom handler and context
+			defer.process(TEST_EVENT, function(self, data)
+				handler_context_received = self
+				assert(data == test_data)
+				return expected_result
+			end, handler_context)
+
+			-- Verify contexts were passed correctly
+			assert(handler_context_received == handler_context)
+			assert(on_handle_called == true)
+			assert(actual_result == expected_result)
+
+			-- Event should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
 	end)
 end
 
