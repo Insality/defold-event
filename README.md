@@ -190,6 +190,12 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- The `event:unsubscribe` now removes all subscriptions with the same function if `callback_context` is not provided
 	- You can use events instead callbacks in `event:subscribe` and `event:unsubscribe`. The subcribed event will be triggered by the parent event trigger.
 	- Update docs and API reference
+
+### **V11**
+	- Introduced behavior in the `defer` module. The Defer module provides a queuing mechanism for events. Unlike regular events which are immediately processed, deferred events are stored in a queue until they are explicitly handled by a subscriber. This is useful for events that need to persist until they can be properly handled.
+	- Add `use_xpcall` option to get detailed tracebacks in case of an error in the event callback.
+	- Moved detailed API documentation to separate files
+	- Remove annotations files. Now all annotations directly in the code.
 </details>
 
 ## ❤️ Support project ❤️

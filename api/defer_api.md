@@ -163,11 +163,11 @@ defer.clear_subscribers("new_achievement")
 ```lua
 defer.clear_all()
 ```
-Clear all pending events and handlers. Useful for cleanup or at soft reboot.
+Clear all pending events and handlers for all event types.
 
 - **Usage Example:**
 
 ```lua
--- Clear all pending events and handlers
+-- Clear everything - all events and all subscribers
 defer.clear_all()
 ```
