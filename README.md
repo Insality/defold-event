@@ -28,20 +28,21 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/10.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/11.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/10.zip
+https://github.com/Insality/defold-event/archive/refs/tags/11.zip
 ```
 
 ### Library Size
 
 > **Note:** The library size is calculated based on the build report per platform
+> Events and Defer module will be included in the build only if you use them.
 
-| Platform         | Library Size |
-| ---------------- | ------------ |
-| HTML5            | **2.07 KB**  |
-| Desktop / Mobile | **3.54 KB**  |
+| Platform         | Event Size   | Events Size   | Defer Size   |
+| ---------------- | ------------ | ------------- | ------------ |
+| HTML5            | **1.85 KB**  | **0.42 KB**   | **1.07 KB**  |
+| Desktop / Mobile | **3.14 KB**  | **0.71 KB**   | **1.93 KB**  |
 
 
 ### Memory Allocation Tracking

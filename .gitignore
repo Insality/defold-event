@@ -12,3 +12,4 @@ bob.jar
 deployer_build_stats.csv
 dist
 /.editor_settings
+/.deployer_cache
