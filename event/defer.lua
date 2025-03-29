@@ -2,7 +2,7 @@ local event = require("event.event")
 
 ---Deferred event system that allows events to be queued until they are handled.
 ---This differs from regular events which are processed immediately.
----@class defer
+---@class event.defer
 local M = {}
 
 -- Local versions of functions to improve performance

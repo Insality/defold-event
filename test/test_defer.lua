@@ -1,16 +1,16 @@
-local defer = require("event.defer")
-
 local function test_defer()
 	describe("Defer module", function()
+		local defer ---@type event.defer
 		local TEST_EVENT = "test_event"
 
-		local function reset()
-			defer.clear(TEST_EVENT)
-			defer.clear_subscribers(TEST_EVENT)
-		end
+		before(function()
+			defer = require("event.defer")
+			defer.clear_all()
+		end)
 
-		before(reset)
-		after(reset)
+		after(function()
+			defer.clear_all()
+		end)
 
 		it("Should call subscriber when event is pushed after subscription", function()
 			local was_called = false
@@ -288,7 +288,7 @@ local function test_defer()
 			assert(#defer.get_events(TEST_EVENT) == 0)
 
 			-- Reset and test with multiple events
-			reset()
+			defer.clear_all()
 			handler1_called = false
 			handler2_called = false
 

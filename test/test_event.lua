@@ -1,7 +1,7 @@
 return function()
-	local event = {}
-
 	describe("Defold Event", function()
+		local event ---@type event
+
 		before(function()
 			event = require("event.event")
 		end)

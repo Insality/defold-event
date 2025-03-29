@@ -17,8 +17,8 @@ local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 ---@field error fun(logger: event.logger, message: string, data: any|nil) Log an error message.
 
 ---The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
----@class event
 ---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
+---@class event
 local M = {}
 
 -- Forward declaration
