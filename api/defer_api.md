@@ -127,7 +127,7 @@ print("Pending achievements:", #pending_achievements)
 **defer.clear**
 ---
 ```lua
-defer.clear(event_id)
+defer.clear_events(event_id)
 ```
 Clear all pending events for a specific event type.
 
@@ -138,7 +138,7 @@ Clear all pending events for a specific event type.
 
 ```lua
 -- Clear all new_achievement events
-defer.clear("new_achievement")
+defer.clear_events("new_achievement")
 ```
 
 **defer.clear_subscribers**

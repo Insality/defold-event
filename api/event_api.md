@@ -50,7 +50,7 @@ Subscribe a callback to the event or other event. The callback will be invoked w
 on_click_event:subscribe(callback, self)
 ```
 
-You can subscribe an other event instance to be triggered by the event. Example:
+You can subscribe another event instance to be triggered by the event. Example:
 ```lua
 event_1 = event.create(callback)
 event_2 = event.create()

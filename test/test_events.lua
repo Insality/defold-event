@@ -77,19 +77,19 @@ return function()
 
 			events.subscribe("test1", f1)
 			events.subscribe("test2", f2)
-			
+
 			events.trigger("test1")
 			events.trigger("test2")
 			assert(counter1 == 1)
 			assert(counter2 == 1)
 
 			events.clear_all()
-			
+
 			events.trigger("test1")
 			events.trigger("test2")
 			assert(counter1 == 1)
 			assert(counter2 == 1)
-			
+
 			assert(events.is_empty("test1") == true)
 			assert(events.is_empty("test2") == true)
 		end)
