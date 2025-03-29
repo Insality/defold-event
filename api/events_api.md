@@ -25,12 +25,12 @@ local events = require("event.events")
 **events.subscribe**
 ---
 ```lua
-events.subscribe(name, callback, [callback_context])
+events.subscribe(event_id, callback, [callback_context])
 ```
 Subscribe a callback to the specified global event.
 
 - **Parameters:**
-  - `name`: The name of the global event to subscribe to.
+  - `event_id`: The id of the global event to subscribe to.
   - `callback`: The function to be executed when the global event occurs.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
@@ -45,12 +45,12 @@ end
 **events.unsubscribe**
 ---
 ```lua
-events.unsubscribe(name, callback, [callback_context])
+events.unsubscribe(event_id, callback, [callback_context])
 ```
 Remove a previously subscribed callback from the specified global event. The `callback_context` should be the same as the one used when subscribing the callback. If there is no `callback_context` provided, all callbacks with the same function will be unsubscribed.
 
 - **Parameters:**
-  - `name`: The name of the global event to unsubscribe from.
+  - `event_id`: The id of the global event to unsubscribe from.
   - `callback`: The callback function to unsubscribe.
   - `callback_context` (optional): The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function.
 
@@ -65,12 +65,12 @@ end
 **events.is_subscribed**
 ---
 ```lua
-events.is_subscribed(name, callback, [callback_context])
+events.is_subscribed(event_id, callback, [callback_context])
 ```
 Determine if a specific callback is currently subscribed to the specified global event.
 
 - **Parameters:**
-  - `name`: The name of the global event in question.
+  - `event_id`: The id of the global event in question.
   - `callback`: The callback function in question.
   - `callback_context` (optional): The first parameter to be passed to the callback function.
 
@@ -85,12 +85,12 @@ local is_subscribed = events.is_subscribed("on_game_over", callback, self)
 **events.trigger**
 ---
 ```lua
-events.trigger(name, ...)
+events.trigger(event_id, ...)
 ```
-Throw a global event with the specified name. All subscribed callbacks will be executed. Any parameters passed to `trigger` will be forwarded to the callbacks. The return value of the last executed callback is returned.
+Throw a global event with the specified id. All subscribed callbacks will be executed. Any parameters passed to `trigger` will be forwarded to the callbacks. The return value of the last executed callback is returned.
 
 - **Parameters:**
-  - `name`: The name of the global event to trigger.
+  - `event_id`: The id of the global event to trigger.
   - `...`: Any number of parameters to be passed to the subscribed callbacks.
 
 - **Usage Example:**
@@ -102,12 +102,12 @@ events.trigger("on_game_over", "arg1", "arg2")
 **events.is_empty**
 ---
 ```lua
-events.is_empty(name)
+events.is_empty(event_id)
 ```
 Check if the specified global event has no subscribed callbacks.
 
 - **Parameters:**
-  - `name`: The name of the global event to check.
+  - `event_id`: The id of the global event to check.
 
 - **Return Value:** `true` if the global event has no subscribed callbacks, `false` otherwise.
 
@@ -120,12 +120,12 @@ local is_empty = events.is_empty("on_game_over")
 **events.clear**
 ---
 ```lua
-events.clear(name)
+events.clear(event_id)
 ```
 Remove all callbacks subscribed to the specified global event.
 
 - **Parameters:**
-  - `name`: The name of the global event to clear.
+  - `event_id`: The id of the global event to clear.
 
 - **Usage Example:**
 
