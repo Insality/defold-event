@@ -14,11 +14,11 @@ local events = require("event.events")
 
 - [events.subscribe](#eventsubscribe)
 - [events.unsubscribe](#eventsunsubscribe)
-- [events.is_subscribed](#eventsissubscribed)
+- [events.is_subscribed](#eventsis_subscribed)
 - [events.trigger](#eventstrigger)
-- [events.is_empty](#eventsisempty)
+- [events.is_empty](#eventsis_empty)
 - [events.clear](#eventsclear)
-- [events.clear_all](#eventsclearall)
+- [events.clear_all](#eventsclear_all)
 
 ## API Reference
 
