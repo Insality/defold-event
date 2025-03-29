@@ -18,6 +18,7 @@
 - **Cross-Context**: You can subscribe to events from different scripts.
 - **Callback Management**: Attach callbacks to events with optional data.
 - **Global Events**: Create and subscribe global events that can be triggered from anywhere in your game.
+- **Defer**: Defer module provides a queuing mechanism for events. Unlike regular events which are immediately processed, deferred events are stored in a queue until they are explicitly handled by a subscriber
 - **Logging**: Set a logger to log event activities.
 - **Memory Allocations Tracker**: Detects if an event callback causes a huge memory allocations.
 
