@@ -356,6 +356,169 @@ local function test_defer()
 			-- Event should be removed
 			assert(#defer.get_events(TEST_EVENT) == 0)
 		end)
+
+		it("Should clear events with clear_events", function()
+			local test_data = "test_data"
+			local test_data2 = "test_data2"
+			local second_event = "second_event"
+
+			-- Push events
+			defer.push(TEST_EVENT, test_data)
+			defer.push(TEST_EVENT, test_data2)
+			defer.push(second_event, test_data)
+
+			-- Verify events exist
+			assert(#defer.get_events(TEST_EVENT) == 2)
+			assert(#defer.get_events(second_event) == 1)
+
+			-- Clear events for TEST_EVENT
+			defer.clear_events(TEST_EVENT)
+
+			-- Verify TEST_EVENT events are gone but second_event events remain
+			assert(#defer.get_events(TEST_EVENT) == 0)
+			assert(#defer.get_events(second_event) == 1)
+		end)
+
+		it("Should clear subscribers with clear_subscribers", function()
+			local test_data = "test_data"
+			local handler1_called = false
+			local handler2_called = false
+			local second_event = "second_event"
+
+			-- Subscribe handlers
+			defer.subscribe(TEST_EVENT, function(data)
+				handler1_called = true
+				return true
+			end)
+
+			defer.subscribe(second_event, function(data)
+				handler2_called = true
+				return true
+			end)
+
+			-- Verify handlers are called
+			defer.push(TEST_EVENT, test_data)
+			defer.push(second_event, test_data)
+
+			assert(handler1_called == true)
+			assert(handler2_called == true)
+
+			-- Reset flags and clear subscribers for TEST_EVENT
+			handler1_called = false
+			handler2_called = false
+			defer.clear_subscribers(TEST_EVENT)
+
+			-- Push events again
+			defer.push(TEST_EVENT, test_data)
+			defer.push(second_event, test_data)
+
+			-- Verify TEST_EVENT handler is not called but second_event handler is called
+			assert(handler1_called == false)
+			assert(handler2_called == true)
+
+			-- Verify TEST_EVENT event remains (since no subscribers handled it)
+			assert(#defer.get_events(TEST_EVENT) == 1)
+			assert(#defer.get_events(second_event) == 0)
+		end)
+
+		it("Should clear all events and subscribers with clear_all", function()
+			local test_data = "test_data"
+			local handler1_called = false
+			local handler2_called = false
+			local second_event = "second_event"
+
+			-- Subscribe handlers
+			defer.subscribe(TEST_EVENT, function(data)
+				handler1_called = true
+				return true
+			end)
+
+			defer.subscribe(second_event, function(data)
+				handler2_called = true
+				return true
+			end)
+
+			-- Push events
+			defer.push(TEST_EVENT, test_data)
+			defer.push(second_event, test_data)
+
+			-- Verify events are handled
+			assert(handler1_called == true)
+			assert(handler2_called == true)
+
+			-- Push events again
+			defer.push(TEST_EVENT, test_data)
+			defer.push(second_event, test_data)
+
+			-- Clear all events and subscribers
+			defer.clear_all()
+
+			-- Reset flags
+			handler1_called = false
+			handler2_called = false
+
+			-- Push events again
+			defer.push(TEST_EVENT, test_data)
+			defer.push(second_event, test_data)
+
+			-- Verify events remain (since no subscribers handled them)
+			assert(#defer.get_events(TEST_EVENT) == 1)
+			assert(#defer.get_events(second_event) == 1)
+
+			-- Verify no handlers were called
+			assert(handler1_called == false)
+			assert(handler2_called == false)
+		end)
+
+		it("Should not subscribe the same handler+context combination twice", function()
+			local test_data = "test_data"
+			local handler_called_count = 0
+			local context = { value = "context_value" }
+
+			local handler = function(self, data)
+				handler_called_count = handler_called_count + 1
+				return true
+			end
+
+			-- Subscribe the same handler+context twice
+			local first_subscribe_result = defer.subscribe(TEST_EVENT, handler, context)
+			local second_subscribe_result = defer.subscribe(TEST_EVENT, handler, context)
+
+			-- First subscription should succeed, second should fail
+			assert(first_subscribe_result == true)
+			assert(second_subscribe_result == false)
+
+			-- Push event
+			defer.push(TEST_EVENT, test_data)
+
+			-- Handler should be called exactly once
+			assert(handler_called_count == 1)
+		end)
+
+		it("Should process events with custom handler only", function()
+			local test_data = "test_data"
+			local subscriber_called = false
+			local process_handler_called = false
+
+			subscriber_called = false
+
+			-- Push another event
+			defer.push(TEST_EVENT, test_data)
+
+			-- Process with custom handler
+			defer.process(TEST_EVENT, function(data)
+				process_handler_called = true
+				assert(data == test_data)
+				return true
+			end)
+
+			-- Custom handler should be called, but not the subscriber
+			assert(process_handler_called == true)
+			assert(subscriber_called == false)
+
+			-- Event should be removed
+			assert(#defer.get_events(TEST_EVENT) == 0)
+		end)
 	end)
 end
 

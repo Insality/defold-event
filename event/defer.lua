@@ -163,12 +163,12 @@ end
 
 ---Clear all pending events for a specific event type.
 ---@param event_id string The unique identifier for the event type.
-function M.clear(event_id)
+function M.clear_events(event_id)
 	deferred_events[event_id] = nil
 end
 
 
----Clear all handlers for a specific event type.
+---Clear all subscribers for a specific event type.
 ---@param event_id string The unique identifier for the event type.
 function M.clear_subscribers(event_id)
 	handlers[event_id] = nil

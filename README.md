@@ -107,7 +107,7 @@ defer.subscribe(event_id, handler, [context])
 defer.unsubscribe(event_id, handler, [context])
 defer.process(event_id, handler, [context])
 defer.get_events(event_id)
-defer.clear(event_id)
+defer.clear_events(event_id)
 defer.clear_subscribers(event_id)
 defer.clear_all()
 ```
