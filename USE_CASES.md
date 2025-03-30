@@ -106,7 +106,7 @@ local on_sound_click = event.create()
 
 -- This callback params will be checked by Lua linter
 on_sound_click:subscribe(function(is_sound_on)
-	print("Sound is on: ", is_sound_on)
+    print("Sound is on: ", is_sound_on)
 end)
 
 -- Trigger params will be checked by Lua linter
@@ -146,8 +146,8 @@ local event = require("event.event")
 local global = require("global.data")
 
 function init(self)
-	global.gui_set_text = event.create(gui.set_text)
-	global.gui_get_node = event.create(gui.get_node)
+    global.gui_set_text = event.create(gui.set_text)
+    global.gui_get_node = event.create(gui.get_node)
 end
 ```
 
@@ -157,8 +157,8 @@ end
 local global = require("global.data")
 
 function init(self)
-	local node = global.gui_get_node("text")
-	global.gui_set_text(node, "Hello, World!")
+    local node = global.gui_get_node("text")
+    global.gui_set_text(node, "Hello, World!")
 end
 ```
 
@@ -180,3 +180,57 @@ print(my_event:subscribe(function() end)) -- true
 print(#my_event) -- 1
 print(my_event:is_empty()) -- false
 ```
+
+### 7. Using Defe module to communicate between script and gui_script
+
+Then you add a logic inside `init` function in `script` and `gui_script`, you can't ensure which one will be called first.
+
+With **Defer** module you can subscribe to the event in `script` and call it in `gui_script` or vice versa. The event will be proceed after the subscriber was initialized. So in case the trigger will be called before the subscriber, it will be queued and proceed after the subscriber will be initialized.
+
+Can be useful when you need to use `go` resource functions in `gui_script` or in other cases when you don't know is the subscriber already initialized or not but want to ensure that trigger will be proceed.
+
+```lua
+-- gui_script file
+local defer = require("event.defer")
+
+function on_get_atlas_path(self, data)
+    print("Atlas path: ", data)
+end
+
+function init(self)
+    defer.push("get_atlas_path", {
+        texture_name = gui.get_texture(self.node),
+        sender = msg.url(),
+    }, self.on_get_atlas_path, self)
+end
+```
+
+```lua
+-- script file
+local defer = require("event.defer")
+
+local function get_atlas_path(self, request)
+    local my_url = msg.url()
+    my_url.fragment = nil
+
+    local copy_url = msg.url(request.sender)
+    copy_url.fragment = nil
+
+    -- This check should works well
+    if my_url ~= copy_url then
+        return nil
+    end
+
+    return go.get(request.sender, "textures", { key = request.texture_name })
+end
+
+function init(self)
+    defer.subscribe("get_atlas_path", get_atlas_path, self)
+end
+
+function final(self)
+    defer.unsubscribe("get_atlas_path", get_atlas_path, self)
+end
+```
+
+
