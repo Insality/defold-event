@@ -10,7 +10,7 @@ local table_insert = table.insert
 local table_remove = table.remove
 
 ---Storage for all deferred events organized by event_id
----@type table<string, table<number, {data:any, on_handle:event}>>
+---@type table<string, table<number, { data:any, on_handle:event }>>
 local deferred_events = {}
 
 ---Storage for all event handlers organized by event_id
@@ -118,7 +118,7 @@ end
 ---Process all events of a specific type immediately. Subscribers will be not called in this function.
 ---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 ---@param event_id string The unique identifier for the event type.
----@param event_handler function Specific handler to process the events
+---@param event_handler function Specific handler to process the events. If this function returns true, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 function M.process(event_id, event_handler, context)
 	if not deferred_events[event_id] or #deferred_events[event_id] == 0 then

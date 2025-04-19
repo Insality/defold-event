@@ -1,0 +1,10 @@
+coverage:
+  status:
+    project:
+      default:
+        informational: true    # Disable the project status check
+    patch:
+      default:
+        informational: true    # Disable the patch status check
+
+comment: false  # Optional: Disable codecov comments on PRs

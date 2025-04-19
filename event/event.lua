@@ -84,7 +84,7 @@ end
 ---Allocate 64 bytes per instance.
 ---@param callback function|event|nil The function to be called when the event is triggered. Or the event instance to subscribe.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
----@return event A new event instance.
+---@return event event_instance A new event instance.
 ---@nodiscard
 function M.create(callback, callback_context)
 	local instance = setmetatable({}, EVENT_METATABLE)
