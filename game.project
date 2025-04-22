@@ -13,7 +13,7 @@ input_method = HiddenInputField
 
 [project]
 title = Defold Event
-version = 10
+version = 11
 publisher = Insality
 developer = Maksim Tuprikov, Insality
 dependencies#0 = https://github.com/Insality/defold-log/archive/refs/tags/2.zip
@@ -24,4 +24,4 @@ include_dirs = event
 
 [event]
 memory_threshold_warning = 0
-
+use_xpcall = 0

@@ -1,11 +1,5 @@
 return function()
-	local event = {}
-
 	describe("Event Context Manager", function()
-		before(function()
-			event = require("event.event")
-		end)
-
 		it("Basic Get/Set", function()
 			local current_instance = event_context_manager.get()
 			assert(current_instance)

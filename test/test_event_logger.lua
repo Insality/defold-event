@@ -1,9 +1,9 @@
 return function()
-	local event = {}
-
 	describe("Defold Event", function()
+		local event ---@type event
+
 		before(function()
-			event = require("event.event") --[[@as event]]
+			event = require("event.event")
 		end)
 
 		it("Event Set logger", function()
@@ -16,7 +16,6 @@ return function()
 				error = EMPTY_FUNCTION,
 			}
 			event.set_logger(logger)
-			assert(event.logger == logger)
 		end)
 
 		it("Should handle error in callback", function()
@@ -31,7 +30,6 @@ return function()
 				error = function() called = true end,
 			}
 			event.set_logger(logger)
-			assert(event.logger == logger)
 
 			local test_event = event.create()
 			local f = function() error("error") end

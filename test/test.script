@@ -6,6 +6,7 @@ function init(self)
 	deftest.add(require("test.test_events"))
 	deftest.add(require("test.test_event_context_manager"))
 	deftest.add(require("test.test_event_context_change"))
+	deftest.add(require("test.test_defer"))
 
 	-- Ensure all other script init has been processed before
 	-- Required for context changing tests

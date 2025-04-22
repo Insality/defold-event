@@ -1,7 +1,7 @@
 return function()
-	local event = {}
-
 	describe("Defold Event", function()
+		local event ---@type event
+
 		before(function()
 			event = require("event.event")
 		end)
@@ -218,12 +218,13 @@ return function()
 			collectgarbage("stop")
 
 			local current_memory = collectgarbage("count")
-			for _ = 1, 10000 do
-				event.create()
+			local events = {}
+			for _ = 1, 1000 do
+				table.insert(events, event.create())
 			end
 
 			local new_memory = collectgarbage("count")
-			local memory_per_event = ((new_memory - current_memory) * 1024) / 10000
+			local memory_per_event = ((new_memory - current_memory) * 1024) / 1000
 			print("Event instance should be around 64 bytes, but on CI with code debug coverage it will be much more")
 			print("Memory allocations per instance (Bytes): ", memory_per_event)
 
@@ -242,6 +243,24 @@ return function()
 			new_memory = collectgarbage("count") - functions_memory
 			local memory_per_subscribe = ((new_memory - current_memory) * 1024) / 1000
 			print("Memory allocations per subscribe (Bytes): ", memory_per_subscribe)
+
+			collectgarbage("restart")
+		end)
+
+		it("Print memory allocations per trigger with 1 subscriber", function()
+			collectgarbage("stop")
+
+			local e = event.create()
+			e:subscribe(function(a, b, c) end)
+
+			local current_memory = collectgarbage("count")
+			for _ = 1, 1000 do
+				e:trigger(1, 2, 3)
+			end
+
+			local new_memory = collectgarbage("count")
+			local memory_per_trigger = ((new_memory - current_memory) * 1024) / 1000
+			print("Memory allocations per trigger with 1 subscriber (Bytes): ", memory_per_trigger)
 
 			collectgarbage("restart")
 		end)

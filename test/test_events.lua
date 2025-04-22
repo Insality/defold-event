@@ -70,16 +70,28 @@ return function()
 		end)
 
 		it("Events Clear All", function()
-			local counter = 0
-			local f = function() counter = counter + 1 end
+			local counter1 = 0
+			local counter2 = 0
+			local f1 = function() counter1 = counter1 + 1 end
+			local f2 = function() counter2 = counter2 + 1 end
 
-			events.subscribe("test", f)
-			events.trigger("test")
-			assert(counter == 1)
+			events.subscribe("test1", f1)
+			events.subscribe("test2", f2)
 
-			events.clear("test")
-			events.trigger("test")
-			assert(counter == 1)
+			events.trigger("test1")
+			events.trigger("test2")
+			assert(counter1 == 1)
+			assert(counter2 == 1)
+
+			events.clear_all()
+
+			events.trigger("test1")
+			events.trigger("test2")
+			assert(counter1 == 1)
+			assert(counter2 == 1)
+
+			assert(events.is_empty("test1") == true)
+			assert(events.is_empty("test2") == true)
 		end)
 
 		it("Events is_subscribed", function()
