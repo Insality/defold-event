@@ -4,6 +4,7 @@ local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_t
 ---Xpcall is used to get the exact error place, but calls with xpcall are slower and use more memory.
 ---Used mostly for debug
 local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
+local USE_PCALL = sys.get_config_int("event.use_pcall", 1) == 1
 
 ---Array of next items: { callback, callback_context, script_context }
 ---@class event.callback_data: table
@@ -243,7 +244,7 @@ function M:trigger(...)
 		-- Call callback
 		local ok, result_or_error
 		if event_callback_context then
-			if not USE_XPCALL then
+			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
 			else
 				-- Create a table with the context as the first element
@@ -257,14 +258,18 @@ function M:trigger(...)
 					args[i+1] = select(i, ...)
 				end
 
-				ok, result_or_error = xpcall(function()
-					return event_callback(unpack(args))
-				end, event_error_handler)
+				if USE_XPCALL then
+					ok, result_or_error = xpcall(function()
+						return event_callback(unpack(args))
+					end, event_error_handler)
+				else
+					event_callback(unpack(args))
+				end
 			end
 		else
-			if not USE_XPCALL then
+			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, ...)
-			else
+			elseif USE_XPCALL then
 				-- Create a new args table with the proper count
 				local args = {}
 				local n = select("#", ...)
@@ -277,6 +282,8 @@ function M:trigger(...)
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args))
 				end, event_error_handler)
+			else
+				event_callback(...)
 			end
 		end
 
@@ -299,7 +306,7 @@ function M:trigger(...)
 		end
 
 		-- Handle errors
-		if not ok then
+		if (USE_PCALL or USE_XPCALL) and not ok then
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
 			logger:error("Error in trigger event: " .. place, result_or_error)
