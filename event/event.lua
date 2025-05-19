@@ -263,7 +263,8 @@ function M:trigger(...)
 						return event_callback(unpack(args))
 					end, event_error_handler)
 				else
-					event_callback(unpack(args))
+					result_or_error = event_callback(unpack(args))
+					ok = true
 				end
 			end
 		else
@@ -283,7 +284,8 @@ function M:trigger(...)
 					return event_callback(unpack(args))
 				end, event_error_handler)
 			else
-				event_callback(...)
+				result_or_error = event_callback(...)
+				ok = true
 			end
 		end
 
