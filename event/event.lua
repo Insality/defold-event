@@ -1,10 +1,5 @@
-local IS_DEBUG = sys.get_engine_info().is_debug
-local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
-
----Xpcall is used to get the exact error place, but calls with xpcall are slower and use more memory.
----Used mostly for debug
-local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 local USE_PCALL = sys.get_config_int("event.use_pcall", 1) == 1
+local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 
 ---Array of next items: { callback, callback_context, script_context }
 ---@class event.callback_data: table
@@ -24,7 +19,6 @@ local M = {}
 
 -- Forward declaration
 local EVENT_METATABLE
-local MEMORY_BEFORE_VALUE
 
 -- Local versions
 local set_context = event_context_manager.set
@@ -67,15 +61,15 @@ function M.set_logger(logger_instance)
 end
 
 
----Set the threshold for logging warnings about memory allocations in event callbacks.
----Works only in debug builds. The threshold is in kilobytes.
----If the callback causes a memory allocation greater than the threshold, a warning will be logged.
----@param value number Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
-function M.set_memory_threshold(value)
-	if not IS_DEBUG then
-		return
+---Check if the table is an event instance.
+---@param value any
+---@return boolean is_event
+function M.is_event(value)
+	if type(value) ~= "table" then
+		return false
 	end
-	MEMORY_THRESHOLD_WARNING = value
+
+	return getmetatable(value) == EVENT_METATABLE
 end
 
 
@@ -126,12 +120,6 @@ function M:subscribe(callback, callback_context)
 	if self:is_subscribed(callback, callback_context) then
 		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
-	end
-
-	if MEMORY_THRESHOLD_WARNING > 0 then
-		self._mapping = self._mapping or {}
-		local caller_info = debug.getinfo(2)
-		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
 	table_insert(self, { callback, callback_context, get_context() })
@@ -236,11 +224,6 @@ function M:trigger(...)
 			set_context(event_script_context)
 		end
 
-		-- Check memory allocation
-		if MEMORY_THRESHOLD_WARNING > 0 then
-			MEMORY_BEFORE_VALUE = collectgarbage("count")
-		end
-
 		-- Call callback
 		local ok, result_or_error
 		if event_callback_context then
@@ -286,19 +269,6 @@ function M:trigger(...)
 			else
 				result_or_error = event_callback(...)
 				ok = true
-			end
-		end
-
-		-- Check memory allocation
-		if MEMORY_THRESHOLD_WARNING > 0 then
-			local memory_after = collectgarbage("count")
-			if memory_after - MEMORY_BEFORE_VALUE > MEMORY_THRESHOLD_WARNING then
-				local caller_info = debug.getinfo(2)
-				logger:warn("Detected huge memory allocation in event", {
-					event = self._mapping and self._mapping[event_callback],
-					trigger = caller_info.short_src .. ":" .. caller_info.currentline,
-					memory = memory_after - MEMORY_BEFORE_VALUE,
-				})
 			end
 		end
 
