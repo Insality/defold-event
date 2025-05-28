@@ -1,4 +1,3 @@
-
 ## Use Cases
 
 This section illustrates practical examples of how to use the Event module in your Defold game development projects.
@@ -181,24 +180,24 @@ print(#my_event) -- 1
 print(my_event:is_empty()) -- false
 ```
 
-### 7. Using Defe module to communicate between script and gui_script
+### 7. Using Defers module to communicate between script and gui_script
 
 Then you add a logic inside `init` function in `script` and `gui_script`, you can't ensure which one will be called first.
 
-With **Defer** module you can subscribe to the event in `script` and call it in `gui_script` or vice versa. The event will be proceed after the subscriber was initialized. So in case the trigger will be called before the subscriber, it will be queued and proceed after the subscriber will be initialized.
+With **Defers** module you can subscribe to the event in `script` and call it in `gui_script` or vice versa. The event will be proceed after the subscriber was initialized. So in case the trigger will be called before the subscriber, it will be queued and proceed after the subscriber will be initialized.
 
 Can be useful when you need to use `go` resource functions in `gui_script` or in other cases when you don't know is the subscriber already initialized or not but want to ensure that trigger will be proceed.
 
 ```lua
 -- gui_script file
-local defer = require("event.defer")
+local defers = require("event.defers")
 
 function on_get_atlas_path(self, data)
     print("Atlas path: ", data)
 end
 
 function init(self)
-    defer.push("get_atlas_path", {
+    defers.push("get_atlas_path", {
         texture_name = gui.get_texture(self.node),
         sender = msg.url(),
     }, self.on_get_atlas_path, self)
@@ -207,7 +206,7 @@ end
 
 ```lua
 -- script file
-local defer = require("event.defer")
+local defers = require("event.defers")
 
 local function get_atlas_path(self, request)
     local my_url = msg.url()
@@ -225,11 +224,13 @@ local function get_atlas_path(self, request)
 end
 
 function init(self)
-    defer.subscribe("get_atlas_path", get_atlas_path, self)
+    defers.subscribe("get_atlas_path", get_atlas_path, self)
 end
 
 function final(self)
-    defer.unsubscribe("get_atlas_path", get_atlas_path, self)
+    defers.unsubscribe("get_atlas_path", get_atlas_path, self)
+end
+```
 end
 ```
 

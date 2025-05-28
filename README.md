@@ -18,9 +18,10 @@
 - **Cross-Context**: You can subscribe to events from different scripts.
 - **Callback Management**: Attach callbacks to events with optional data.
 - **Global Events**: Create and subscribe global events that can be triggered from anywhere in your game.
-- **Defer**: Defer module provides a queuing mechanism for events. Unlike regular events which are immediately processed, deferred events are stored in a queue until they are explicitly handled by a subscriber
+- **Queue**: Create queue instances to queue events until they are handled by subscribers. Unlike regular events which are immediately processed, queued events are stored in a queue until they are explicitly handled.
+- **Global Queues**: Create and subscribe global queue instances that can be accessed from anywhere in your game.
+- **Promise**: A+ Promise specification implementation built on top of the event system for asynchronous operations and chaining.
 - **Logging**: Set a logger to log event activities.
-- **Memory Allocations Tracker**: Detects if an event callback causes a huge memory allocations.
 
 
 ## Setup
@@ -38,30 +39,22 @@ https://github.com/Insality/defold-event/archive/refs/tags/11.zip
 ### Library Size
 
 > **Note:** The library size is calculated based on the build report per platform
-> Events and Defer module will be included in the build only if you use them.
+> Events, Queues, and Promise modules will be included in the build only if you use them.
 
-| Platform         | Event Size   | Events Size   | Defer Size   |
-| ---------------- | ------------ | ------------- | ------------ |
-| HTML5            | **1.85 KB**  | **0.42 KB**   | **1.07 KB**  |
-| Desktop / Mobile | **3.14 KB**  | **0.71 KB**   | **1.93 KB**  |
+| Platform         | Event Size   | Events Size   | Queue Size   | Queues Size  | Promise Size |
+| ---------------- | ------------ | ------------- | ------------ | ------------ | ------------ |
+| HTML5            | **1.68 KB**  | **0.41 KB**   | **1.11 KB**  | **0.49 KB**  | **1.74 KB**  |
+| Desktop / Mobile | **2.88 KB**  | **0.71 KB**   | **2.03 KB**  | **0.97 KB**  | **3.22 KB**  |
 
 
-### Memory Allocation Tracking
+### Using `pcall` within event callback
 
-**Enabling in `game.project`**
-
-To monitor memory allocations for event callbacks, add to your `game.project`:
+The `pcall` function is enabled by default. It is used to handle errors within event callback. If you want to disable it, you can set the `use_pcall` option to `0` in the `game.project` file:
 
 ```ini
 [event]
-memory_threshold_warning = 50
+use_pcall = 0
 ```
-
-- `memory_threshold_warning`: Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
-
-The event memory tracking is not 100% accurate and is used to check unexpected huge leaks in the event callbacks. The memory tracking applied additional memory allocations for tracking purposes.
-
-Memory allocation tracking is turned off in release builds, regardless of the `game.project` settings.
 
 
 ### Using `xpcall` to get detailed tracebacks
@@ -83,7 +76,6 @@ In this case, you will get a detailed traceback with the exact line of the error
 ```lua
 local event = require("event.event")
 event.set_logger(logger)
-event.set_memory_threshold(threshold)
 
 local event_instance = event.create([callback], [callback_context])
 event_instance:subscribe(callback, [callback_context])
@@ -102,21 +94,55 @@ events.is_empty(event_id)
 events.clear(event_id)
 events.clear_all()
 
-local defer = require("event.defer")
-defer.push(event_id, data, [on_handle], [context])
-defer.subscribe(event_id, handler, [context])
-defer.unsubscribe(event_id, handler, [context])
-defer.process(event_id, handler, [context])
-defer.get_events(event_id)
-defer.clear_events(event_id)
-defer.clear_subscribers(event_id)
-defer.clear_all()
+local queue = require("event.queue")
+local queue_instance = queue.create([handler], [handler_context])
+queue_instance:push(data, [on_handle], [context])
+queue_instance:subscribe(handler, [context])
+queue_instance:unsubscribe(handler, [context])
+queue_instance:process(event_handler, [context])
+queue_instance:get_events()
+queue_instance:clear_events()
+queue_instance:clear_subscribers()
+queue_instance:is_empty()
+queue_instance:has_subscribers()
+queue_instance:clear()
+
+local queues = require("event.queues")
+queues.push(queue_id, data, [on_handle], [context])
+queues.subscribe(queue_id, handler, [context])
+queues.unsubscribe(queue_id, handler, [context])
+queues.process(queue_id, event_handler, [context])
+queues.get_events(queue_id)
+queues.clear_events(queue_id)
+queues.clear_subscribers(queue_id)
+queues.is_empty(queue_id)
+queues.has_subscribers(queue_id)
+queues.clear(queue_id)
+queues.clear_all()
+
+local promise = require("event.promise")
+local promise_instance = promise.create([executor])
+promise_instance:next([on_resolved], [on_rejected])
+promise_instance:catch(on_rejected)
+promise_instance:finally(on_finally)
+promise_instance:is_pending()
+promise_instance:is_resolved()
+promise_instance:is_rejected()
+promise_instance:is_finished()
+
+-- Create specific promise instances
+promise.resolved(value)
+promise.rejected(reason)
+promise.all(promises)
+promise.race(promises)
 ```
 
 For detailed API documentation, please refer to:
 - [Event API Reference](api/event_api.md)
 - [Global Events API Reference](api/events_api.md)
-- [Defer API Reference](api/defer_api.md)
+- [Queue API Reference](api/queue_api.md)
+- [Global Queues API Reference](api/queues_api.md)
+- [Promise API Reference](api/promise_api.md)
 
 ## Use Cases
 
@@ -165,7 +191,6 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Fix validate context in `event_context_manager.set`
 	- Better error messages in case of invalid context
 	- Refactor `event_context_manager`
-	- Add tests for event_context_manager
 	- Add `event.set_memory_threshold` function. Works only in debug builds.
 
 ### **V5**
@@ -198,6 +223,26 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Add `use_xpcall` option to get detailed tracebacks in case of an error in the event callback.
 	- Moved detailed API documentation to separate files
 	- Remove annotations files. Now all annotations directly in the code.
+
+### **V12**
+	- **BREAKING CHANGE**: Refactored defer system to be instance-based like event system
+	- `defer.lua` now creates defer instances with `defer.create()` instead of global event_id system
+	- Added `defers.lua` for global defer operations (replaces old defer.lua functionality)
+	- **IMPORTANT**: Fixed event processing order from LIFO to FIFO (events now processed in correct queue order)
+	- Updated all tests and documentation to reflect new API structure
+	- Maintains backward compatibility through global defers module
+
+### **V13**
+	- **BREAKING CHANGE**: Renamed `defer` module to `queue` for better clarity
+	- `queue.lua` replaces `defer.lua` with same functionality but clearer naming
+	- `queues.lua` replaces `defers.lua` for global queue operations
+	- Added **Promise** module with A+ Promise specification compliance
+	- Promise module built on top of event system for seamless integration
+	- Support for Promise chaining, error handling, and utility methods (all, race)
+	- Events can be used as Promise executors and handlers
+	- Updated all documentation and tests to reflect new naming
+	- Removed memory allocation tracking feature
+	- **Migration**: Replace `require("event.defer")` with `require("event.queue")` and `require("event.defers")` with `require("event.queues")`
 </details>
 
 ## ❤️ Support project ❤️
