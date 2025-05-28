@@ -9,7 +9,7 @@
 
 # Event
 
-**Event** - is a single file Lua module for the [Defold](https://defold.com/) game engine. It provides a simple and efficient way to manage events and callbacks in your game.
+**Event** is a comprehensive event-driven toolkit for the [Defold](https://defold.com/) game engine that enables decoupled communication between different parts of your code through a publish-subscribe pattern. It provides events, queues, promises, and global messaging systems to create clean, maintainable game architectures with efficient asynchronous operations.
 
 
 ## Features
