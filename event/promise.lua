@@ -1,18 +1,13 @@
 local event = require("event.event")
 
----Promise states
-local PROMISE_STATE = {
-	PENDING = "pending",
-	RESOLVED = "resolved",
-	REJECTED = "rejected"
-}
+---@alias promise.state "pending" | "resolved" | "rejected"
 
----The Promise module, used to create and manage promises. Implements A+ Promise specification.
+---The Promise module, used to create and manage promises.
 ---A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 ---@overload fun(value:any, reason:any|nil): nil Call the promise to resolve it with value or reject it with reason if value is nil
 ---@class promise
----@field state string Current state of the promise (pending, resolved, rejected)
----@field value any The resolved val ue or rejection reason
+---@field state promise.state Current state of the promise (pending, resolved, rejected)
+---@field value any The resolved value or rejection reason
 ---@field private resolve_handlers event Event for resolve handlers
 ---@field private reject_handlers event Event for rejection handlers
 local M = {}
@@ -21,67 +16,13 @@ local M = {}
 local PROMISE_METATABLE
 
 
----Check if a value is a promise object
----@param value any The value to check
----@return boolean is_promise True if the value is a promise
-function M.is_promise(value)
-	if type(value) ~= "table" then
-		return false
-	end
-
-	return getmetatable(value) == PROMISE_METATABLE
-end
-
-
----Resolve a promise with a value or another promise
----@param target_promise promise The promise to resolve
----@param value any The value or promise to resolve with
-local function resolve_promise(target_promise, value)
-	if not M.is_promise(value) then
-		target_promise:_resolve(value)
-		return
-	end
-
-	if value:is_resolved() then
-		target_promise:_resolve(value.value)
-	elseif value:is_rejected() then
-		target_promise:_reject(value.value)
-	else
-		value:next(function(val)
-			target_promise:_resolve(val)
-		end, function(reason)
-			target_promise:_reject(reason)
-		end)
-	end
-end
-
-
----Handle the result of a callback and resolve the target promise accordingly
----@param target_promise promise The promise to resolve
----@param callback function|event|nil The callback to execute (function or event)
----@param value any The value to pass to the callback
----@param is_rejection boolean Whether this is handling a rejection
-local function handle_callback_result(target_promise, callback, value, is_rejection)
-	if not callback then
-		if is_rejection then
-			target_promise:_reject(value)
-		else
-			target_promise:_resolve(value)
-		end
-		return
-	end
-
-	resolve_promise(target_promise, callback(value))
-end
-
-
 ---Generate a new promise instance. This instance represents a single asynchronous operation.
 ---The executor function is called immediately with resolve and reject functions.
 ---@param executor function|event|nil The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
 ---@return promise promise_instance A new promise instance.
 function M.create(executor)
 	local self = setmetatable({
-		state = PROMISE_STATE.PENDING,
+		state = "pending",
 		value = nil,
 		resolve_handlers = event.create(),
 		reject_handlers = event.create()
@@ -199,6 +140,60 @@ function M.race(promises)
 end
 
 
+---Check if a value is a promise object
+---@param value any The value to check
+---@return boolean is_promise True if the value is a promise
+function M.is_promise(value)
+	if type(value) ~= "table" then
+		return false
+	end
+
+	return getmetatable(value) == PROMISE_METATABLE
+end
+
+
+---Resolve a promise with a value or another promise
+---@param target_promise promise The promise to resolve
+---@param value any The value or promise to resolve with
+local function resolve_promise(target_promise, value)
+	if not M.is_promise(value) then
+		target_promise:_resolve(value)
+		return
+	end
+
+	if value:is_resolved() then
+		target_promise:_resolve(value.value)
+	elseif value:is_rejected() then
+		target_promise:_reject(value.value)
+	else
+		value:next(function(val)
+			target_promise:_resolve(val)
+		end, function(reason)
+			target_promise:_reject(reason)
+		end)
+	end
+end
+
+
+---Handle the result of a callback and resolve the target promise accordingly
+---@param target_promise promise The promise to resolve
+---@param callback function|event|nil The callback to execute (function or event)
+---@param value any The value to pass to the callback
+---@param is_rejection boolean Whether this is handling a rejection
+local function handle_callback_result(target_promise, callback, value, is_rejection)
+	if not callback then
+		if is_rejection then
+			target_promise:_reject(value)
+		else
+			target_promise:_resolve(value)
+		end
+		return
+	end
+
+	resolve_promise(target_promise, callback(value))
+end
+
+
 ---Attach resolve and reject handlers to the promise.
 ---Returns a new promise that will be resolved or rejected based on the handlers' return values.
 ---@param on_resolved function|event|nil Handler called when promise is resolved. If nil, value passes through.
@@ -257,28 +252,28 @@ end
 ---Check if the promise is in pending state.
 ---@return boolean is_pending True if the promise is pending.
 function M:is_pending()
-	return self.state == PROMISE_STATE.PENDING
+	return self.state == "pending"
 end
 
 
 ---Check if the promise is in resolved state.
 ---@return boolean is_resolved True if the promise is resolved.
 function M:is_resolved()
-	return self.state == PROMISE_STATE.RESOLVED
+	return self.state == "resolved"
 end
 
 
 ---Check if the promise is in rejected state.
 ---@return boolean is_rejected True if the promise is rejected.
 function M:is_rejected()
-	return self.state == PROMISE_STATE.REJECTED
+	return self.state == "rejected"
 end
 
 
 ---Check if the promise is finished (either resolved or rejected).
 ---@return boolean is_finished True if the promise is finished.
 function M:is_finished()
-	return self.state ~= PROMISE_STATE.PENDING
+	return self.state ~= "pending"
 end
 
 
@@ -302,10 +297,10 @@ end
 
 
 ---Settle the promise with the given state and value
----@param state string The new state (resolved or rejected)
+---@param state promise.state The new state (resolved or rejected)
 ---@param value any The value or reason
 local function settle_promise(self, state, value)
-	if self.state ~= PROMISE_STATE.PENDING then
+	if self.state ~= "pending" then
 		return
 	end
 
@@ -313,7 +308,7 @@ local function settle_promise(self, state, value)
 	self.value = value
 
 	-- Trigger appropriate handlers
-	if state == PROMISE_STATE.RESOLVED then
+	if state == "resolved" then
 		self.resolve_handlers:trigger(value)
 	else
 		self.reject_handlers:trigger(value)
@@ -329,7 +324,7 @@ end
 ---@param value any The value to resolve with.
 ---@package
 function M:_resolve(value)
-	if self.state ~= PROMISE_STATE.PENDING then
+	if self.state ~= "pending" then
 		return
 	end
 
@@ -339,7 +334,7 @@ function M:_resolve(value)
 		return
 	end
 
-	settle_promise(self, PROMISE_STATE.RESOLVED, value)
+	settle_promise(self, "resolved", value)
 end
 
 
@@ -347,7 +342,7 @@ end
 ---@param reason any The reason to reject with.
 ---@package
 function M:_reject(reason)
-	settle_promise(self, PROMISE_STATE.REJECTED, reason)
+	settle_promise(self, "rejected", reason)
 end
 
 

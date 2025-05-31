@@ -20,7 +20,7 @@
 - **Global Events**: Create and subscribe global events that can be triggered from anywhere in your game.
 - **Queue**: Create queue instances to queue events until they are handled by subscribers. Unlike regular events which are immediately processed, queued events are stored in a queue until they are explicitly handled.
 - **Global Queues**: Create and subscribe global queue instances that can be accessed from anywhere in your game.
-- **Promise**: A+ Promise specification implementation built on top of the event system for asynchronous operations and chaining.
+- **Promise**: A promise implementation built on top of the event system for asynchronous operations and chaining.
 - **Logging**: Set a logger to log event activities.
 
 
@@ -225,18 +225,15 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Remove annotations files. Now all annotations directly in the code.
 
 ### **V12**
-	- **BREAKING CHANGE**: Refactored defer system to be instance-based like event system
-	- `defer.lua` now creates defer instances with `defer.create()` instead of global event_id system
-	- Added `defers.lua` for global defer operations (replaces old defer.lua functionality)
+	- **BREAKING CHANGE**: Refactored defer system to be instance-based like event system. `defer.lua` now creates defer instances with `defer.create()` instead of global event_id system
+	- **BREAKING CHANGE**: Renamed `defer` module to `queue` for better clarity
+	- Added `queues.lua` for global queues operations (replaces old defer.lua functionality)
 	- **IMPORTANT**: Fixed event processing order from LIFO to FIFO (events now processed in correct queue order)
 	- Updated all tests and documentation to reflect new API structure
-	- Maintains backward compatibility through global defers module
-
-### **V13**
-	- **BREAKING CHANGE**: Renamed `defer` module to `queue` for better clarity
+	- Maintains backward compatibility through global queues module
 	- `queue.lua` replaces `defer.lua` with same functionality but clearer naming
 	- `queues.lua` replaces `defers.lua` for global queue operations
-	- Added **Promise** module with A+ Promise specification compliance
+	- Added **Promise** module
 	- Promise module built on top of event system for seamless integration
 	- Support for Promise chaining, error handling, and utility methods (all, race)
 	- Events can be used as Promise executors and handlers

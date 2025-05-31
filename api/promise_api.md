@@ -2,7 +2,7 @@
 
 > at /event/promise.lua
 
-The Promise module, used to create and manage promises. Implements A+ Promise specification.
+The Promise module, used to create and manage promises.
 A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 
 ## Functions
