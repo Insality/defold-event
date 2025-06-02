@@ -226,20 +226,13 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 ### **V12**
 	- **BREAKING CHANGE**: Refactored defer system to be instance-based like event system. `defer.lua` now creates defer instances with `defer.create()` instead of global event_id system
-	- **BREAKING CHANGE**: Renamed `defer` module to `queue` for better clarity
+	- **BREAKING CHANGE**: Renamed `defer` module to `queues` for better clarity
+	- **BREAKING CHANGE**: Removed memory allocation tracking feature
 	- Added `queues.lua` for global queues operations (replaces old defer.lua functionality)
-	- **IMPORTANT**: Fixed event processing order from LIFO to FIFO (events now processed in correct queue order)
-	- Updated all tests and documentation to reflect new API structure
-	- Maintains backward compatibility through global queues module
-	- `queue.lua` replaces `defer.lua` with same functionality but clearer naming
-	- `queues.lua` replaces `defers.lua` for global queue operations
-	- Added **Promise** module
-	- Promise module built on top of event system for seamless integration
-	- Support for Promise chaining, error handling, and utility methods (all, race)
-	- Events can be used as Promise executors and handlers
-	- Updated all documentation and tests to reflect new naming
-	- Removed memory allocation tracking feature
-	- **Migration**: Replace `require("event.defer")` with `require("event.queue")` and `require("event.defers")` with `require("event.queues")`
+	- Added **Promise** module on top of event module
+	- Fixed event processing order from LIFO to FIFO (events now processed in correct queue order)
+	- Add `use_pcall` option to disable `pcall` in event callback. Use pcall is a default behavior.
+	- **Migration**: Replace `require("event.defer")` with `require("event.queues")`
 </details>
 
 ## ❤️ Support project ❤️

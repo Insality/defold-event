@@ -45,11 +45,7 @@ end
 ---@param value any The value to check
 ---@return boolean is_queue True if the value is a queue
 function M.is_queue(value)
-	if type(value) ~= "table" then
-		return false
-	end
-
-	return getmetatable(value) == QUEUE_METATABLE
+	return type(value) == "table" and getmetatable(value) == QUEUE_METATABLE
 end
 
 

@@ -23,5 +23,4 @@ dependencies#1 = https://github.com/britzl/deftest/archive/refs/tags/2.8.0.zip
 include_dirs = event
 
 [event]
-memory_threshold_warning = 0
 use_xpcall = 0

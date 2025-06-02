@@ -65,11 +65,7 @@ end
 ---@param value any
 ---@return boolean is_event
 function M.is_event(value)
-	if type(value) ~= "table" then
-		return false
-	end
-
-	return getmetatable(value) == EVENT_METATABLE
+	return type(value) == "table" and getmetatable(value) == EVENT_METATABLE
 end
 
 
@@ -112,7 +108,7 @@ function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	-- If callback is an event, subscribe to it and return
-	if type(callback) == "table" and callback.trigger then
+	if M.is_event(callback) then
 		return self:subscribe(callback.trigger, callback)
 	end
 
@@ -138,7 +134,7 @@ function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	-- If callback is an event, unsubscribe from it and return
-	if type(callback) == "table" and callback.trigger then
+	if M.is_event(callback) then
 		return self:unsubscribe(callback.trigger, callback)
 	end
 
@@ -170,7 +166,7 @@ function M:is_subscribed(callback, callback_context)
 	end
 
 	-- If callback is an event, check if it is subscribed
-	if type(callback) == "table" and callback.trigger then
+	if M.is_event(callback) then
 		return self:is_subscribed(callback.trigger, callback)
 	end
 

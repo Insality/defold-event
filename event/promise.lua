@@ -144,11 +144,7 @@ end
 ---@param value any The value to check
 ---@return boolean is_promise True if the value is a promise
 function M.is_promise(value)
-	if type(value) ~= "table" then
-		return false
-	end
-
-	return getmetatable(value) == PROMISE_METATABLE
+	return type(value) == "table" and getmetatable(value) == PROMISE_METATABLE
 end
 
 
