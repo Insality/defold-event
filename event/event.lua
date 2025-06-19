@@ -1,4 +1,4 @@
-local USE_PCALL = sys.get_config_int("event.use_pcall", 1) == 1
+local USE_PCALL = sys.get_config_int("event.use_pcall", 0) == 1
 local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 
 ---Array of next items: { callback, callback_context, script_context }

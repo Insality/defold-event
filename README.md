@@ -53,13 +53,13 @@ The `pcall` function is enabled by default. It is used to handle errors within e
 
 ```ini
 [event]
-use_pcall = 0
+use_pcall = 1
 ```
 
 
 ### Using `xpcall` to get detailed tracebacks
 
-You can use `xpcall` to get detailed tracebacks in case of an error in the event callback. Usually, in case of an error, you will get a line with `event.trigger` and traceback ended in event module. To get a detailed traceback to help with debug, you can use `use_xpcall`:
+You can use `xpcall` to get detailed tracebacks in case of an error in the event callback. In case of just pcall, you will get a line with `event.trigger` and traceback ended in event module. To get a detailed traceback to help with debug, you can use `use_xpcall`:
 
 ```ini
 [event]
@@ -225,14 +225,17 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Remove annotations files. Now all annotations directly in the code.
 
 ### **V12**
+	- **MIGRATION**: Replace `require("event.defer")` with `require("event.queues")`
+	- **MIGRATION**: Default `use_pcall` is now `0`, but before it was `1`. If something is broken, try to set it to `1`.
+
 	- **BREAKING CHANGE**: Refactored defer system to be instance-based like event system. `defer.lua` now creates defer instances with `defer.create()` instead of global event_id system
 	- **BREAKING CHANGE**: Renamed `defer` module to `queues` for better clarity
 	- **BREAKING CHANGE**: Removed memory allocation tracking feature
 	- Added `queues.lua` for global queues operations (replaces old defer.lua functionality)
 	- Added **Promise** module on top of event module
-	- Fixed event processing order from LIFO to FIFO (events now processed in correct queue order)
-	- Add `use_pcall` option to disable `pcall` in event callback. Use pcall is a default behavior.
-	- **Migration**: Replace `require("event.defer")` with `require("event.queues")`
+	- Fixed queue event processing order from LIFO to FIFO (events now processed in correct queue order)
+	- Add `use_pcall` option to disable `pcall` in event callback. Now default is `pcall` is disabled.
+
 </details>
 
 ## ❤️ Support project ❤️
