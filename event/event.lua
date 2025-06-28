@@ -1,8 +1,4 @@
-local IS_DEBUG = sys.get_engine_info().is_debug
-local MEMORY_THRESHOLD_WARNING = IS_DEBUG and sys.get_config_int("event.memory_threshold_warning", 0) or 0
-
----Xpcall is used to get the exact error place, but calls with xpcall are slower and use more memory.
----Used mostly for debug
+local USE_PCALL = sys.get_config_int("event.use_pcall", 0) == 1
 local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
 
 ---Array of next items: { callback, callback_context, script_context }
@@ -23,7 +19,6 @@ local M = {}
 
 -- Forward declaration
 local EVENT_METATABLE
-local MEMORY_BEFORE_VALUE
 
 -- Local versions
 local set_context = event_context_manager.set
@@ -66,15 +61,19 @@ function M.set_logger(logger_instance)
 end
 
 
----Set the threshold for logging warnings about memory allocations in event callbacks.
----Works only in debug builds. The threshold is in kilobytes.
----If the callback causes a memory allocation greater than the threshold, a warning will be logged.
----@param value number Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
-function M.set_memory_threshold(value)
-	if not IS_DEBUG then
-		return
-	end
-	MEMORY_THRESHOLD_WARNING = value
+---Set the mode of the event module.
+---@param mode "pcall" | "xpcall" | "none" The mode to set.
+function M.set_mode(mode)
+	USE_PCALL = mode == "pcall"
+	USE_XPCALL = mode == "xpcall"
+end
+
+
+---Check if the table is an event instance.
+---@param value any
+---@return boolean is_event
+function M.is_event(value)
+	return type(value) == "table" and getmetatable(value) == EVENT_METATABLE
 end
 
 
@@ -117,7 +116,7 @@ function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	-- If callback is an event, subscribe to it and return
-	if type(callback) == "table" and callback.trigger then
+	if M.is_event(callback) then
 		return self:subscribe(callback.trigger, callback)
 	end
 
@@ -125,12 +124,6 @@ function M:subscribe(callback, callback_context)
 	if self:is_subscribed(callback, callback_context) then
 		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
-	end
-
-	if MEMORY_THRESHOLD_WARNING > 0 then
-		self._mapping = self._mapping or {}
-		local caller_info = debug.getinfo(2)
-		self._mapping[callback] = caller_info.short_src .. ":" .. caller_info.currentline
 	end
 
 	table_insert(self, { callback, callback_context, get_context() })
@@ -149,7 +142,7 @@ function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	-- If callback is an event, unsubscribe from it and return
-	if type(callback) == "table" and callback.trigger then
+	if M.is_event(callback) then
 		return self:unsubscribe(callback.trigger, callback)
 	end
 
@@ -181,7 +174,7 @@ function M:is_subscribed(callback, callback_context)
 	end
 
 	-- If callback is an event, check if it is subscribed
-	if type(callback) == "table" and callback.trigger then
+	if M.is_event(callback) then
 		return self:is_subscribed(callback.trigger, callback)
 	end
 
@@ -235,15 +228,10 @@ function M:trigger(...)
 			set_context(event_script_context)
 		end
 
-		-- Check memory allocation
-		if MEMORY_THRESHOLD_WARNING > 0 then
-			MEMORY_BEFORE_VALUE = collectgarbage("count")
-		end
-
 		-- Call callback
 		local ok, result_or_error
 		if event_callback_context then
-			if not USE_XPCALL then
+			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
 			else
 				-- Create a table with the context as the first element
@@ -257,14 +245,19 @@ function M:trigger(...)
 					args[i+1] = select(i, ...)
 				end
 
-				ok, result_or_error = xpcall(function()
-					return event_callback(unpack(args))
-				end, event_error_handler)
+				if USE_XPCALL then
+					ok, result_or_error = xpcall(function()
+						return event_callback(unpack(args))
+					end, event_error_handler)
+				else
+					result_or_error = event_callback(unpack(args))
+					ok = true
+				end
 			end
 		else
-			if not USE_XPCALL then
+			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, ...)
-			else
+			elseif USE_XPCALL then
 				-- Create a new args table with the proper count
 				local args = {}
 				local n = select("#", ...)
@@ -277,19 +270,9 @@ function M:trigger(...)
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args))
 				end, event_error_handler)
-			end
-		end
-
-		-- Check memory allocation
-		if MEMORY_THRESHOLD_WARNING > 0 then
-			local memory_after = collectgarbage("count")
-			if memory_after - MEMORY_BEFORE_VALUE > MEMORY_THRESHOLD_WARNING then
-				local caller_info = debug.getinfo(2)
-				logger:warn("Detected huge memory allocation in event", {
-					event = self._mapping and self._mapping[event_callback],
-					trigger = caller_info.short_src .. ":" .. caller_info.currentline,
-					memory = memory_after - MEMORY_BEFORE_VALUE,
-				})
+			else
+				result_or_error = event_callback(...)
+				ok = true
 			end
 		end
 
@@ -299,7 +282,7 @@ function M:trigger(...)
 		end
 
 		-- Handle errors
-		if not ok then
+		if (USE_PCALL or USE_XPCALL) and not ok then
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
 			logger:error("Error in trigger event: " .. place, result_or_error)
