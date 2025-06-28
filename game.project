@@ -21,6 +21,3 @@ dependencies#1 = https://github.com/britzl/deftest/archive/refs/tags/2.8.0.zip
 
 [library]
 include_dirs = event
-
-[event]
-use_xpcall = 0

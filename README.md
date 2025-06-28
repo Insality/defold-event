@@ -49,7 +49,10 @@ https://github.com/Insality/defold-event/archive/refs/tags/12.zip
 
 ### Using `pcall` within event callback
 
-The `pcall` function is enabled by default. It is used to handle errors within event callback. If you want to disable it, you can set the `use_pcall` option to `0` in the `game.project` file:
+The `pcall` function is disabled by default. It is used to handle errors within event callback. If you want to enable it, you can set the `use_pcall` option to `1` in the `game.project` file:
+
+You can also set the mode to `pcall` or `xpcall` using `event.set_mode("pcall" | "xpcall" | "none")` function.
+With default behavior `none`, the error will be thrown as usual lua error.
 
 ```ini
 [event]
