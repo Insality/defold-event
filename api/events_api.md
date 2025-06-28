@@ -1,6 +1,6 @@
 # events API
 
-> at /event/events.lua
+> at event/events.lua
 
 Global events module that allows creation and management of global events that can be triggered from anywhere in your game.
 This is particularly useful for events that need to be handled by multiple scripts or systems.
