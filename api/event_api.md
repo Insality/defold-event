@@ -1,13 +1,14 @@
 # event API
 
-> at /event/event.lua
+> at event/event.lua
 
 The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
 
 ## Functions
 
 - [set_logger](#set_logger)
-- [set_memory_threshold](#set_memory_threshold)
+- [set_mode](#set_mode)
+- [is_event](#is_event)
 - [create](#create)
 
 - [subscribe](#subscribe)
@@ -32,19 +33,38 @@ By default, the module uses the `pprint` logger for errors.
 - **Parameters:**
 	- `[logger_instance]` *(table|event.logger|nil)*: A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
 
-### set_memory_threshold
+### set_mode
 
 ---
 ```lua
-event.set_memory_threshold(value)
+event.set_mode(mode)
 ```
 
-Set the threshold for logging warnings about memory allocations in event callbacks.
-Works only in debug builds. The threshold is in kilobytes.
-If the callback causes a memory allocation greater than the threshold, a warning will be logged.
+Set the mode of the event module.
+```lua
+mode:
+    | "pcall"
+    | "xpcall"
+    | "none"
+```
 
 - **Parameters:**
-	- `value` *(number)*: Threshold in kilobytes for logging warnings about memory allocations. `0` disables tracking.
+	- `mode` *("none"|"pcall"|"xpcall")*: The mode to set.
+
+### is_event
+
+---
+```lua
+event.is_event([value])
+```
+
+Check if the table is an event instance.
+
+- **Parameters:**
+	- `[value]` *(any)*:
+
+- **Returns:**
+	- `is_event` *(boolean)*:
 
 ### create
 

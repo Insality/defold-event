@@ -61,6 +61,14 @@ function M.set_logger(logger_instance)
 end
 
 
+---Set the mode of the event module.
+---@param mode "pcall" | "xpcall" | "none" The mode to set.
+function M.set_mode(mode)
+	USE_PCALL = mode == "pcall"
+	USE_XPCALL = mode == "xpcall"
+end
+
+
 ---Check if the table is an event instance.
 ---@param value any
 ---@return boolean is_event

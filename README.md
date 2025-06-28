@@ -76,6 +76,7 @@ In this case, you will get a detailed traceback with the exact line of the error
 ```lua
 local event = require("event.event")
 event.set_logger(logger)
+event.set_mode("pcall" | "xpcall" | "none")
 
 local event_instance = event.create([callback], [callback_context])
 event_instance:subscribe(callback, [callback_context])

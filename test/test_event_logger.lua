@@ -4,6 +4,11 @@ return function()
 
 		before(function()
 			event = require("event.event")
+			event.set_mode("pcall")
+		end)
+
+		after(function()
+			event.set_mode("none")
 		end)
 
 		it("Event Set logger", function()
@@ -35,7 +40,7 @@ return function()
 			local f = function() error("error") end
 
 			test_event:subscribe(f)
-			test_event:trigger()
+			pcall(test_event:trigger())
 
 			assert(called == true)
 		end)
