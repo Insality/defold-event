@@ -4,11 +4,6 @@ return function()
 
 		before(function()
 			event = require("event.event")
-			event.set_mode("pcall")
-		end)
-
-		after(function()
-			event.set_mode("none")
 		end)
 
 		it("Event Set logger", function()

@@ -1,4 +1,4 @@
-#define LIB_NAME "EventContextManager"
+#define LIB_NAME "EventCM"
 #define MODULE_NAME "event_context_manager"
 
 #include <dmsdk/sdk.h>
@@ -27,10 +27,20 @@ static int set_context(lua_State* L) {
 	return 1;
 }
 
+static int log_error(lua_State* L) {
+	DM_LUA_STACK_CHECK(L, 0); // No return values
+
+	const char* message = luaL_checkstring(L, 1);
+	dmLogError("%s", message);
+
+	return 0;
+}
+
 // Functions exposed to Lua
 static const luaL_reg Module_methods[] = {
 	{"get", get_context},
 	{"set", set_context},
+	{"log_error", log_error},
 	{0, 0}
 };
 
@@ -48,4 +58,4 @@ static dmExtension::Result Initialize(dmExtension::Params* params) {
 	return dmExtension::RESULT_OK;
 }
 
-DM_DECLARE_EXTENSION(EventContextManager, LIB_NAME, 0, 0, Initialize, 0, 0, 0)
+DM_DECLARE_EXTENSION(EventCM, LIB_NAME, 0, 0, Initialize, 0, 0, 0)

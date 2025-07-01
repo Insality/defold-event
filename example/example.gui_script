@@ -26,7 +26,7 @@ function init(self)
 
 	msg.post(".", "acquire_input_focus")
 
-	events.subscribe("hehe", function() print("global!", self.counter) end)
+	events.subscribe("pass_via_global_event", function() print("Global call!", self.counter) end)
 end
 
 
@@ -36,5 +36,7 @@ function on_input(self, action_id, action)
 
 		self.counter = self.counter + 1
 		logic.set_counter(logic, self.counter)
+
+		print("After counter")
 	end
 end

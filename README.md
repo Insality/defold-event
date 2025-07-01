@@ -47,16 +47,33 @@ https://github.com/Insality/defold-event/archive/refs/tags/12.zip
 | Desktop / Mobile | **2.88 KB**  | **0.71 KB**   | **2.03 KB**  | **0.97 KB**  | **3.22 KB**  |
 
 
-### Using `pcall` within event callback
+## Event Mode
 
-The `pcall` function is disabled by default. It is used to handle errors within event callback. If you want to enable it, you can set the `use_pcall` option to `1` in the `game.project` file:
+Event module can work in 3 modes:
 
-You can also set the mode to `pcall` or `xpcall` using `event.set_mode("pcall" | "xpcall" | "none")` function.
-With default behavior `none`, the error will be thrown as usual lua error.
+| Mode | Default | Cross-Context | Detailed Tracebacks | Notes |
+| --- | --- | --- | --- | --- |
+| `pcall` | ✅ | ✅ | ❌ | The `pcall` function is used to handle errors within event callback. |
+| `xpcall` | ❌ | ✅ | ✅ | The `xpcall` function is used to handle errors within event callback. |
+| `none` | ❌ | ❌ | ✅ | The error will be thrown as usual Lua error. No cross GO, GUI function calls
+
+You can set the Event Mode with code:
+
+```lua
+event.set_mode("pcall")
+event.set_mode("xpcall")
+event.set_mode("none")
+```
+
+The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected behavior. With `pcall` (default) the subscribed callback will be executed in the same context where created. By context I mean the GO scripts and GUI scripts in Defold.
+
+### Using `pcall` for cross-context function calls
+
+The `pcall` function is **enabled** by default. If you want to disable it to use `none` mode, you can set the `use_pcall` option to `0` in the `game.project` file:
 
 ```ini
 [event]
-use_pcall = 1
+use_pcall = 0
 ```
 
 
@@ -229,16 +246,16 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Remove annotations files. Now all annotations directly in the code.
 
 ### **V12**
-	- **MIGRATION**: Replace `require("event.defer")` with `require("event.queues")`
-	- **MIGRATION**: Default `use_pcall` is now `0`, but before it was `1`. If something is broken, try to set it to `1`.
+	- **MIGRATION**: Replace `require("event.defer")` with `require("event.queues")` in case of using `defer` module
 
 	- **BREAKING CHANGE**: Refactored defer system to be instance-based like event system. `defer.lua` now creates defer instances with `defer.create()` instead of global event_id system
 	- **BREAKING CHANGE**: Renamed `defer` module to `queues` for better clarity
-	- **BREAKING CHANGE**: Removed memory allocation tracking feature
-	- Added `queues.lua` for global queues operations (replaces old defer.lua functionality)
+	- Removed memory allocation tracking feature
+	- Added `queues.lua` for global queues operations (renamed from defer.lua functionality)
 	- Added **Promise** module on top of event module
 	- Fixed queue event processing order from LIFO to FIFO (events now processed in correct queue order)
-	- Add `use_pcall` option to disable `pcall` in event callback. Now default is `pcall` is disabled.
+	- Added no_context_change mode to disable context changing in event callback and using `pcall` by default
+	- Added `event.set_mode` function to set the event mode
 
 </details>
 

@@ -6,7 +6,6 @@ The Promise module, used to create and manage promises.
 A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 
 ## Functions
-
 - [create](#create)
 - [resolved](#resolved)
 - [rejected](#rejected)
