@@ -1,5 +1,6 @@
-local USE_PCALL = sys.get_config_int("event.use_pcall", 0) == 1
 local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
+local USE_PCALL = sys.get_config_int("event.use_pcall", 1) == 1 and not USE_XPCALL
+local USE_CONTEXT_CHANGE = USE_PCALL or USE_XPCALL
 
 ---Array of next items: { callback, callback_context, script_context }
 ---@class event.callback_data: table
@@ -48,7 +49,7 @@ local logger = {
 		pprint("WARN:", message)
 	end,
 	error = function(_, message)
-		pprint("ERROR:", message)
+		event_context_manager.log_error(message)
 	end,
 }
 
@@ -66,6 +67,7 @@ end
 function M.set_mode(mode)
 	USE_PCALL = mode == "pcall"
 	USE_XPCALL = mode == "xpcall"
+	USE_CONTEXT_CHANGE = USE_PCALL or USE_XPCALL
 end
 
 
@@ -173,13 +175,12 @@ function M:is_subscribed(callback, callback_context)
 		return false, nil
 	end
 
-	-- If callback is an event, check if it is subscribed
+	-- Callback can be an event instance
 	if M.is_event(callback) then
 		return self:is_subscribed(callback.trigger, callback)
 	end
 
 	---@cast callback function
-
 	for index = 1, #self do
 		local cb = self[index]
 		if cb[1] == callback and cb[2] == callback_context then
@@ -224,7 +225,7 @@ function M:trigger(...)
 		local event_script_context = callback[3]
 
 		-- Set context for the callback
-		if current_script_context ~= event_script_context then
+		if USE_CONTEXT_CHANGE and current_script_context ~= event_script_context then
 			set_context(event_script_context)
 		end
 
@@ -235,10 +236,6 @@ function M:trigger(...)
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
 			elseif USE_XPCALL then
 				local args = { event_callback_context }
-
-				-- Note: Most more oblivious ways to do this is not working
-				-- because of the way Lua handles varargs and closures.
-				-- This way seems okay
 				local n = select("#", ...)
 				for i = 1, n do
 					args[i+1] = select(i, ...)
@@ -260,11 +257,8 @@ function M:trigger(...)
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, ...)
 			elseif USE_XPCALL then
-				-- Create a new args table with the proper count
 				local args = {}
 				local n = select("#", ...)
-
-				-- Add each argument individually
 				for i = 1, n do
 					args[i] = select(i, ...)
 				end
@@ -279,16 +273,16 @@ function M:trigger(...)
 		end
 
 		-- Restore context
-		if current_script_context ~= event_script_context then
+		if USE_CONTEXT_CHANGE and current_script_context ~= event_script_context then
 			set_context(current_script_context)
 		end
 
 		-- Handle errors
-		if (USE_PCALL or USE_XPCALL) and not ok then
+		if not ok then
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
-			logger:error("Error in trigger event: " .. place, result_or_error)
-			logger:error(debug.traceback(result_or_error, 2))
+			logger:error("Error in trigger event: " .. place)
+			logger:error(USE_XPCALL and result_or_error or debug.traceback(result_or_error, 2))
 		end
 
 		result = result_or_error

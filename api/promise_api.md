@@ -1,18 +1,17 @@
 # promise API
 
-> at /event/promise.lua
+> at event/promise.lua
 
 The Promise module, used to create and manage promises.
 A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 
 ## Functions
-
-- [is_promise](#is_promise)
 - [create](#create)
 - [resolved](#resolved)
 - [rejected](#rejected)
 - [all](#all)
 - [race](#race)
+- [is_promise](#is_promise)
 
 - [next](#next)
 - [catch](#catch)
@@ -28,21 +27,6 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [value](#value)
 
 
-
-### is_promise
-
----
-```lua
-promise.is_promise([value])
-```
-
-Check if a value is a promise object
-
-- **Parameters:**
-	- `[value]` *(any)*: The value to check
-
-- **Returns:**
-	- `is_promise` *(boolean)*: True if the value is a promise
 
 ### create
 
@@ -120,6 +104,21 @@ Create a promise that resolves or rejects as soon as one of the given promises r
 
 - **Returns:**
 	- `promise_instance` *(promise)*: A promise that resolves or rejects with the first finished promise.
+
+### is_promise
+
+---
+```lua
+promise.is_promise([value])
+```
+
+Check if a value is a promise object
+
+- **Parameters:**
+	- `[value]` *(any)*: The value to check
+
+- **Returns:**
+	- `is_promise` *(boolean)*: True if the value is a promise
 
 ### next
 
@@ -220,8 +219,8 @@ Check if the promise is finished (either resolved or rejected).
 
 ## Fields
 <a name="state"></a>
-- **state** (_string_): Current state of the promise (pending, resolved, rejected)
+- **state** (_"pending"|"rejected"|"resolved"_): Current state of the promise (pending, resolved, rejected)
 
 <a name="value"></a>
-- **value** (_any_): The resolved val ue or rejection reason
+- **value** (_any_): The resolved value or rejection reason
 
