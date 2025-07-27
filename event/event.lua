@@ -233,8 +233,7 @@ function M:trigger(...)
 		if event_callback_context then
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
-			else
-				-- Create a table with the context as the first element
+			elseif USE_XPCALL then
 				local args = { event_callback_context }
 
 				-- Note: Most more oblivious ways to do this is not working
@@ -245,14 +244,17 @@ function M:trigger(...)
 					args[i+1] = select(i, ...)
 				end
 
-				if USE_XPCALL then
-					ok, result_or_error = xpcall(function()
-						return event_callback(unpack(args))
-					end, event_error_handler)
-				else
-					result_or_error = event_callback(unpack(args))
-					ok = true
+				ok, result_or_error = xpcall(function()
+					return event_callback(unpack(args, 1, n + 1))
+				end, event_error_handler)
+			else
+				local args = { event_callback_context }
+				local n = select("#", ...)
+				for i = 1, n do
+					args[i+1] = select(i, ...)
 				end
+				result_or_error = event_callback(unpack(args, 1, n + 1))
+				ok = true
 			end
 		else
 			if USE_PCALL then
@@ -268,7 +270,7 @@ function M:trigger(...)
 				end
 
 				ok, result_or_error = xpcall(function()
-					return event_callback(unpack(args))
+					return event_callback(unpack(args, 1, n))
 				end, event_error_handler)
 			else
 				result_or_error = event_callback(...)
