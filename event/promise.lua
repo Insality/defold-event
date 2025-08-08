@@ -29,7 +29,7 @@ function M.create(executor)
 	}, PROMISE_METATABLE)
 
 	if executor then
-		local resolve_func = function(value) self:_resolve(value) end
+		local resolve_func = function(value) self:resolve(value) end
 		local reject_func = function(reason) self:_reject(reason) end
 		executor(resolve_func, reject_func)
 	end
@@ -44,7 +44,7 @@ end
 ---@nodiscard
 function M.resolved(value)
 	local promise_instance = M.create()
-	promise_instance:_resolve(value)
+	promise_instance:resolve(value)
 	return promise_instance
 end
 
@@ -55,7 +55,7 @@ end
 ---@nodiscard
 function M.rejected(reason)
 	local promise_instance = M.create()
-	promise_instance:_reject(reason)
+	promise_instance:reject(reason)
 	return promise_instance
 end
 
@@ -77,7 +77,7 @@ function M.all(promises)
 
 	local function check_completion()
 		if completed_count == total_count then
-			result_promise:_resolve(results)
+			result_promise:resolve(results)
 		end
 	end
 
@@ -86,7 +86,7 @@ function M.all(promises)
 			results[i] = promise_instance.value
 			completed_count = completed_count + 1
 		elseif promise_instance:is_rejected() then
-			result_promise:_reject(promise_instance.value)
+			result_promise:reject(promise_instance.value)
 			return result_promise
 		else
 			promise_instance:next(function(value)
@@ -94,7 +94,7 @@ function M.all(promises)
 				completed_count = completed_count + 1
 				check_completion()
 			end, function(reason)
-				result_promise:_reject(reason)
+				result_promise:reject(reason)
 			end)
 		end
 	end
@@ -118,19 +118,19 @@ function M.race(promises)
 	for _, promise_instance in ipairs(promises) do
 		if promise_instance:is_finished() then
 			if promise_instance:is_resolved() then
-				result_promise:_resolve(promise_instance.value)
+				result_promise:resolve(promise_instance.value)
 			else
-				result_promise:_reject(promise_instance.value)
+				result_promise:reject(promise_instance.value)
 			end
 			break
 		else
 			promise_instance:next(function(value)
 				if result_promise:is_pending() then
-					result_promise:_resolve(value)
+					result_promise:resolve(value)
 				end
 			end, function(reason)
 				if result_promise:is_pending() then
-					result_promise:_reject(reason)
+					result_promise:reject(reason)
 				end
 			end)
 		end
@@ -153,19 +153,19 @@ end
 ---@param value any The value or promise to resolve with
 local function resolve_promise(target_promise, value)
 	if not M.is_promise(value) then
-		target_promise:_resolve(value)
+		target_promise:resolve(value)
 		return
 	end
 
 	if value:is_resolved() then
-		target_promise:_resolve(value.value)
+		target_promise:resolve(value.value)
 	elseif value:is_rejected() then
-		target_promise:_reject(value.value)
+		target_promise:reject(value.value)
 	else
 		value:next(function(val)
-			target_promise:_resolve(val)
+			target_promise:resolve(val)
 		end, function(reason)
-			target_promise:_reject(reason)
+			target_promise:reject(reason)
 		end)
 	end
 end
@@ -179,9 +179,9 @@ end
 local function handle_callback_result(target_promise, callback, value, is_rejection)
 	if not callback then
 		if is_rejection then
-			target_promise:_reject(value)
+			target_promise:reject(value)
 		else
-			target_promise:_resolve(value)
+			target_promise:resolve(value)
 		end
 		return
 	end
@@ -285,9 +285,9 @@ function M:__call(value, reason)
 	end
 
 	if value ~= nil then
-		self:_resolve(value)
+		self:resolve(value)
 	else
-		self:_reject(reason)
+		self:reject(reason)
 	end
 end
 
@@ -318,8 +318,7 @@ end
 
 ---Internal method to resolve the promise.
 ---@param value any The value to resolve with.
----@package
-function M:_resolve(value)
+function M:resolve(value)
 	if self.state ~= "pending" then
 		return
 	end
@@ -336,8 +335,7 @@ end
 
 ---Internal method to reject the promise.
 ---@param reason any The reason to reject with.
----@package
-function M:_reject(reason)
+function M:reject(reason)
 	settle_promise(self, "rejected", reason)
 end
 
