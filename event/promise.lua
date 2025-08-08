@@ -30,7 +30,7 @@ function M.create(executor)
 
 	if executor then
 		local resolve_func = function(value) self:resolve(value) end
-		local reject_func = function(reason) self:_reject(reason) end
+		local reject_func = function(reason) self:reject(reason) end
 		executor(resolve_func, reject_func)
 	end
 
