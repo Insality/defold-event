@@ -8,8 +8,8 @@ local event = require("event.event")
 ---@class promise
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
----@field private resolve_handlers event Event for resolve handlers
----@field private reject_handlers event Event for rejection handlers
+---@field private on_resolve event Event for resolve handlers
+---@field private on_reject event Event for rejection handlers
 local M = {}
 
 -- Forward declaration
@@ -183,6 +183,7 @@ local function handle_callback_result(target_promise, callback, value, is_reject
 		else
 			target_promise:resolve(value)
 		end
+
 		return
 	end
 
@@ -211,8 +212,8 @@ function M:next(on_resolved, on_rejected)
 	elseif self:is_rejected() then
 		handle_reject(self.value)
 	else
-		self.resolve_handlers:subscribe(handle_resolve)
-		self.reject_handlers:subscribe(handle_reject)
+		self.on_resolve:subscribe(handle_resolve)
+		self.on_reject:subscribe(handle_reject)
 	end
 
 	return new_promise
