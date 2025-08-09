@@ -163,6 +163,37 @@ function M:process(event_handler, context)
 end
 
 
+---Process exactly one queued event with a specific handler (subscribers will NOT be called).
+---If the handler returns non-nil the event will be removed from the queue.
+---@param event_handler function|event Specific handler or event to process the event. If this function returns non-nil, the event will be removed from the queue.
+---@param context any|nil The context to be passed to the handler.
+---@return boolean handled True if the head event was handled and removed
+function M:process_next(event_handler, context)
+    if #self.events == 0 or not event_handler then
+        return false
+    end
+
+    local event_data = self.events[1]
+    local handle_result
+
+    if context then
+        handle_result = event_handler(context, event_data.data)
+    else
+        handle_result = event_handler(event_data.data)
+    end
+
+    if handle_result ~= nil then
+        if event_data.on_handle then
+            event_data.on_handle(handle_result)
+        end
+        table_remove(self.events, 1)
+        return true
+    end
+
+    return false
+end
+
+
 ---Get all pending events in this queue.
 ---@return queue.event_data[] events A table of pending events.
 function M:get_events()

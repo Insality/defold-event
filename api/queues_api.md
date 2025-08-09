@@ -12,6 +12,7 @@ This is particularly useful for events that need to be handled by multiple scrip
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [process](#process)
+- [process_next](#process_next)
 - [get_events](#get_events)
 - [clear_events](#clear_events)
 - [clear_subscribers](#clear_subscribers)
@@ -135,6 +136,24 @@ Events can be handled and removed in event handler callback. If event is handled
 	- `queue_id` *(string)*: The id of the global queue to process.
 	- `event_handler` *(function)*: Specific handler to process the events. If this function returns true, the event will be removed from the queue.
 	- `[context]` *(any)*: The context to be passed to the handler.
+
+### process_next
+
+---
+```lua
+queues.process_next(queue_id, event_handler, [context])
+```
+
+Process exactly one event in the specified global queue with a specific handler (subscribers will not be called).
+If the handler returns non-nil the event will be removed from the queue.
+
+- **Parameters:**
+  - `queue_id` *(string)*: The id of the global queue to process.
+  - `event_handler` *(function)*: Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
+  - `[context]` *(any)*: The context to be passed to the handler.
+
+- **Returns:**
+  - `handled` *(boolean)*: True if the head event was handled and removed
 
 - **Example Usage:**
 
