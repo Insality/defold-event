@@ -24,8 +24,8 @@ function M.create(executor)
 	local self = setmetatable({
 		state = "pending",
 		value = nil,
-		resolve_handlers = event.create(),
-		reject_handlers = event.create()
+		on_resolve = event.create(),
+		on_reject = event.create()
 	}, PROMISE_METATABLE)
 
 	if executor then
@@ -306,14 +306,14 @@ local function settle_promise(self, state, value)
 
 	-- Trigger appropriate handlers
 	if state == "resolved" then
-		self.resolve_handlers:trigger(value)
+		self.on_resolve:trigger(value)
 	else
-		self.reject_handlers:trigger(value)
+		self.on_reject:trigger(value)
 	end
 
 	-- Clear handlers to prevent memory leaks
-	self.resolve_handlers:clear()
-	self.reject_handlers:clear()
+	self.on_resolve:clear()
+	self.on_reject:clear()
 end
 
 

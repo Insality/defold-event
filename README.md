@@ -55,7 +55,7 @@ Event module can work in 3 modes:
 | --- | --- | --- | --- | --- |
 | `pcall` | ✅ | ✅ | ❌ | The `pcall` function is used to handle errors within event callback. |
 | `xpcall` | ❌ | ✅ | ✅ | The `xpcall` function is used to handle errors within event callback. |
-| `none` | ❌ | ❌ | ✅ | The error will be thrown as usual Lua error. No cross GO, GUI function calls
+| `none` | ❌ | ❌ | ✅ | The error will be thrown as usual Lua error. No cross GO/GUI function calls. |
 
 You can set the Event Mode with code:
 
