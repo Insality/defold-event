@@ -5,7 +5,7 @@ local event = require("event.event")
 ---The Promise module, used to create and manage promises.
 ---A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 ---@overload fun(value:any, reason:any|nil): nil Call the promise to resolve it with value or reject it with reason if value is nil
----@class promise
+---@class promise: function
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
 ---@field private on_resolve event Event for resolve handlers
@@ -338,6 +338,34 @@ end
 ---@param reason any The reason to reject with.
 function M:reject(reason)
 	settle_promise(self, "rejected", reason)
+end
+
+
+---Append a task to this promise's internal sequence without reassigning.
+---The task may return a value or a promise. Returns self for chaining.
+---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
+---@param task fun(value:any):any
+---@return promise self
+function M:append(task)
+	self._tail = (self._tail or self):next(function(value)
+		return task(value)
+	end)
+	return self
+end
+
+
+---Get the current tail promise representing all appended work.
+---@return promise tail
+function M:tail()
+	return self._tail or self
+end
+
+
+---Reset the internal sequence to an already resolved promise.
+---@return promise self
+function M:reset()
+	self._tail = M.resolved()
+	return self
 end
 
 

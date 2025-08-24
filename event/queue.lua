@@ -169,28 +169,28 @@ end
 ---@param context any|nil The context to be passed to the handler.
 ---@return boolean handled True if the head event was handled and removed
 function M:process_next(event_handler, context)
-    if #self.events == 0 or not event_handler then
-        return false
-    end
+	if #self.events == 0 or not event_handler then
+		return false
+	end
 
-    local event_data = self.events[1]
-    local handle_result
+	local event_data = self.events[1]
+	local handle_result
 
-    if context then
-        handle_result = event_handler(context, event_data.data)
-    else
-        handle_result = event_handler(event_data.data)
-    end
+	if context then
+		handle_result = event_handler(context, event_data.data)
+	else
+		handle_result = event_handler(event_data.data)
+	end
 
-    if handle_result ~= nil then
-        if event_data.on_handle then
-            event_data.on_handle(handle_result)
-        end
-        table_remove(self.events, 1)
-        return true
-    end
+	if handle_result ~= nil then
+		if event_data.on_handle then
+			event_data.on_handle(handle_result)
+		end
+		table_remove(self.events, 1)
+		return true
+	end
 
-    return false
+	return false
 end
 
 
