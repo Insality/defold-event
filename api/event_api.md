@@ -10,7 +10,6 @@ The Event module, used to create and manage events. Allows to subscribe to event
 - [set_mode](#set_mode)
 - [is_event](#is_event)
 - [create](#create)
-
 - [subscribe](#subscribe)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)

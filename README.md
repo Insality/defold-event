@@ -65,29 +65,9 @@ event.set_mode("xpcall")
 event.set_mode("none")
 ```
 
-The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected behavior. With `pcall` (default) the subscribed callback will be executed in the same context where created. By context I mean the GO scripts and GUI scripts in Defold.
+The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected (errors like "The node can be reached from this context") behavior. With `pcall` (default) or `xpcall` the subscribed callback will be executed in the same context where created. By context I mean the GO scripts and GUI scripts in Defold.
 
-### Using `pcall` for cross-context function calls
-
-The `pcall` function is **enabled** by default. If you want to disable it to use `none` mode, you can set the `use_pcall` option to `0` in the `game.project` file:
-
-```ini
-[event]
-use_pcall = 0
-```
-
-
-### Using `xpcall` to get detailed tracebacks
-
-You can use `xpcall` to get detailed tracebacks in case of an error in the event callback. In case of just pcall, you will get a line with `event.trigger` and traceback ended in event module. To get a detailed traceback to help with debug, you can use `use_xpcall`:
-
-```ini
-[event]
-use_xpcall = 1
-```
-
-In this case, you will get a detailed traceback with the exact line of the error in the event callback. But the drawback of it is memory allocations per `event:trigger` call. Should be used only for debugging purposes.
-
+The `xpcall` mode is more verbose than `pcall` mode. It will return a detailed traceback in case of an error in the event callback. But the drawback of it is memory allocations per `event:trigger` call. Currently, I'm recommending to use `pcall` mode for production builds and `xpcall` mode for debugging purposes.
 
 ## API Reference
 
