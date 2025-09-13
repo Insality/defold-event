@@ -19,8 +19,9 @@ local PROMISE_METATABLE
 ---Generate a new promise instance. This instance represents a single asynchronous operation.
 ---The executor function is called immediately with resolve and reject functions.
 ---@param executor function|event|nil The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
+---@param context any|nil The context to call the executor function with.
 ---@return promise promise_instance A new promise instance.
-function M.create(executor)
+function M.create(executor, context)
 	local self = setmetatable({
 		state = "pending",
 		value = nil,
@@ -29,9 +30,14 @@ function M.create(executor)
 	}, PROMISE_METATABLE)
 
 	if executor then
+
 		local resolve_func = function(value) self:resolve(value) end
 		local reject_func = function(reason) self:reject(reason) end
-		executor(resolve_func, reject_func)
+		if context then
+			executor(context, resolve_func, reject_func)
+		else
+			executor(resolve_func, reject_func)
+		end
 	end
 
 	return self
@@ -176,7 +182,8 @@ end
 ---@param callback function|event|nil The callback to execute (function or event)
 ---@param value any The value to pass to the callback
 ---@param is_rejection boolean Whether this is handling a rejection
-local function handle_callback_result(target_promise, callback, value, is_rejection)
+---@param context any|nil The context to call the callback with.
+local function handle_callback_result(target_promise, callback, value, is_rejection, context)
 	if not callback then
 		if is_rejection then
 			target_promise:reject(value)
@@ -187,7 +194,11 @@ local function handle_callback_result(target_promise, callback, value, is_reject
 		return
 	end
 
-	resolve_promise(target_promise, callback(value))
+	if context then
+		resolve_promise(target_promise, callback(context, value))
+	else
+		resolve_promise(target_promise, callback(value))
+	end
 end
 
 
@@ -195,16 +206,17 @@ end
 ---Returns a new promise that will be resolved or rejected based on the handlers' return values.
 ---@param on_resolved function|event|nil Handler called when promise is resolved. If nil, value passes through.
 ---@param on_rejected function|event|nil Handler called when promise is rejected. If nil, rejection passes through.
+---@param context any|nil The context to call the handlers with.
 ---@return promise new_promise A new promise representing the result of the handlers.
-function M:next(on_resolved, on_rejected)
+function M:next(on_resolved, on_rejected, context)
 	local new_promise = M.create()
 
 	local handle_resolve = function(value)
-		handle_callback_result(new_promise, on_resolved, value, false)
+		handle_callback_result(new_promise, on_resolved, value, false, context)
 	end
 
 	local handle_reject = function(reason)
-		handle_callback_result(new_promise, on_rejected, reason, true)
+		handle_callback_result(new_promise, on_rejected, reason, true, context)
 	end
 
 	if self:is_resolved() then
