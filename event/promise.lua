@@ -30,7 +30,6 @@ function M.create(executor, context)
 	}, PROMISE_METATABLE)
 
 	if executor then
-
 		local resolve_func = function(value) self:resolve(value) end
 		local reject_func = function(reason) self:reject(reason) end
 		if context then
