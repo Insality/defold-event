@@ -12,7 +12,7 @@ local event = require("event.event")
 local M = {}
 
 -- Forward declaration
-local QUEUE_METATABLE
+local QUEUE_METATABLE = { __index = M }
 
 -- Local versions
 local table_insert = table.insert
@@ -149,14 +149,11 @@ function M:process(event_handler, context)
 				if event_data.on_handle then
 					event_data.on_handle(handle_result)
 				end
-				-- Remove the event, don't increment index since elements shift down
 				table_remove(self.events, event_index)
 			else
-				-- Event not handled, move to next event
 				event_index = event_index + 1
 			end
 		else
-			-- No handler provided, move to next event
 			event_index = event_index + 1
 		end
 	end
@@ -262,24 +259,16 @@ function M:_check_subscribers()
 					event_data.on_handle(handle_result)
 				end
 				is_handled = true
-				-- No break here, continue processing all subscribers
 			end
 		end
 
 		if is_handled then
-			-- Remove the event, don't increment index since elements shift down
 			table_remove(self.events, event_index)
 		else
-			-- Event not handled, move to next event
 			event_index = event_index + 1
 		end
 	end
 end
 
-
--- Construct queue metatable
-QUEUE_METATABLE = {
-	__index = M,
-}
 
 return M

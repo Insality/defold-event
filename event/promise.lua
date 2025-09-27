@@ -210,19 +210,19 @@ end
 function M:next(on_resolved, on_rejected, context)
 	local new_promise = M.create()
 
-	local handle_resolve = function(value)
-		handle_callback_result(new_promise, on_resolved, value, false, context)
-	end
-
-	local handle_reject = function(reason)
-		handle_callback_result(new_promise, on_rejected, reason, true, context)
-	end
-
 	if self:is_resolved() then
-		handle_resolve(self.value)
+		handle_callback_result(new_promise, on_resolved, self.value, false, context)
 	elseif self:is_rejected() then
-		handle_reject(self.value)
+		handle_callback_result(new_promise, on_rejected, self.value, true, context)
 	else
+		local handle_resolve = function(value)
+			handle_callback_result(new_promise, on_resolved, value, false, context)
+		end
+
+		local handle_reject = function(reason)
+			handle_callback_result(new_promise, on_rejected, reason, true, context)
+		end
+
 		self.on_resolve:subscribe(handle_resolve)
 		self.on_reject:subscribe(handle_reject)
 	end
@@ -304,30 +304,6 @@ function M:__call(value, reason)
 end
 
 
----Settle the promise with the given state and value
----@param state promise.state The new state (resolved or rejected)
----@param value any The value or reason
-local function settle_promise(self, state, value)
-	if self.state ~= "pending" then
-		return
-	end
-
-	self.state = state
-	self.value = value
-
-	-- Trigger appropriate handlers
-	if state == "resolved" then
-		self.on_resolve:trigger(value)
-	else
-		self.on_reject:trigger(value)
-	end
-
-	-- Clear handlers to prevent memory leaks
-	self.on_resolve:clear()
-	self.on_reject:clear()
-end
-
-
 ---Internal method to resolve the promise.
 ---@param value any The value to resolve with.
 function M:resolve(value)
@@ -341,14 +317,32 @@ function M:resolve(value)
 		return
 	end
 
-	settle_promise(self, "resolved", value)
+	-- Inline settle_promise logic for resolved state
+	self.state = "resolved"
+	self.value = value
+	self.on_resolve:trigger(value)
+
+	-- Clear handlers to prevent memory leaks
+	self.on_resolve:clear()
+	self.on_reject:clear()
 end
 
 
 ---Internal method to reject the promise.
 ---@param reason any The reason to reject with.
 function M:reject(reason)
-	settle_promise(self, "rejected", reason)
+	if self.state ~= "pending" then
+		return
+	end
+
+	-- Inline settle_promise logic for rejected state
+	self.state = "rejected"
+	self.value = reason
+	self.on_reject:trigger(reason)
+
+	-- Clear handlers to prevent memory leaks
+	self.on_resolve:clear()
+	self.on_reject:clear()
 end
 
 

@@ -46,7 +46,7 @@ local logger = {
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
 	warn = function(_, message)
-		pprint("WARN:", message)
+		print("WARN:", message)
 	end,
 	error = function(_, message)
 		event_context_manager.log_error(message)
