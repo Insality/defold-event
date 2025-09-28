@@ -5,11 +5,12 @@ local event = require("event.event")
 ---The Promise module, used to create and manage promises.
 ---A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 ---@overload fun(value:any, reason:any|nil): nil Call the promise to resolve it with value or reject it with reason if value is nil
----@class promise: function
+---@class promise
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
 ---@field private on_resolve event Event for resolve handlers
 ---@field private on_reject event Event for rejection handlers
+---@field private _tail promise|nil Internal tail promise for append chaining
 local M = {}
 
 -- Forward declaration

@@ -245,12 +245,7 @@ function M:trigger(...)
 					return event_callback(unpack(args, 1, n + 1))
 				end, event_error_handler)
 			else
-				local args = { event_callback_context }
-				local n = select("#", ...)
-				for i = 1, n do
-					args[i+1] = select(i, ...)
-				end
-				result_or_error = event_callback(unpack(args, 1, n + 1))
+				result_or_error = event_callback(event_callback_context, ...)
 				ok = true
 			end
 		else
