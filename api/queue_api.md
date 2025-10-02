@@ -9,7 +9,6 @@ Events are stored in the queue until they are handled by subscribers, following 
 
 - [create](#create)
 - [is_queue](#is_queue)
-
 - [push](#push)
 - [subscribe](#subscribe)
 - [unsubscribe](#unsubscribe)

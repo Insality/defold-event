@@ -65,13 +65,13 @@ event.set_mode("xpcall")
 event.set_mode("none")
 ```
 
-The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected behavior. With `pcall` (default) the subscribed callback will be executed in the same context where created.
-
-
 ## What is context?
 
 Context is the script context where the event is triggered. It can be a GO script or a GUI script in Defold. Without context changing, you can't call `gui.set_text` from GO script for example.
 
+The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected behavior. With `pcall` (default) the subscribed callback will be executed in the same context where created.
+
+The `xpcall` mode is more verbose than `pcall` mode. It will return a detailed traceback in case of an error in the event callback. But the drawback of it is memory allocations per `event:trigger` call. Currently, I'm recommending to use `pcall` mode for production builds and `xpcall` mode for debugging purposes.
 
 ## API Reference
 

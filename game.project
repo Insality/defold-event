@@ -1,5 +1,5 @@
 [bootstrap]
-main_collection = /test/test.collectionc
+main_collection = /example/example.collectionc
 
 [script]
 shared_state = 1
@@ -23,6 +23,5 @@ dependencies#1 = https://github.com/britzl/deftest/archive/refs/tags/2.8.0.zip
 include_dirs = event
 
 [event]
-use_pcall = 1
-use_xpcall = 0
+event_mode = "none"
 

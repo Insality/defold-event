@@ -12,7 +12,6 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [all](#all)
 - [race](#race)
 - [is_promise](#is_promise)
-
 - [next](#next)
 - [catch](#catch)
 - [finally](#finally)
