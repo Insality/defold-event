@@ -12,7 +12,7 @@ local event = require("event.event")
 local M = {}
 
 -- Forward declaration
-local QUEUE_METATABLE
+local QUEUE_METATABLE = { __index = M }
 
 -- Local versions
 local table_insert = table.insert
@@ -149,17 +149,45 @@ function M:process(event_handler, context)
 				if event_data.on_handle then
 					event_data.on_handle(handle_result)
 				end
-				-- Remove the event, don't increment index since elements shift down
 				table_remove(self.events, event_index)
 			else
-				-- Event not handled, move to next event
 				event_index = event_index + 1
 			end
 		else
-			-- No handler provided, move to next event
 			event_index = event_index + 1
 		end
 	end
+end
+
+
+---Process exactly one queued event with a specific handler (subscribers will NOT be called).
+---If the handler returns non-nil the event will be removed from the queue.
+---@param event_handler function|event Specific handler or event to process the event. If this function returns non-nil, the event will be removed from the queue.
+---@param context any|nil The context to be passed to the handler.
+---@return boolean handled True if the head event was handled and removed
+function M:process_next(event_handler, context)
+	if #self.events == 0 or not event_handler then
+		return false
+	end
+
+	local event_data = self.events[1]
+	local handle_result
+
+	if context then
+		handle_result = event_handler(context, event_data.data)
+	else
+		handle_result = event_handler(event_data.data)
+	end
+
+	if handle_result ~= nil then
+		if event_data.on_handle then
+			event_data.on_handle(handle_result)
+		end
+		table_remove(self.events, 1)
+		return true
+	end
+
+	return false
 end
 
 
@@ -231,24 +259,16 @@ function M:_check_subscribers()
 					event_data.on_handle(handle_result)
 				end
 				is_handled = true
-				-- No break here, continue processing all subscribers
 			end
 		end
 
 		if is_handled then
-			-- Remove the event, don't increment index since elements shift down
 			table_remove(self.events, event_index)
 		else
-			-- Event not handled, move to next event
 			event_index = event_index + 1
 		end
 	end
 end
 
-
--- Construct queue metatable
-QUEUE_METATABLE = {
-	__index = M,
-}
 
 return M

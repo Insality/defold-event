@@ -88,6 +88,22 @@ function M.process(queue_id, event_handler, context)
 end
 
 
+---Process exactly one event in the specified global queue with a specific handler (subscribers will NOT be called).
+---If the handler returns non-nil the event will be removed from the queue.
+---		queues.process_next("save_game", process_save_handler, self)
+---@param queue_id string The id of the global queue to process.
+---@param event_handler function Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
+---@param context any|nil The context to be passed to the handler.
+---@return boolean handled True if the head event was handled and removed
+function M.process_next(queue_id, event_handler, context)
+    if not M.queues[queue_id] then
+        return false
+    end
+
+    return M.queues[queue_id]:process_next(event_handler, context)
+end
+
+
 ---Get all pending events in the specified global queue.
 ---		local events = queues.get_events("save_game")
 ---@param queue_id string The id of the global queue to get events from.

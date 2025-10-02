@@ -8,8 +8,9 @@ local event = require("event.event")
 ---@class promise
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
----@field private resolve_handlers event Event for resolve handlers
----@field private reject_handlers event Event for rejection handlers
+---@field private on_resolve event Event for resolve handlers
+---@field private on_reject event Event for rejection handlers
+---@field private _tail promise|nil Internal tail promise for append chaining
 local M = {}
 
 -- Forward declaration
@@ -19,19 +20,24 @@ local PROMISE_METATABLE
 ---Generate a new promise instance. This instance represents a single asynchronous operation.
 ---The executor function is called immediately with resolve and reject functions.
 ---@param executor function|event|nil The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
+---@param context any|nil The context to call the executor function with.
 ---@return promise promise_instance A new promise instance.
-function M.create(executor)
+function M.create(executor, context)
 	local self = setmetatable({
 		state = "pending",
 		value = nil,
-		resolve_handlers = event.create(),
-		reject_handlers = event.create()
+		on_resolve = event.create(),
+		on_reject = event.create()
 	}, PROMISE_METATABLE)
 
 	if executor then
-		local resolve_func = function(value) self:_resolve(value) end
-		local reject_func = function(reason) self:_reject(reason) end
-		executor(resolve_func, reject_func)
+		local resolve_func = function(value) self:resolve(value) end
+		local reject_func = function(reason) self:reject(reason) end
+		if context then
+			executor(context, resolve_func, reject_func)
+		else
+			executor(resolve_func, reject_func)
+		end
 	end
 
 	return self
@@ -44,7 +50,7 @@ end
 ---@nodiscard
 function M.resolved(value)
 	local promise_instance = M.create()
-	promise_instance:_resolve(value)
+	promise_instance:resolve(value)
 	return promise_instance
 end
 
@@ -55,7 +61,7 @@ end
 ---@nodiscard
 function M.rejected(reason)
 	local promise_instance = M.create()
-	promise_instance:_reject(reason)
+	promise_instance:reject(reason)
 	return promise_instance
 end
 
@@ -77,7 +83,7 @@ function M.all(promises)
 
 	local function check_completion()
 		if completed_count == total_count then
-			result_promise:_resolve(results)
+			result_promise:resolve(results)
 		end
 	end
 
@@ -86,7 +92,7 @@ function M.all(promises)
 			results[i] = promise_instance.value
 			completed_count = completed_count + 1
 		elseif promise_instance:is_rejected() then
-			result_promise:_reject(promise_instance.value)
+			result_promise:reject(promise_instance.value)
 			return result_promise
 		else
 			promise_instance:next(function(value)
@@ -94,7 +100,7 @@ function M.all(promises)
 				completed_count = completed_count + 1
 				check_completion()
 			end, function(reason)
-				result_promise:_reject(reason)
+				result_promise:reject(reason)
 			end)
 		end
 	end
@@ -118,19 +124,19 @@ function M.race(promises)
 	for _, promise_instance in ipairs(promises) do
 		if promise_instance:is_finished() then
 			if promise_instance:is_resolved() then
-				result_promise:_resolve(promise_instance.value)
+				result_promise:resolve(promise_instance.value)
 			else
-				result_promise:_reject(promise_instance.value)
+				result_promise:reject(promise_instance.value)
 			end
 			break
 		else
 			promise_instance:next(function(value)
 				if result_promise:is_pending() then
-					result_promise:_resolve(value)
+					result_promise:resolve(value)
 				end
 			end, function(reason)
 				if result_promise:is_pending() then
-					result_promise:_reject(reason)
+					result_promise:reject(reason)
 				end
 			end)
 		end
@@ -153,19 +159,19 @@ end
 ---@param value any The value or promise to resolve with
 local function resolve_promise(target_promise, value)
 	if not M.is_promise(value) then
-		target_promise:_resolve(value)
+		target_promise:resolve(value)
 		return
 	end
 
 	if value:is_resolved() then
-		target_promise:_resolve(value.value)
+		target_promise:resolve(value.value)
 	elseif value:is_rejected() then
-		target_promise:_reject(value.value)
+		target_promise:reject(value.value)
 	else
 		value:next(function(val)
-			target_promise:_resolve(val)
+			target_promise:resolve(val)
 		end, function(reason)
-			target_promise:_reject(reason)
+			target_promise:reject(reason)
 		end)
 	end
 end
@@ -173,46 +179,59 @@ end
 
 ---Handle the result of a callback and resolve the target promise accordingly
 ---@param target_promise promise The promise to resolve
----@param callback function|event|nil The callback to execute (function or event)
+---@param callback function|event|promise|nil The callback to execute (function or event)
 ---@param value any The value to pass to the callback
 ---@param is_rejection boolean Whether this is handling a rejection
-local function handle_callback_result(target_promise, callback, value, is_rejection)
+---@param context any|nil The context to call the callback with.
+local function handle_callback_result(target_promise, callback, value, is_rejection, context)
 	if not callback then
 		if is_rejection then
-			target_promise:_reject(value)
+			target_promise:reject(value)
 		else
-			target_promise:_resolve(value)
+			target_promise:resolve(value)
 		end
+
 		return
 	end
 
-	resolve_promise(target_promise, callback(value))
+	-- If callback is a promise, resolve target_promise with it directly
+	if M.is_promise(callback) then
+		resolve_promise(target_promise, callback)
+		return
+	end
+
+	if context then
+		resolve_promise(target_promise, callback(context, value))
+	else
+		resolve_promise(target_promise, callback(value))
+	end
 end
 
 
 ---Attach resolve and reject handlers to the promise.
 ---Returns a new promise that will be resolved or rejected based on the handlers' return values.
----@param on_resolved function|event|nil Handler called when promise is resolved. If nil, value passes through.
----@param on_rejected function|event|nil Handler called when promise is rejected. If nil, rejection passes through.
+---@param on_resolved function|promise|event|nil Handler called when promise is resolved. If nil, value passes through.
+---@param on_rejected function|promise|event|nil Handler called when promise is rejected. If nil, rejection passes through.
+---@param context any|nil The context to call the handlers with.
 ---@return promise new_promise A new promise representing the result of the handlers.
-function M:next(on_resolved, on_rejected)
+function M:next(on_resolved, on_rejected, context)
 	local new_promise = M.create()
 
-	local handle_resolve = function(value)
-		handle_callback_result(new_promise, on_resolved, value, false)
-	end
-
-	local handle_reject = function(reason)
-		handle_callback_result(new_promise, on_rejected, reason, true)
-	end
-
 	if self:is_resolved() then
-		handle_resolve(self.value)
+		handle_callback_result(new_promise, on_resolved, self.value, false, context)
 	elseif self:is_rejected() then
-		handle_reject(self.value)
+		handle_callback_result(new_promise, on_rejected, self.value, true, context)
 	else
-		self.resolve_handlers:subscribe(handle_resolve)
-		self.reject_handlers:subscribe(handle_reject)
+		local handle_resolve = function(value)
+			handle_callback_result(new_promise, on_resolved, value, false, context)
+		end
+
+		local handle_reject = function(reason)
+			handle_callback_result(new_promise, on_rejected, reason, true, context)
+		end
+
+		self.on_resolve:subscribe(handle_resolve)
+		self.on_reject:subscribe(handle_reject)
 	end
 
 	return new_promise
@@ -285,41 +304,16 @@ function M:__call(value, reason)
 	end
 
 	if value ~= nil then
-		self:_resolve(value)
+		self:resolve(value)
 	else
-		self:_reject(reason)
+		self:reject(reason)
 	end
-end
-
-
----Settle the promise with the given state and value
----@param state promise.state The new state (resolved or rejected)
----@param value any The value or reason
-local function settle_promise(self, state, value)
-	if self.state ~= "pending" then
-		return
-	end
-
-	self.state = state
-	self.value = value
-
-	-- Trigger appropriate handlers
-	if state == "resolved" then
-		self.resolve_handlers:trigger(value)
-	else
-		self.reject_handlers:trigger(value)
-	end
-
-	-- Clear handlers to prevent memory leaks
-	self.resolve_handlers:clear()
-	self.reject_handlers:clear()
 end
 
 
 ---Internal method to resolve the promise.
 ---@param value any The value to resolve with.
----@package
-function M:_resolve(value)
+function M:resolve(value)
 	if self.state ~= "pending" then
 		return
 	end
@@ -330,15 +324,60 @@ function M:_resolve(value)
 		return
 	end
 
-	settle_promise(self, "resolved", value)
+	-- Inline settle_promise logic for resolved state
+	self.state = "resolved"
+	self.value = value
+	self.on_resolve:trigger(value)
+
+	-- Clear handlers to prevent memory leaks
+	self.on_resolve:clear()
+	self.on_reject:clear()
 end
 
 
 ---Internal method to reject the promise.
 ---@param reason any The reason to reject with.
----@package
-function M:_reject(reason)
-	settle_promise(self, "rejected", reason)
+function M:reject(reason)
+	if self.state ~= "pending" then
+		return
+	end
+
+	-- Inline settle_promise logic for rejected state
+	self.state = "rejected"
+	self.value = reason
+	self.on_reject:trigger(reason)
+
+	-- Clear handlers to prevent memory leaks
+	self.on_resolve:clear()
+	self.on_reject:clear()
+end
+
+
+---Append a task to this promise's internal sequence without reassigning.
+---The task may return a value or a promise. Returns self for chaining.
+---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
+---@param task fun(value:any):any
+---@return promise self
+function M:append(task)
+	self._tail = (self._tail or self):next(function(value)
+		return task(value)
+	end)
+	return self
+end
+
+
+---Get the current tail promise representing all appended work.
+---@return promise tail
+function M:tail()
+	return self._tail or self
+end
+
+
+---Reset the internal sequence to an already resolved promise.
+---@return promise self
+function M:reset()
+	self._tail = M.resolved()
+	return self
 end
 
 

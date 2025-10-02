@@ -46,7 +46,7 @@ local logger = {
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
 	warn = function(_, message)
-		pprint("WARN:", message)
+		print("WARN:", message)
 	end,
 	error = function(_, message)
 		event_context_manager.log_error(message)
@@ -234,21 +234,19 @@ function M:trigger(...)
 		if event_callback_context then
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
-			else
+			elseif USE_XPCALL then
 				local args = { event_callback_context }
 				local n = select("#", ...)
 				for i = 1, n do
 					args[i+1] = select(i, ...)
 				end
 
-				if USE_XPCALL then
-					ok, result_or_error = xpcall(function()
-						return event_callback(unpack(args))
-					end, event_error_handler)
-				else
-					result_or_error = event_callback(unpack(args))
-					ok = true
-				end
+				ok, result_or_error = xpcall(function()
+					return event_callback(unpack(args, 1, n + 1))
+				end, event_error_handler)
+			else
+				result_or_error = event_callback(event_callback_context, ...)
+				ok = true
 			end
 		else
 			if USE_PCALL then
@@ -261,7 +259,7 @@ function M:trigger(...)
 				end
 
 				ok, result_or_error = xpcall(function()
-					return event_callback(unpack(args))
+					return event_callback(unpack(args, 1, n))
 				end, event_error_handler)
 			else
 				result_or_error = event_callback(...)

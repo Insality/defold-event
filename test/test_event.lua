@@ -354,6 +354,90 @@ return function()
 			assert(#test_event == 0)
 		end)
 
+		it("Trigger with context passes all args under xpcall (nil in middle)", function()
+			event.set_mode("xpcall")
+
+			local test_event = event.create()
+			local ctx = {}
+			local ra, rb, rc
+			local f = function(self, ...)
+				ra, rb, rc = ...
+			end
+
+			test_event:subscribe(f, ctx)
+			test_event:trigger(1, nil, 3)
+
+			assert(ra == 1)
+			assert(rb == nil)
+			assert(rc == 3)
+
+			-- restore default mode
+			event.set_mode("pcall")
+		end)
+
+		it("Trigger without context passes all args under xpcall (nil in middle)", function()
+			event.set_mode("xpcall")
+
+			local test_event = event.create()
+			local ra, rb, rc
+			local f = function(...)
+				ra, rb, rc = ...
+			end
+
+			test_event:subscribe(f)
+			test_event:trigger(1, nil, 3)
+
+			assert(ra == 1)
+			assert(rb == nil)
+			assert(rc == 3)
+
+			-- restore default mode
+			event.set_mode("pcall")
+		end)
+
+
+		it("Trigger with context passes all args under none mode (nil in middle)", function()
+			event.set_mode("none")
+
+			local test_event = event.create()
+			local ctx = {}
+			local ra, rb, rc
+			local f = function(self, ...)
+				ra, rb, rc = ...
+			end
+
+			test_event:subscribe(f, ctx)
+			test_event:trigger(1, nil, 3)
+
+			assert(ra == 1)
+			assert(rb == nil)
+			assert(rc == 3)
+
+			-- restore default mode
+			event.set_mode("pcall")
+		end)
+
+
+		it("Trigger without context passes all args under none mode (nil in middle)", function()
+			event.set_mode("none")
+
+			local test_event = event.create()
+			local ra, rb, rc
+			local f = function(...)
+				ra, rb, rc = ...
+			end
+
+			test_event:subscribe(f)
+			test_event:trigger(1, nil, 3)
+
+			assert(ra == 1)
+			assert(rb == nil)
+			assert(rc == 3)
+
+			-- restore default mode
+			event.set_mode("pcall")
+		end)
+
 		--[[
 		it("Print execution time per function", function()
 			local test_time = function(c)

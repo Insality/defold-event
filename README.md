@@ -9,7 +9,7 @@
 
 # Event
 
-**Event** is a comprehensive event-driven toolkit for the [Defold](https://defold.com/) game engine that enables decoupled communication between different parts of your code through a publish-subscribe pattern. It provides events, queues, promises, and global messaging systems to create clean, maintainable game architectures with efficient asynchronous operations.
+**Event** is an event system for the [Defold](https://defold.com/) game engine. It provides events, queues, promises, and global messaging using a publish-subscribe pattern. Events are triggered instantly and automatically preserve script context, allowing you to call events from any context.
 
 
 ## Features
@@ -53,9 +53,9 @@ Event module can work in 3 modes:
 
 | Mode | Default | Cross-Context | Detailed Tracebacks | Notes |
 | --- | --- | --- | --- | --- |
-| `pcall` | ✅ | ✅ | ❌ | The `pcall` function is used to handle errors within event callback. |
-| `xpcall` | ❌ | ✅ | ✅ | The `xpcall` function is used to handle errors within event callback. |
-| `none` | ❌ | ❌ | ✅ | The error will be thrown as usual Lua error. No cross GO, GUI function calls
+| `pcall` | ✅ | ✅ | ❌ | Uses `pcall` function to handle subscribers. |
+| `xpcall` | ❌ | ✅ | ✅ | Uses `xpcall` function to handle subscribers. More memory allocations per `event:trigger` call. |
+| `none` | ❌ | ❌ | ✅ | The error will be thrown as usual Lua error. |
 
 You can set the Event Mode with code:
 
@@ -65,7 +65,11 @@ event.set_mode("xpcall")
 event.set_mode("none")
 ```
 
-The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected (errors like "The node can be reached from this context") behavior. With `pcall` (default) or `xpcall` the subscribed callback will be executed in the same context where created. By context I mean the GO scripts and GUI scripts in Defold.
+## What is context?
+
+Context is the script context where the event is triggered. It can be a GO script or a GUI script in Defold. Without context changing, you can't call `gui.set_text` from GO script for example.
+
+The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected behavior. With `pcall` (default) the subscribed callback will be executed in the same context where created.
 
 The `xpcall` mode is more verbose than `pcall` mode. It will return a detailed traceback in case of an error in the event callback. But the drawback of it is memory allocations per `event:trigger` call. Currently, I'm recommending to use `pcall` mode for production builds and `xpcall` mode for debugging purposes.
 
@@ -236,6 +240,12 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Fixed queue event processing order from LIFO to FIFO (events now processed in correct queue order)
 	- Added no_context_change mode to disable context changing in event callback and using `pcall` by default
 	- Added `event.set_mode` function to set the event mode
+
+### **V13**
+	- Added `queue:process_next` function to process exactly one event in the queue with a specific handler (subscribers will not be called)
+	- Make `promise:resolve` and `promise:reject` public functions
+	- Added `promise:append` function to append a task to the promise
+	- Added `promise:tail` and `promise:reset` functions to manage the promise tail
 
 </details>
 
