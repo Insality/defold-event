@@ -241,6 +241,12 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Added no_context_change mode to disable context changing in event callback and using `pcall` by default
 	- Added `event.set_mode` function to set the event mode
 
+### **V13**
+	- Added `queue:process_next` function to process exactly one event in the queue with a specific handler (subscribers will not be called)
+	- Make `promise:resolve` and `promise:reject` public functions
+	- Added `promise:append` function to append a task to the promise
+	- Added `promise:tail` and `promise:reset` functions to manage the promise tail
+
 </details>
 
 ## ❤️ Support project ❤️

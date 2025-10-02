@@ -179,7 +179,7 @@ end
 
 ---Handle the result of a callback and resolve the target promise accordingly
 ---@param target_promise promise The promise to resolve
----@param callback function|event|nil The callback to execute (function or event)
+---@param callback function|event|promise|nil The callback to execute (function or event)
 ---@param value any The value to pass to the callback
 ---@param is_rejection boolean Whether this is handling a rejection
 ---@param context any|nil The context to call the callback with.
@@ -194,6 +194,12 @@ local function handle_callback_result(target_promise, callback, value, is_reject
 		return
 	end
 
+	-- If callback is a promise, resolve target_promise with it directly
+	if M.is_promise(callback) then
+		resolve_promise(target_promise, callback)
+		return
+	end
+
 	if context then
 		resolve_promise(target_promise, callback(context, value))
 	else
@@ -204,8 +210,8 @@ end
 
 ---Attach resolve and reject handlers to the promise.
 ---Returns a new promise that will be resolved or rejected based on the handlers' return values.
----@param on_resolved function|event|nil Handler called when promise is resolved. If nil, value passes through.
----@param on_rejected function|event|nil Handler called when promise is rejected. If nil, rejection passes through.
+---@param on_resolved function|promise|event|nil Handler called when promise is resolved. If nil, value passes through.
+---@param on_rejected function|promise|event|nil Handler called when promise is rejected. If nil, rejection passes through.
 ---@param context any|nil The context to call the handlers with.
 ---@return promise new_promise A new promise representing the result of the handlers.
 function M:next(on_resolved, on_rejected, context)
