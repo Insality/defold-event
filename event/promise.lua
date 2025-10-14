@@ -311,7 +311,7 @@ function M:__call(value, reason)
 end
 
 
----Internal method to resolve the promise.
+---Resolve the promise.
 ---@param value any The value to resolve with.
 function M:resolve(value)
 	if self.state ~= "pending" then
@@ -335,7 +335,7 @@ function M:resolve(value)
 end
 
 
----Internal method to reject the promise.
+---Reject the promise.
 ---@param reason any The reason to reject with.
 function M:reject(reason)
 	if self.state ~= "pending" then

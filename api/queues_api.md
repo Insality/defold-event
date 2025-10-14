@@ -137,6 +137,11 @@ Events can be handled and removed in event handler callback. If event is handled
 	- `event_handler` *(function)*: Specific handler to process the events. If this function returns true, the event will be removed from the queue.
 	- `[context]` *(any)*: The context to be passed to the handler.
 
+- **Example Usage:**
+
+```lua
+queues.process("save_game", process_save_handler, self)
+```
 ### process_next
 
 ---
@@ -144,21 +149,21 @@ Events can be handled and removed in event handler callback. If event is handled
 queues.process_next(queue_id, event_handler, [context])
 ```
 
-Process exactly one event in the specified global queue with a specific handler (subscribers will not be called).
+Process exactly one event in the specified global queue with a specific handler (subscribers will NOT be called).
 If the handler returns non-nil the event will be removed from the queue.
 
 - **Parameters:**
-  - `queue_id` *(string)*: The id of the global queue to process.
-  - `event_handler` *(function)*: Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
-  - `[context]` *(any)*: The context to be passed to the handler.
+	- `queue_id` *(string)*: The id of the global queue to process.
+	- `event_handler` *(function)*: Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
+	- `[context]` *(any)*: The context to be passed to the handler.
 
 - **Returns:**
-  - `handled` *(boolean)*: True if the head event was handled and removed
+	- `handled` *(boolean)*: True if the head event was handled and removed
 
 - **Example Usage:**
 
 ```lua
-queues.process("save_game", process_save_handler, self)
+queues.process_next("save_game", process_save_handler, self)
 ```
 ### get_events
 

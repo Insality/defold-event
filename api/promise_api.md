@@ -6,12 +6,14 @@ The Promise module, used to create and manage promises.
 A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 
 ## Functions
+
 - [create](#create)
 - [resolved](#resolved)
 - [rejected](#rejected)
 - [all](#all)
 - [race](#race)
 - [is_promise](#is_promise)
+
 - [next](#next)
 - [catch](#catch)
 - [finally](#finally)
@@ -19,6 +21,11 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [is_resolved](#is_resolved)
 - [is_rejected](#is_rejected)
 - [is_finished](#is_finished)
+- [resolve](#resolve)
+- [reject](#reject)
+- [append](#append)
+- [tail](#tail)
+- [reset](#reset)
 
 ## Fields
 
@@ -31,7 +38,7 @@ A promise represents a single asynchronous operation that will either resolve wi
 
 ---
 ```lua
-promise.create([executor])
+promise.create([executor], [context])
 ```
 
 Generate a new promise instance. This instance represents a single asynchronous operation.
@@ -39,6 +46,7 @@ The executor function is called immediately with resolve and reject functions.
 
 - **Parameters:**
 	- `[executor]` *(function|event|nil)*: The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
+	- `[context]` *(any)*: The context to call the executor function with.
 
 - **Returns:**
 	- `promise_instance` *(promise)*: A new promise instance.
@@ -123,15 +131,16 @@ Check if a value is a promise object
 
 ---
 ```lua
-promise:next([on_resolved], [on_rejected])
+promise:next([on_resolved], [on_rejected], [context])
 ```
 
 Attach resolve and reject handlers to the promise.
 Returns a new promise that will be resolved or rejected based on the handlers' return values.
 
 - **Parameters:**
-	- `[on_resolved]` *(function|event|nil)*: Handler called when promise is resolved. If nil, value passes through.
-	- `[on_rejected]` *(function|event|nil)*: Handler called when promise is rejected. If nil, rejection passes through.
+	- `[on_resolved]` *(function|event|promise|nil)*: Handler called when promise is resolved. If nil, value passes through.
+	- `[on_rejected]` *(function|event|promise|nil)*: Handler called when promise is rejected. If nil, rejection passes through.
+	- `[context]` *(any)*: The context to call the handlers with.
 
 - **Returns:**
 	- `new_promise` *(promise)*: A new promise representing the result of the handlers.
@@ -214,6 +223,71 @@ Check if the promise is finished (either resolved or rejected).
 
 - **Returns:**
 	- `is_finished` *(boolean)*: True if the promise is finished.
+
+### resolve
+
+---
+```lua
+promise:resolve([value])
+```
+
+Resolve the promise.
+
+- **Parameters:**
+	- `[value]` *(any)*: The value to resolve with.
+
+### reject
+
+---
+```lua
+promise:reject([reason])
+```
+
+Reject the promise.
+
+- **Parameters:**
+	- `[reason]` *(any)*: The reason to reject with.
+
+### append
+
+---
+```lua
+promise:append([task])
+```
+
+Append a task to this promise's internal sequence without reassigning.
+The task may return a value or a promise. Returns self for chaining.
+Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
+
+- **Parameters:**
+	- `[task]` *(fun(value: any):any)*:
+
+- **Returns:**
+	- `self` *(promise)*:
+
+### tail
+
+---
+```lua
+promise:tail()
+```
+
+Get the current tail promise representing all appended work.
+
+- **Returns:**
+	- `tail` *(promise)*:
+
+### reset
+
+---
+```lua
+promise:reset()
+```
+
+Reset the internal sequence to an already resolved promise.
+
+- **Returns:**
+	- `self` *(promise)*:
 
 
 ## Fields
