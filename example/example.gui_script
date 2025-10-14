@@ -6,7 +6,8 @@ local logic = require("example.logic")
 
 
 local function setup_logger()
-	event.set_logger(log.get_logger("event") --[[@as event.logger]])
+	event.set_logger(log.get_logger("event"))
+	--event.set_logger(nil)
 end
 
 
