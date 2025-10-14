@@ -1,5 +1,6 @@
-local USE_XPCALL = sys.get_config_int("event.use_xpcall", 0) == 1
-local USE_PCALL = sys.get_config_int("event.use_pcall", 1) == 1 and not USE_XPCALL
+local event_mode = sys.get_config_string("event.event_mode", "pcall")
+local USE_XPCALL = event_mode == "xpcall"
+local USE_PCALL = event_mode == "pcall"
 local USE_CONTEXT_CHANGE = USE_PCALL or USE_XPCALL
 
 ---Array of next items: { callback, callback_context, script_context }
@@ -37,7 +38,9 @@ local empty_logger = {
 	debug = EMPTY_FUNCTION,
 	info = EMPTY_FUNCTION,
 	warn = EMPTY_FUNCTION,
-	error = EMPTY_FUNCTION,
+	error = function(_, message)
+		event_context_manager.log_error(message)
+	end,
 }
 
 ---@type event.logger
@@ -282,7 +285,7 @@ function M:trigger(...)
 		if not ok then
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
-			logger:error("Error in trigger event: " .. place)
+			logger:error("Error from trigger event here: " .. place)
 			logger:error(USE_XPCALL and result_or_error or debug.traceback(result_or_error, 2))
 		end
 
