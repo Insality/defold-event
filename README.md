@@ -103,7 +103,7 @@ object:is_empty()
 object:clear()
 
 local events = require("event.events")
-events(...)
+events(event_id, ...)
 events.trigger(event_id, ...)
 events.subscribe(event_id, callback, [callback_context])
 events.unsubscribe(event_id, callback, [callback_context])
