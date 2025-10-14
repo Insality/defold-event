@@ -105,4 +105,12 @@ function M.is_empty(event_id)
 end
 
 
+-- Make the module callable as a shorthand for trigger
+setmetatable(M, {
+	__call = function(_, event_id, ...)
+		return M.trigger(event_id, ...)
+	end
+})
+
+
 return M

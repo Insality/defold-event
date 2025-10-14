@@ -144,5 +144,51 @@ return function()
 			local is_unsubscribed = events.unsubscribe("unknown", f)
 			assert(is_unsubscribed == false)
 		end)
+
+
+		it("Events callable as shorthand for trigger", function()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			events.subscribe("test", f)
+			events("test") -- Should be equivalent to events.trigger("test")
+			assert(counter == 1)
+			events("test")
+			assert(counter == 2)
+
+			events.unsubscribe("test", f)
+			events("test")
+			assert(counter == 2)
+		end)
+
+
+		it("Events callable with params", function()
+			local counter = 0
+			local f = function(a, b) counter = counter + a + b end
+
+			events.subscribe("test", f)
+			events("test", 1, 2) -- Should be equivalent to events.trigger("test", 1, 2)
+			assert(counter == 3)
+		end)
+
+
+		it("Events callable returns result", function()
+			local f = function() return "result" end
+
+			events.subscribe("test", f)
+			local result = events("test") -- Should be equivalent to events.trigger("test")
+			assert(result == "result")
+		end)
+
+
+		it("Events callable return last callback result", function()
+			local f1 = function() return "result1" end
+			local f2 = function() return "result2" end
+
+			events.subscribe("test", f1)
+			events.subscribe("test", f2)
+			local result = events("test") -- Should be equivalent to events.trigger("test")
+			assert(result == "result2")
+		end)
 	end)
 end
