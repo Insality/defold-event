@@ -9,6 +9,7 @@ Events are stored in the queue until they are handled by subscribers, following 
 
 - [create](#create)
 - [is_queue](#is_queue)
+
 - [push](#push)
 - [subscribe](#subscribe)
 - [unsubscribe](#unsubscribe)
@@ -145,15 +146,15 @@ Events can be handled and removed in event handler callback. If event is handled
 queue:process_next(event_handler, [context])
 ```
 
-Process exactly one queued event with a specific handler (subscribers will not be called).
+Process exactly one queued event with a specific handler (subscribers will NOT be called).
 If the handler returns non-nil the event will be removed from the queue.
 
 - **Parameters:**
-  - `event_handler` *(function|event)*: Specific handler or event to process the head event. If this function returns non-nil, the event will be removed from the queue.
-  - `[context]` *(any)*: The context to be passed to the handler.
+	- `event_handler` *(function|event)*: Specific handler or event to process the event. If this function returns non-nil, the event will be removed from the queue.
+	- `[context]` *(any)*: The context to be passed to the handler.
 
 - **Returns:**
-  - `handled` *(boolean)*: True if the head event was handled and removed
+	- `handled` *(boolean)*: True if the head event was handled and removed
 
 ### get_events
 

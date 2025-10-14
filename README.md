@@ -74,13 +74,13 @@ Context is the script context where the event is triggered. It can be a GO scrip
 **Continue on error** (`pcall` and `xpcall` modes):
 - If one subscriber throws an error, it gets logged but other subscribers still run
 - Code after `event:trigger()` continues executing
-- Good for non-critical events where you want resilience
 
 **Stop on error** (`none` mode):
 - If any subscriber throws an error, execution stops immediately
 - No more subscribers are called, code after `event:trigger()` doesn't run
-- Good for critical validation chains where failure should halt everything
-- **Note**: Cross-context is disabled - callbacks run in trigger context, not subscriber context
+- **Important limitation**: Cross-context switching is disabled. Callbacks execute in the trigger's context rather than their subscription context, which removes the primary advantage of this event system over standard Lua function calls
+
+The mode setting is global and affects all events in your project.
 
 **Recommendation**: Use `pcall` for production (safe, fast) and `xpcall` for debugging (detailed errors).
 
