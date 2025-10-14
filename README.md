@@ -14,13 +14,13 @@
 
 ## Features
 
-- **Event Management**: Create, subscribe, unsubscribe, and trigger events.
+- **Event Management**: Create, trigger, subscribe, unsubscribe to events.
 - **Cross-Context**: You can subscribe to events from different scripts.
-- **Callback Management**: Attach callbacks to events with optional data.
-- **Global Events**: Create and subscribe global events that can be triggered from anywhere in your game.
-- **Queue**: Create queue instances to queue events until they are handled by subscribers. Unlike regular events which are immediately processed, queued events are stored in a queue until they are explicitly handled.
-- **Global Queues**: Create and subscribe global queue instances that can be accessed from anywhere in your game.
-- **Promise**: A promise implementation built on top of the event system for asynchronous operations and chaining.
+- **Callback Management**: Attach callbacks to events with optional context.
+- **Global Events**: Use string identifiers to trigger events from anywhere in your game.
+- **Queue**: Store events in a queue until they are processed by subscribers.
+- **Global Queues**: Access queue instances from anywhere in your game using string identifiers.
+- **Promise**: Handle asynchronous operations with promise-style chaining.
 - **Logging**: Set a logger to log event activities.
 
 
@@ -51,11 +51,11 @@ https://github.com/Insality/defold-event/archive/refs/tags/13.zip
 
 Event module can work in 3 modes:
 
-| Mode | Default | Cross-Context | Detailed Tracebacks | Notes |
-| --- | --- | --- | --- | --- |
-| `pcall` | ✅ | ✅ | ❌ | Uses `pcall` function to handle subscribers. |
-| `xpcall` | ❌ | ✅ | ✅ | Uses `xpcall` function to handle subscribers. More memory allocations per `event:trigger` call. |
-| `none` | ❌ | ❌ | ✅ | The error will be thrown as usual Lua error. |
+| Mode | Default | Cross-Context | Error Behavior | Tracebacks | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `pcall` | ✅ | ✅ | **Continue on error** | Basic | Errors are logged, other subscribers still run, code after trigger continues. |
+| `xpcall` | ❌ | ✅ | **Continue on error** | Full | Same as pcall but with detailed tracebacks. More memory usage. |
+| `none` | ❌ | ❌ | **Stop on error** | Full | Error stops all execution immediately. No cross-context support. |
 
 You can set the Event Mode with code:
 
@@ -69,9 +69,20 @@ event.set_mode("none")
 
 Context is the script context where the event is triggered. It can be a GO script or a GUI script in Defold. Without context changing, you can't call `gui.set_text` from GO script for example.
 
-The context changing is disabled in case of `none` mode. That means the event callback will be executed in the same context as the event trigger, which can lead to unexpected behavior. With `pcall` (default) the subscribed callback will be executed in the same context where created.
+## Error Behavior
 
-The `xpcall` mode is more verbose than `pcall` mode. It will return a detailed traceback in case of an error in the event callback. But the drawback of it is memory allocations per `event:trigger` call. Currently, I'm recommending to use `pcall` mode for production builds and `xpcall` mode for debugging purposes.
+**Continue on error** (`pcall` and `xpcall` modes):
+- If one subscriber throws an error, it gets logged but other subscribers still run
+- Code after `event:trigger()` continues executing
+- Good for non-critical events where you want resilience
+
+**Stop on error** (`none` mode):
+- If any subscriber throws an error, execution stops immediately
+- No more subscribers are called, code after `event:trigger()` doesn't run
+- Good for critical validation chains where failure should halt everything
+- **Note**: Cross-context is disabled - callbacks run in trigger context, not subscriber context
+
+**Recommendation**: Use `pcall` for production (safe, fast) and `xpcall` for debugging (detailed errors).
 
 ## API Reference
 
@@ -82,16 +93,17 @@ local event = require("event.event")
 event.set_logger([logger])
 event.set_mode("pcall" | "xpcall" | "none")
 
-local event_instance = event.create([callback], [callback_context])
-event_instance(...)
-event_instance:trigger(...)
-event_instance:subscribe(callback, [callback_context])
-event_instance:unsubscribe(callback, [callback_context])
-event_instance:is_subscribed(callback, [callback_context])
-event_instance:is_empty()
-event_instance:clear()
+local object = event.create([callback], [callback_context])
+object(...)
+object:trigger(...)
+object:subscribe(callback, [callback_context])
+object:unsubscribe(callback, [callback_context])
+object:is_subscribed(callback, [callback_context])
+object:is_empty()
+object:clear()
 
 local events = require("event.events")
+events(...)
 events.trigger(event_id, ...)
 events.subscribe(event_id, callback, [callback_context])
 events.unsubscribe(event_id, callback, [callback_context])
@@ -185,7 +197,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 ### **V11**
 	- Introduced behavior in the `defer` module. The Defer module provides a queuing mechanism for events. Unlike regular events which are immediately processed, deferred events are stored in a queue until they are explicitly handled by a subscriber. This is useful for events that need to persist until they can be properly handled.
-	- Add `use_xpcall` option to get detailed tracebacks in case of an error in the event callback.
+	- Add `use_xpcall` option to get full tracebacks in case of an error in the event callback.
 	- Moved detailed API documentation to separate files
 	- Remove annotations files. Now all annotations directly in the code.
 
