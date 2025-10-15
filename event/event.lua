@@ -119,7 +119,13 @@ function M:subscribe(callback, callback_context)
 
 	-- If callback is an event, subscribe to it and return
 	if M.is_event(callback) then
-		return self:subscribe(callback.trigger, callback)
+		if callback_context then
+			return self:subscribe(function(context, ...)
+				return callback:trigger(context, ...)
+			end, callback_context)
+		else
+			return self:subscribe(callback.trigger, callback)
+		end
 	end
 
 	---@cast callback function
