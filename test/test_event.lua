@@ -438,6 +438,45 @@ return function()
 			event.set_mode("pcall")
 		end)
 
+
+		it("Error in callback in none mode rethrows", function()
+			event.set_mode("none")
+
+			local test_event = event.create()
+			local err_msg = "none mode error"
+			test_event:subscribe(function()
+				error(err_msg)
+			end)
+
+			local ok, err = pcall(function()
+				test_event:trigger()
+			end)
+
+			assert(ok == false)
+			assert(err and tostring(err):find(err_msg))
+
+			event.set_mode("pcall")
+		end)
+
+
+		it("Error in none mode includes traceback", function()
+			event.set_mode("none")
+
+			local test_event = event.create()
+			test_event:subscribe(function()
+				error("traceback test")
+			end)
+
+			local ok, err = pcall(function()
+				test_event:trigger()
+			end)
+
+			assert(ok == false)
+			assert(err and tostring(err):find("stack traceback"))
+
+			event.set_mode("pcall")
+		end)
+
 		--[[
 		it("Print execution time per function", function()
 			local test_time = function(c)

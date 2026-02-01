@@ -1,7 +1,7 @@
 local event_mode = sys.get_config_string("event.event_mode", "pcall")
 local USE_XPCALL = event_mode == "xpcall"
 local USE_PCALL = event_mode == "pcall"
-local USE_CONTEXT_CHANGE = USE_PCALL or USE_XPCALL
+local USE_NONE = event_mode == "none"
 
 ---Array of next items: { callback, callback_context, script_context }
 ---@class event.callback_data: table
@@ -70,7 +70,7 @@ end
 function M.set_mode(mode)
 	USE_PCALL = mode == "pcall"
 	USE_XPCALL = mode == "xpcall"
-	USE_CONTEXT_CHANGE = USE_PCALL or USE_XPCALL
+	USE_NONE = mode == "none"
 end
 
 
@@ -234,7 +234,7 @@ function M:trigger(...)
 		local event_script_context = callback[3]
 
 		-- Set context for the callback
-		if USE_CONTEXT_CHANGE and current_script_context ~= event_script_context then
+		if current_script_context ~= event_script_context then
 			set_context(event_script_context)
 		end
 
@@ -243,7 +243,7 @@ function M:trigger(...)
 		if event_callback_context then
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
-			elseif USE_XPCALL then
+			elseif USE_XPCALL or USE_NONE then
 				local args = { event_callback_context }
 				local n = select("#", ...)
 				for i = 1, n do
@@ -260,7 +260,7 @@ function M:trigger(...)
 		else
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, ...)
-			elseif USE_XPCALL then
+			elseif USE_XPCALL or USE_NONE then
 				local args = {}
 				local n = select("#", ...)
 				for i = 1, n do
@@ -277,12 +277,16 @@ function M:trigger(...)
 		end
 
 		-- Restore context
-		if USE_CONTEXT_CHANGE and current_script_context ~= event_script_context then
+		if current_script_context ~= event_script_context then
 			set_context(current_script_context)
 		end
 
 		-- Handle errors
 		if not ok then
+			if USE_NONE then
+				error(result_or_error)
+			end
+
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
 			logger:error("Error from trigger event here: " .. place)

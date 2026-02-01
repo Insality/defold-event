@@ -30,10 +30,10 @@
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/13.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/14.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/13.zip
+https://github.com/Insality/defold-event/archive/refs/tags/14.zip
 ```
 
 ### Library Size
@@ -55,7 +55,7 @@ Event module can work in 3 modes:
 | --- | --- | --- | --- | --- | --- |
 | `pcall` | ✅ | ✅ | **Continue on error** | Basic | Errors are logged, other subscribers still run, code after trigger continues. |
 | `xpcall` | ❌ | ✅ | **Continue on error** | Full | Same as pcall but with detailed tracebacks. More memory usage. |
-| `none` | ❌ | ❌ | **Stop on error** | Full | Error stops all execution immediately. No cross-context support. |
+| `none` | ❌ | ✅ | **Stop on error** | Full | Error stops all execution immediately. Callbacks run with xpcall; on error, error is rethrown with full traceback. |
 
 You can set the Event Mode with code:
 
@@ -78,7 +78,7 @@ Context is the script context where the event is triggered. It can be a GO scrip
 **Stop on error** (`none` mode):
 - If any subscriber throws an error, execution stops immediately
 - No more subscribers are called, code after `event:trigger()` doesn't run
-- **Important limitation**: Cross-context switching is disabled. Callbacks execute in the trigger's context rather than their subscription context, which removes the primary advantage of this event system over standard Lua function calls
+- Callbacks run with xpcall; on error, the error is rethrown with `error()` (full traceback)
 
 The mode setting is global and affects all events in your project.
 
@@ -218,6 +218,10 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Make `promise:resolve` and `promise:reject` public functions
 	- Added `promise:append` function to append a task to the promise
 	- Added `promise:tail` and `promise:reset` functions to manage the promise tail
+
+### **V14**
+	- Enable cross-context for "none" event mode
+	- In "none" mode callbacks are run with xpcall; on error, error is rethrown with `error()` (full traceback)
 
 </details>
 
