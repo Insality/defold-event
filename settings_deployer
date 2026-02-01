@@ -2,13 +2,13 @@
 bob_folder=./
 
 # You can point bob version for project in format "filename:sha"
-bob_sha="181:fd1ad4c17bfdcd890ea7176f2672c35102384419"
+bob_sha="1_12_0:3206f699aaff89f357c9d549050b8453e080c5d2"
 
 # Select Defold channel. Values: stable, beta, alpha
 bob_channel="stable"
 
 # If true, it will check and download latest bob version. It will ignore bob_sha param
-use_latest_bob=true
+use_latest_bob=false
 
 # Select Defold build server
 build_server="https://build.defold.com"
