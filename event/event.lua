@@ -252,7 +252,7 @@ function M:trigger(...)
 
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args, 1, n + 1))
-				end, event_error_handler)
+				end, USE_NONE and tostring or event_error_handler)
 			else
 				result_or_error = event_callback(event_callback_context, ...)
 				ok = true
@@ -269,7 +269,7 @@ function M:trigger(...)
 
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args, 1, n))
-				end, event_error_handler)
+				end, USE_NONE and tostring or event_error_handler)
 			else
 				result_or_error = event_callback(...)
 				ok = true
