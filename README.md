@@ -51,38 +51,57 @@ https://github.com/Insality/defold-event/archive/refs/tags/14.zip
 
 Event module can work in 3 modes:
 
-| Mode | Default | Cross-Context | Error Behavior | Tracebacks | Notes |
-| --- | --- | --- | --- | --- | --- |
-| `pcall` | ✅ | ✅ | **Continue on error** | Basic | Errors are logged, other subscribers still run, code after trigger continues. |
-| `xpcall` | ❌ | ✅ | **Continue on error** | Full | Same as pcall but with detailed tracebacks. More memory usage. |
-| `none` | ❌ | ✅ | **Stop on error** | Full | Error stops all execution immediately. Callbacks run with xpcall; on error, error is rethrown with full traceback. |
+| Mode      | Default | Error Behavior         | Tracebacks | Notes                                                                                       |
+|-----------|:-------:|-----------------------|------------|---------------------------------------------------------------------------------------------|
+| `pcall`   |   ✅    | Continue on error     | Basic      | Errors are logged; other subscribers still run; code after trigger continues.               |
+| `xpcall`  |   ❌    | Continue on error     | Full       | Same as pcall but with detailed tracebacks. More memory usage.                              |
+| `none`    |   ❌    | Stop on error         | Full       | Error stops all execution immediately. Callbacks run with xpcall; error rethrown w/ traceback. |
 
-You can set the Event Mode with code:
-
-```lua
-event.set_mode("pcall")
-event.set_mode("xpcall")
-event.set_mode("none")
-```
 
 ## What is context?
 
 Context is the script context where the event is triggered. It can be a GO script or a GUI script in Defold. Without context changing, you can't call `gui.set_text` from GO script for example.
 
-## Error Behavior
 
-**Continue on error** (`pcall` and `xpcall` modes):
-- If one subscriber throws an error, it gets logged but other subscribers still run
-- Code after `event:trigger()` continues executing
+## Basic Usage
 
-**Stop on error** (`none` mode):
-- If any subscriber throws an error, execution stops immediately
-- No more subscribers are called, code after `event:trigger()` doesn't run
-- Callbacks run with xpcall; on error, the error is rethrown with `error()` (full traceback)
+```lua
+-- Lua module /my_module.lua
+local event = require("event.event")
 
-The mode setting is global and affects all events in your project.
+local M = {}
 
-**Recommendation**: Use `pcall` for production (safe, fast) and `xpcall` for debugging (detailed errors).
+-- Create events anywhere
+M.on_value_changed = event.create()
+
+function M.set_value(self, value)
+	M._value = value
+	-- Trigger the event when required to call subscribers
+	M.on_value_changed:trigger(value)
+end
+
+return M
+
+---
+
+-- Lua script /my_script.script
+local my_module = require("my_module")
+
+local function on_value_changed(self, value)
+	print("Value changed to:", value)
+end
+
+function init(self)
+	-- Subscribe to the event when required to call subscribers
+	-- Self is passed as the first parameter to the callback
+	my_module.on_value_changed:subscribe(on_value_changed, self)
+end
+
+function final(self)
+	-- Unsubscribe from the event when the script is destroyed
+	my_module.on_value_changed:unsubscribe(on_value_changed, self)
+end
+```
 
 ## API Reference
 
@@ -94,7 +113,7 @@ event.set_logger([logger])
 event.set_mode("pcall" | "xpcall" | "none")
 
 local object = event.create([callback], [callback_context])
-object(...)
+object(...) -- Alias for object:trigger(...)
 object:trigger(...)
 object:subscribe(callback, [callback_context])
 object:unsubscribe(callback, [callback_context])
@@ -103,7 +122,7 @@ object:is_empty()
 object:clear()
 
 local events = require("event.events")
-events(event_id, ...)
+events(event_id, ...) -- Alias for events.trigger(event_id, ...)
 events.trigger(event_id, ...)
 events.subscribe(event_id, callback, [callback_context])
 events.unsubscribe(event_id, callback, [callback_context])
@@ -120,6 +139,7 @@ For detailed API documentation, please refer to:
 - [Queue API](api/queue_api.md)
 - [Global Queues API](api/queues_api.md)
 - [Promise API](api/promise_api.md)
+
 
 ## Use Cases
 

@@ -8,7 +8,7 @@ event.set_logger(logger)
 event.set_mode("pcall" | "xpcall" | "none")
 
 local object = event.create([callback], [callback_context])
-object(...)
+object(...) -- Alias for object:trigger(...)
 object:trigger(...)
 object:subscribe(callback, [callback_context])
 object:unsubscribe(callback, [callback_context])
@@ -21,6 +21,7 @@ object:clear()
 ```lua
 local events = require("event.events")
 
+events(event_id, ...) -- Alias for events.trigger(event_id, ...)
 events.trigger(event_id, ...)
 events.subscribe(event_id, callback, [callback_context])
 events.unsubscribe(event_id, callback, [callback_context])
