@@ -82,8 +82,6 @@ end
 
 return M
 
----
-
 -- Lua script /my_script.script
 local my_module = require("my_module")
 
