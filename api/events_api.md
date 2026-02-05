@@ -10,6 +10,7 @@ This is particularly useful for events that need to be handled by multiple scrip
 - [trigger](#trigger)
 - [clear](#clear)
 - [clear_all](#clear_all)
+- [get](#get)
 - [subscribe](#subscribe)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
@@ -60,6 +61,27 @@ Remove all callbacks subscribed to the specified global event.
 
 ```lua
 events.clear("on_game_over")
+```
+### get
+
+---
+```lua
+events.get(event_id)
+```
+
+Get an event instance for the specified global event. Creates the event if it does not exist.
+
+- **Parameters:**
+	- `event_id` *(string)*: The id of the global event.
+
+- **Returns:**
+	- `event_instance` *(event)*: An event instance that can be used to subscribe to and trigger the event.
+
+- **Example Usage:**
+
+```lua
+local on_game_over = events.get("on_game_over")
+on_game_over:subscribe(callback, self)
 ```
 ### clear_all
 

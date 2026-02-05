@@ -40,7 +40,7 @@ By default, the module uses the `pprint` logger for errors.
 event.set_mode(mode)
 ```
 
-Set the mode of the event module.
+Set the mode of the event module. All modes support cross-context. In "none" mode callbacks run with xpcall; on error, the error is rethrown with full traceback.
 ```lua
 mode:
     | "pcall"

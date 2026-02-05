@@ -1,9 +1,27 @@
 return function()
 	local events = {}
+	local event = nil
 
 	describe("Event Context Change", function()
 		before(function()
 			events = require("event.events")
+			event = require("event.event")
+		end)
+
+
+		it("Cross-context works in none mode", function()
+			assert(event)
+			event.set_mode("none")
+
+			local object = factory.create("#go_context_object", vmath.vector3(42, 42, 0))
+
+			local go_position = events.trigger("get_go_position", "go")
+			assert(go_position)
+			assert(go_position.x == 42)
+			assert(go_position.y == 42)
+
+			go.delete(object)
+			event.set_mode("pcall")
 		end)
 
 		it("Get position from GO in GUI", function()

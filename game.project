@@ -13,7 +13,7 @@ input_method = HiddenInputField
 
 [project]
 title = Defold Event
-version = 13
+version = 14
 publisher = Insality
 developer = Maksim Tuprikov, Insality
 dependencies#0 = https://github.com/Insality/defold-log/archive/refs/tags/2.zip

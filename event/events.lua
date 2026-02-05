@@ -105,6 +105,15 @@ function M.is_empty(event_id)
 end
 
 
+---Get a event instance for the specified global event.
+---@param event_id string The id of the global event to get a callback for.
+---@return event event_instance A event instance that can be used to subscribe to and trigger the event.
+function M.get(event_id)
+	M.events[event_id] = M.events[event_id] or Event.create()
+	return M.events[event_id]
+end
+
+
 -- Make the module callable as a shorthand for trigger
 setmetatable(M, {
 	__call = function(_, event_id, ...)
