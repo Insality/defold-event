@@ -120,15 +120,8 @@ end
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
-	-- If callback is an event, subscribe to it and return
 	if M.is_event(callback) then
-		if callback_context then
-			return self:subscribe(function(context, ...)
-				return callback:trigger(context, ...)
-			end, callback_context)
-		else
-			return self:subscribe(callback.trigger, callback)
-		end
+		return self:subscribe(callback.trigger, callback)
 	end
 
 	---@cast callback function
@@ -252,7 +245,7 @@ function M:trigger(...)
 
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args, 1, n + 1))
-				end, USE_NONE and tostring or event_error_handler)
+				end, event_error_handler)
 			else
 				result_or_error = event_callback(event_callback_context, ...)
 				ok = true
@@ -269,7 +262,7 @@ function M:trigger(...)
 
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args, 1, n))
-				end, USE_NONE and tostring or event_error_handler)
+				end, event_error_handler)
 			else
 				result_or_error = event_callback(...)
 				ok = true
@@ -284,12 +277,12 @@ function M:trigger(...)
 		-- Handle errors
 		if not ok then
 			if USE_NONE then
-				error(result_or_error)
+				error(result_or_error, 2)
 			end
 
 			local caller_info = debug.getinfo(2)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
-			logger:error("Error from trigger event here: " .. place)
+			logger:error("Error from trigger event here: " .. place, 2)
 			logger:error(USE_XPCALL and result_or_error or debug.traceback(result_or_error, 2))
 		end
 

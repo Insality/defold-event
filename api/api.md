@@ -23,6 +23,7 @@ local events = require("event.events")
 
 events(event_id, ...) -- Alias for events.trigger(event_id, ...)
 events.trigger(event_id, ...)
+events.get(event_id)
 events.subscribe(event_id, callback, [callback_context])
 events.unsubscribe(event_id, callback, [callback_context])
 events.is_subscribed(event_id, callback, [callback_context])
