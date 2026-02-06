@@ -9,7 +9,8 @@
 
 # Event
 
-**Event** is an event system for the [Defold](https://defold.com/) game engine. It provides events, queues, promises, and global messaging using a publish-subscribe pattern. Events are triggered instantly and automatically preserve script context, allowing you to call events from any context.
+**Event** is a lightweight event toolkit for the [Defold](https://defold.com/) game engine.
+It helps you decouple systems using publish-subscribe patterns, delayed queues, and promise-like chains while keeping Defold script context safe.
 
 
 ## Features
@@ -60,7 +61,8 @@ Event module can work in 3 modes:
 
 ## What is context?
 
-Context is the script context where the event is triggered. It can be a GO script or a GUI script in Defold. Without context changing, you can't call `gui.set_text` from GO script for example.
+Context is the Defold script environment where the callback runs (`script`, `gui_script`, etc.).
+Context forwarding lets a callback execute in the correct place, so GUI-only calls such as `gui.set_text()` can be safely triggered from outside GUI code.
 
 
 ## Basic Usage
