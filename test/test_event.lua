@@ -202,6 +202,53 @@ return function()
 			assert(test_event2:is_subscribed(test_event1) == false)
 		end)
 
+		it("Event subscribed with event and context receives context and can be unsubscribed", function()
+			local parent = event.create()
+			local child = event.create()
+			local counter = 0
+			local last_context
+			local f = function(ctx, amount)
+				last_context = ctx
+				counter = counter + amount
+			end
+
+			child:subscribe(f, "my_context")
+			parent:subscribe(child, "my_context")
+
+			parent:trigger(1)
+			assert(counter == 1)
+			assert(last_context == "my_context")
+
+			parent:trigger(2)
+			assert(counter == 3)
+
+			assert(parent:is_subscribed(child, "my_context") == true)
+			local ok = parent:unsubscribe(child, "my_context")
+			assert(ok == true)
+			assert(parent:is_subscribed(child, "my_context") == false)
+
+			parent:trigger(10)
+			assert(counter == 3)
+		end)
+
+		it("Unsubscribe event with context does not remove event without context", function()
+			local parent = event.create()
+			local child = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			child:subscribe(f)
+			parent:subscribe(child)
+			parent:subscribe(child, "context")
+
+			parent:unsubscribe(child, "context")
+			parent:trigger()
+			assert(counter == 1)
+
+			parent:unsubscribe(child)
+			assert(#parent == 0)
+		end)
+
 		it("Print memory allocations per function", function()
 			local EMPTY_FUNCTION = function() end
 			local logger =  {
