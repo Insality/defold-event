@@ -3,7 +3,7 @@ local USE_XPCALL = event_mode == "xpcall"
 local USE_PCALL = event_mode == "pcall"
 local USE_NONE = event_mode == "none"
 
----Array of next items: { callback, callback_context, script_context [, subscribed_event] }
+---Array of next items: { callback, callback_context, script_context [, subscribed_event] [, delete] }
 ---@class event.callback_data: table
 
 ---A logger object for event module should match the following interface
@@ -17,6 +17,7 @@ local USE_NONE = event_mode == "none"
 ---The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
 ---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 ---@class event
+---@field package _trigger_depth number The depth of the event trigger.
 local M = {}
 
 -- Forward declaration
@@ -105,10 +106,14 @@ end
 ---@param self event The event to subscribe to.
 ---@param callback event The event to subscribe to.
 ---@param callback_context any|nil The context to subscribe to.
+---@param once boolean|nil If true, subscription is removed at end of trigger (once).
 ---@return boolean is_subscribed True if the event is subscribed
 ---@return number|nil index Index of the event subscription in the list.
-local function subscribe_event(self, callback, callback_context)
+local function subscribe_event(self, callback, callback_context, once)
 	if not callback_context or callback_context == callback then
+		if once then
+			return self:once(callback.trigger, callback)
+		end
 		return self:subscribe(callback.trigger, callback)
 	end
 
@@ -121,7 +126,7 @@ local function subscribe_event(self, callback, callback_context)
 		return callback:trigger(...)
 	end
 
-	table_insert(self, { wrapper, callback_context, get_context(), callback })
+	table_insert(self, { wrapper, callback_context, get_context(), callback, once })
 
 	return true
 end
@@ -136,6 +141,17 @@ end
 local function unsubscribe_event(self, callback, callback_context)
 	if not callback_context or callback_context == callback then
 		return self:unsubscribe(callback.trigger, callback)
+	end
+
+	if self._trigger_depth and self._trigger_depth > 0 then
+		for index = 1, #self do
+			local cb = self[index]
+			if cb[4] == callback and cb[2] == callback_context then
+				cb[5] = true
+				return true
+			end
+		end
+		return false
 	end
 
 	for index = 1, #self do
@@ -207,6 +223,29 @@ function M:subscribe(callback, callback_context)
 end
 
 
+---Subscribe a callback for a single trigger. After the first trigger the callback is automatically unsubscribed.
+---@param callback function|event The function or event to run once.
+---@param callback_context any|nil Same as subscribe.
+---@return boolean is_subscribed True if subscribed
+function M:once(callback, callback_context)
+	assert(callback, "A function must be passed to subscribe to an event")
+
+	if M.is_event(callback) then
+		---@cast callback event
+		return subscribe_event(self, callback, callback_context, true)
+	end
+
+	---@cast callback function
+	if self:is_subscribed(callback, callback_context) then
+		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
+		return false
+	end
+
+	table_insert(self, { callback, callback_context, get_context(), nil, true })
+	return true
+end
+
+
 ---Remove a previously subscribed callback from the event.
 ---The callback_context should be the same as the one used when subscribing the callback.
 ---If there is no callback_context provided, all callbacks with the same function will be unsubscribed.
@@ -223,6 +262,18 @@ function M:unsubscribe(callback, callback_context)
 	end
 
 	---@cast callback function
+
+	if self._trigger_depth and self._trigger_depth > 0 then
+		local marked = false
+		for index = 1, #self do
+			local cb = self[index]
+			if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
+				cb[5] = true
+				marked = true
+			end
+		end
+		return marked
+	end
 
 	local is_removed = false
 	for index = #self, 1, -1 do
@@ -289,6 +340,7 @@ function M:trigger(...)
 		return
 	end
 
+	self._trigger_depth = (self._trigger_depth or 0) + 1
 	local result = nil
 	local current_script_context = get_context()
 
@@ -361,6 +413,13 @@ function M:trigger(...)
 		result = result_or_error
 	end
 
+	for index = #self, 1, -1 do
+		if self[index][5] == true then
+			table_remove(self, index)
+		end
+	end
+
+	self._trigger_depth = self._trigger_depth - 1
 	return result
 end
 

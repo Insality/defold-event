@@ -44,8 +44,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/14.zip
 
 | Platform         | Event Size   | Events Size   | Queue Size   | Queues Size  | Promise Size |
 | ---------------- | ------------ | ------------- | ------------ | ------------ | ------------ |
-| HTML5            | **1.68 KB**  | **0.41 KB**   | **1.11 KB**  | **0.49 KB**  | **1.74 KB**  |
-| Desktop / Mobile | **2.88 KB**  | **0.71 KB**   | **2.03 KB**  | **0.97 KB**  | **3.22 KB**  |
+| HTML5            | **2.06 KB**  | **0.5 KB**   | **1.28 KB**  | **0.56 KB**  | **1.72 KB**  |
+| Desktop / Mobile | **4.02 KB**  | **0.93 KB**   | **2.57 KB**  | **1.02 KB**  | **3.29 KB**  |
 
 
 ## Event Mode
@@ -242,6 +242,12 @@ If you have any issues, questions or suggestions please [create an issue](https:
 ### **V14**
 	- Enable cross-context for "none" event mode
 	- In "none" mode callbacks are run with xpcall; on error, error is rethrown with `error()` (full traceback)
+
+### **V15**
+	- once: Added `event:once`, `events.once`, `queue:once`, and `queues.once` to subscribe a handler for a single invocation; the handler is automatically unsubscribed after the first call.
+	- Unsubscribe during trigger: Calling `unsubscribe` from inside a callback no longer breaks the current trigger iteration; removals are applied after the trigger finishes, so all callbacks in the current trigger still run.
+	- Event as callback: Support for `callback_context` when subscribing an event to another event (e.g. `event_2:subscribe(event_1, context)`).
+	- Unsubscribe event from event: Fixed unsubscribing one event from another so the correct subscription is found and removed.
 
 </details>
 

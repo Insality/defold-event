@@ -231,7 +231,49 @@ function final(self)
     queues.unsubscribe("get_atlas_path", get_atlas_path, self)
 end
 ```
-end
+
+### 8. Using once: subscribe for a single invocation
+
+Use `once` when you want a handler to run only one time; it is automatically unsubscribed after the first trigger. Same API exists on `event`, `events`, `queue`, and `queues`.
+
+**Event / global events:**
+
+```lua
+local event = require("event.event")
+local events = require("event.events")
+
+-- Local event: callback runs once, then is removed
+local on_ready = event.create()
+on_ready:once(function()
+    print("Ready! This will not run again.")
+end)
+on_ready:trigger() -- prints
+on_ready:trigger() -- does nothing
+
+-- Global event
+events.once("game_over", function(self)
+    self:show_game_over_screen()
+end, self)
 ```
 
+**Queue / global queues:**
+
+```lua
+local queue = require("event.queue")
+local queues = require("event.queues")
+
+-- Handle exactly one item from the queue, then unsubscribe
+local save_queue = queue.create()
+save_queue:once(function(data)
+    do_save(data)
+    return true
+end)
+save_queue:push(save_data)
+
+-- Global queue
+queues.once("toast", function(self, message)
+    self:show_toast(message)
+    return true
+end, self)
+```
 

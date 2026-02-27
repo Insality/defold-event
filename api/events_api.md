@@ -12,6 +12,7 @@ This is particularly useful for events that need to be handled by multiple scrip
 - [clear_all](#clear_all)
 - [get](#get)
 - [subscribe](#subscribe)
+- [once](#once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [is_empty](#is_empty)
@@ -122,6 +123,24 @@ function init(self)
 	events.subscribe("on_game_over", callback, self)
 end
 ```
+
+### once
+
+---
+```lua
+events.once(event_id, callback, [callback_context])
+```
+
+Subscribe a callback to the specified global event for a single trigger. After the first trigger the callback is automatically unsubscribed.
+
+- **Parameters:**
+	- `event_id` *(string)*: The id of the global event to subscribe to.
+	- `callback` *(function)*: The callback function to be executed once when the global event occurs.
+	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
+
+- **Returns:**
+	- `is_subscribed` *(boolean)*: True if subscribed.
+
 ### unsubscribe
 
 ---

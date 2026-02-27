@@ -9,6 +9,7 @@ This is particularly useful for events that need to be handled by multiple scrip
 
 - [push](#push)
 - [subscribe](#subscribe)
+- [once](#once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [process](#process)
@@ -73,6 +74,24 @@ function init(self)
 	queues.subscribe("save_game", save_handler, self)
 end
 ```
+
+### once
+
+---
+```lua
+queues.once(queue_id, handler, [context])
+```
+
+Subscribe a handler to the specified global queue for a single event. After the first event is handled the handler is automatically unsubscribed.
+
+- **Parameters:**
+	- `queue_id` *(string)*: The id of the global queue to subscribe to.
+	- `handler` *(function)*: The handler function to be called once when an event is pushed.
+	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
+
+- **Returns:**
+	- `is_subscribed` *(boolean)*: True if handler was subscribed successfully
+
 ### unsubscribe
 
 ---

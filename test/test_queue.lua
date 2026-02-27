@@ -64,6 +64,44 @@ local function test_queue()
 			assert(#queue_instance:get_events() == 0)
 		end)
 
+		it("once: handler called once then auto-unsubscribed", function()
+			local test_data = "test_data"
+			local call_count = 0
+
+			queue_instance:once(function(data)
+				call_count = call_count + 1
+				assert(data == test_data)
+				return true
+			end)
+
+			queue_instance:push(test_data)
+			assert(call_count == 1)
+			assert(#queue_instance:get_events() == 0)
+
+			queue_instance:push(test_data)
+			assert(call_count == 1)
+			assert(#queue_instance:get_events() == 1)
+		end)
+
+		it("once: same handler and context twice returns false", function()
+			local handler = function() return true end
+			assert(queue_instance:once(handler) == true)
+			assert(queue_instance:once(handler) == false)
+		end)
+
+		it("once then unsubscribe before push: handler not called", function()
+			local call_count = 0
+			local handler = function()
+				call_count = call_count + 1
+				return true
+			end
+
+			queue_instance:once(handler)
+			queue_instance:unsubscribe(handler)
+			queue_instance:push("data")
+			assert(call_count == 0)
+		end)
+
 		it("Should call on_handle callback when event is handled", function()
 			local test_data = "test_data"
 			local on_handle_called = false

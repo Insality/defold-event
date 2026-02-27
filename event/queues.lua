@@ -38,6 +38,17 @@ function M.subscribe(queue_id, handler, context)
 end
 
 
+---Subscribe a handler to the specified global queue for a single event. After the first event is handled the handler is automatically unsubscribed.
+---@param queue_id string The id of the global queue to subscribe to.
+---@param handler function The handler function to be called once when an event is pushed.
+---@param context any|nil The context to be passed as the first parameter to the handler function.
+---@return boolean is_subscribed True if handler was subscribed successfully
+function M.once(queue_id, handler, context)
+	M.queues[queue_id] = M.queues[queue_id] or queue.create()
+	return M.queues[queue_id]:once(handler, context)
+end
+
+
 ---Unsubscribe a handler from the specified global queue.
 ---The context should be the same as the one used when subscribing the handler.
 ---		function final(self)

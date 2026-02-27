@@ -86,6 +86,23 @@ function M:subscribe(handler, context)
 end
 
 
+---Subscribe a handler for a single event. After the first event is handled the handler is automatically unsubscribed.
+---@param handler function|event The handler function or event to be called once when an event is pushed.
+---@param context any|nil The context to be passed as the first parameter to the handler function.
+---@return boolean is_subscribed True if handler was subscribed successfully
+function M:once(handler, context)
+	if self:is_subscribed(handler, context) then
+		return false
+	end
+
+	local handler_event = event.create()
+	handler_event:once(handler, context)
+	table_insert(self.handlers, handler_event)
+	self:_check_subscribers()
+	return true
+end
+
+
 ---Unsubscribe a handler from this queue instance.
 ---@param handler function|event The handler function or event to unsubscribe.
 ---@param context any|nil The context that was passed when subscribing.
@@ -266,6 +283,12 @@ function M:_check_subscribers()
 			table_remove(self.events, event_index)
 		else
 			event_index = event_index + 1
+		end
+	end
+
+	for index = #self.handlers, 1, -1 do
+		if self.handlers[index]:is_empty() then
+			table_remove(self.handlers, index)
 		end
 	end
 end

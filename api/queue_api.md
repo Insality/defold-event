@@ -12,6 +12,7 @@ Events are stored in the queue until they are handled by subscribers, following 
 
 - [push](#push)
 - [subscribe](#subscribe)
+- [once](#once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [process](#process)
@@ -87,6 +88,22 @@ the handler will be called. If there are already events in the queue, they will 
 
 - **Parameters:**
 	- `handler` *(function|event)*: The handler function or event to be called when an event is pushed. Return true from the handler to mark the event as handled.
+	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
+
+- **Returns:**
+	- `is_subscribed` *(boolean)*: True if handler was subscribed successfully
+
+### once
+
+---
+```lua
+queue:once(handler, [context])
+```
+
+Subscribe a handler for a single event. When an event is pushed and handled by this handler, the handler is automatically unsubscribed. Returns false if the same handler (and context) is already subscribed.
+
+- **Parameters:**
+	- `handler` *(function|event)*: The handler function or event to be called once when an event is pushed.
 	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
 
 - **Returns:**

@@ -63,6 +63,25 @@ local function test_queues()
 			assert(#queues.get_events(TEST_EVENT) == 0)
 		end)
 
+		it("once: handler called once then auto-unsubscribed", function()
+			local test_data = "test_data"
+			local call_count = 0
+
+			queues.once(TEST_EVENT, function(data)
+				call_count = call_count + 1
+				assert(data == test_data)
+				return true
+			end)
+
+			queues.push(TEST_EVENT, test_data)
+			assert(call_count == 1)
+			assert(#queues.get_events(TEST_EVENT) == 0)
+
+			queues.push(TEST_EVENT, test_data)
+			assert(call_count == 1)
+			assert(#queues.get_events(TEST_EVENT) == 1)
+		end)
+
 		it("Should call on_handle callback when event is handled", function()
 			local test_data = "test_data"
 			local on_handle_called = false

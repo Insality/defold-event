@@ -56,6 +56,17 @@ function M.subscribe(event_id, callback, callback_context)
 end
 
 
+---Subscribe a callback to the specified global event for a single trigger. After the first trigger the callback is automatically unsubscribed.
+---@param event_id string The id of the global event to subscribe to.
+---@param callback function The callback function to be executed once when the global event occurs.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
+---@return boolean is_subscribed True if subscribed
+function M.once(event_id, callback, callback_context)
+	M.events[event_id] = M.events[event_id] or Event.create()
+	return M.events[event_id]:once(callback, callback_context)
+end
+
+
 ---Remove a previously subscribed callback from the specified global event.
 ---The callback_context should be the same as the one used when subscribing the callback.
 ---If there is no callback_context provided, all callbacks with the same function will be unsubscribed.

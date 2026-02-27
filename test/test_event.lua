@@ -401,6 +401,156 @@ return function()
 			assert(#test_event == 0)
 		end)
 
+		it("once: callback called once then auto-unsubscribed", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:once(f)
+			assert(test_event:is_subscribed(f) == true)
+			test_event:trigger()
+			assert(counter == 1)
+			assert(test_event:is_subscribed(f) == false)
+			test_event:trigger()
+			assert(counter == 1)
+		end)
+
+		it("once: same callback and context twice returns false", function()
+			local test_event = event.create()
+			local f = function() end
+
+			assert(test_event:once(f) == true)
+			assert(test_event:once(f) == false)
+			assert(#test_event == 1)
+
+			test_event:clear()
+
+			assert(test_event:once(f, "context") == true)
+			assert(test_event:once(f, "context") == false)
+			assert(test_event:once(f, "other_context") == true)
+			assert(#test_event == 2)
+
+			test_event:trigger()
+			assert(#test_event == 0)
+		end)
+
+		it("once then unsubscribe before trigger: callback not called", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:once(f)
+			test_event:unsubscribe(f)
+			test_event:trigger()
+			assert(counter == 0)
+		end)
+
+		it("once with context: callback receives context and is removed after first trigger", function()
+			local test_event = event.create()
+			local counter = 0
+			local last_ctx
+			local f = function(ctx)
+				counter = counter + 1
+				last_ctx = ctx
+			end
+
+			test_event:once(f, "my_ctx")
+			test_event:trigger()
+			assert(counter == 1)
+			assert(last_ctx == "my_ctx")
+			assert(test_event:is_subscribed(f, "my_ctx") == false)
+			test_event:trigger()
+			assert(counter == 1)
+		end)
+
+		it("once with event as callback: event triggered once then unsubscribed", function()
+			local event1 = event.create()
+			local event2 = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			event1:subscribe(f)
+			event2:once(event1)
+			event2:trigger()
+			assert(counter == 1)
+			assert(event2:is_subscribed(event1) == false)
+			event2:trigger()
+			assert(counter == 1)
+		end)
+
+		it("once and subscribe together: once removed after first trigger subscribe stays", function()
+			local test_event = event.create()
+			local first_count, once_count, third_count = 0, 0, 0
+			local sub_f = function() first_count = first_count + 1 end
+			local once_f = function() once_count = once_count + 1 end
+			local third_f = function() third_count = third_count + 1 end
+
+			test_event:subscribe(sub_f)
+			test_event:once(once_f)
+			test_event:subscribe(third_f)
+			test_event:trigger()
+			assert(first_count == 1)
+			assert(once_count == 1)
+			assert(third_count == 1)
+
+			test_event:trigger()
+			assert(first_count == 2)
+			assert(once_count == 1)
+			assert(third_count == 2)
+		end)
+
+		it("Unsubscribe self during trigger", function()
+			local test_event = event.create()
+			local order = {}
+			local a
+			a = function()
+				table.insert(order, "A")
+				test_event:unsubscribe(a)
+			end
+			local b = function() table.insert(order, "B") end
+			local c = function() table.insert(order, "C") end
+
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:subscribe(c)
+			test_event:trigger()
+			assert(order[1] == "A")
+			assert(order[2] == "B")
+			assert(order[3] == "C")
+			assert(#order == 3)
+
+			test_event:trigger()
+			assert(order[4] == "B")
+			assert(order[5] == "C")
+			assert(#order == 5)
+		end)
+
+		it("Unsubscribe other during trigger: both called, other removed after trigger", function()
+			local test_event = event.create()
+			local order = {}
+
+			local a, b
+			a = function()
+				table.insert(order, "A")
+				test_event:unsubscribe(b)
+			end
+			b = function()
+				table.insert(order, "B")
+			end
+
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:trigger()
+			assert(order[1] == "A")
+			assert(order[2] == "B")
+			assert(#order == 2)
+			assert(#test_event == 1)
+
+			test_event:trigger()
+			assert(order[3] == "A")
+			assert(#order == 3)
+		end)
+
 		it("Trigger with context passes all args under xpcall (nil in middle)", function()
 			event.set_mode("xpcall")
 
