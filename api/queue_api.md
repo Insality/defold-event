@@ -12,7 +12,7 @@ Events are stored in the queue until they are handled by subscribers, following 
 
 - [push](#push)
 - [subscribe](#subscribe)
-- [once](#once)
+- [subscribe_once](#subscribe_once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [process](#process)
@@ -93,11 +93,11 @@ the handler will be called. If there are already events in the queue, they will 
 - **Returns:**
 	- `is_subscribed` *(boolean)*: True if handler was subscribed successfully
 
-### once
+### subscribe_once
 
 ---
 ```lua
-queue:once(handler, [context])
+queue:subscribe_once(handler, [context])
 ```
 
 Subscribe a handler for a single event. When an event is pushed and handled by this handler, the handler is automatically unsubscribed. Returns false if the same handler (and context) is already subscribed.

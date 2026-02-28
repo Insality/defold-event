@@ -401,12 +401,12 @@ return function()
 			assert(#test_event == 0)
 		end)
 
-		it("once: callback called once then auto-unsubscribed", function()
+		it("subscribe_once: callback called once then auto-unsubscribed", function()
 			local test_event = event.create()
 			local counter = 0
 			local f = function() counter = counter + 1 end
 
-			test_event:once(f)
+			test_event:subscribe_once(f)
 			assert(test_event:is_subscribed(f) == true)
 			test_event:trigger()
 			assert(counter == 1)
@@ -415,37 +415,37 @@ return function()
 			assert(counter == 1)
 		end)
 
-		it("once: same callback and context twice returns false", function()
+		it("subscribe_once: same callback and context twice returns false", function()
 			local test_event = event.create()
 			local f = function() end
 
-			assert(test_event:once(f) == true)
-			assert(test_event:once(f) == false)
+			assert(test_event:subscribe_once(f) == true)
+			assert(test_event:subscribe_once(f) == false)
 			assert(#test_event == 1)
 
 			test_event:clear()
 
-			assert(test_event:once(f, "context") == true)
-			assert(test_event:once(f, "context") == false)
-			assert(test_event:once(f, "other_context") == true)
+			assert(test_event:subscribe_once(f, "context") == true)
+			assert(test_event:subscribe_once(f, "context") == false)
+			assert(test_event:subscribe_once(f, "other_context") == true)
 			assert(#test_event == 2)
 
 			test_event:trigger()
 			assert(#test_event == 0)
 		end)
 
-		it("once then unsubscribe before trigger: callback not called", function()
+		it("subscribe_once then unsubscribe before trigger: callback not called", function()
 			local test_event = event.create()
 			local counter = 0
 			local f = function() counter = counter + 1 end
 
-			test_event:once(f)
+			test_event:subscribe_once(f)
 			test_event:unsubscribe(f)
 			test_event:trigger()
 			assert(counter == 0)
 		end)
 
-		it("once with context: callback receives context and is removed after first trigger", function()
+		it("subscribe_once with context: callback receives context and is removed after first trigger", function()
 			local test_event = event.create()
 			local counter = 0
 			local last_ctx
@@ -454,7 +454,7 @@ return function()
 				last_ctx = ctx
 			end
 
-			test_event:once(f, "my_ctx")
+			test_event:subscribe_once(f, "my_ctx")
 			test_event:trigger()
 			assert(counter == 1)
 			assert(last_ctx == "my_ctx")
@@ -463,14 +463,14 @@ return function()
 			assert(counter == 1)
 		end)
 
-		it("once with event as callback: event triggered once then unsubscribed", function()
+		it("subscribe_once with event as callback: event triggered once then unsubscribed", function()
 			local event1 = event.create()
 			local event2 = event.create()
 			local counter = 0
 			local f = function() counter = counter + 1 end
 
 			event1:subscribe(f)
-			event2:once(event1)
+			event2:subscribe_once(event1)
 			event2:trigger()
 			assert(counter == 1)
 			assert(event2:is_subscribed(event1) == false)
@@ -478,7 +478,7 @@ return function()
 			assert(counter == 1)
 		end)
 
-		it("once and subscribe together: once removed after first trigger subscribe stays", function()
+		it("subscribe_once and subscribe together: subscribe_once removed after first trigger subscribe stays", function()
 			local test_event = event.create()
 			local first_count, once_count, third_count = 0, 0, 0
 			local sub_f = function() first_count = first_count + 1 end
@@ -486,7 +486,7 @@ return function()
 			local third_f = function() third_count = third_count + 1 end
 
 			test_event:subscribe(sub_f)
-			test_event:once(once_f)
+			test_event:subscribe_once(once_f)
 			test_event:subscribe(third_f)
 			test_event:trigger()
 			assert(first_count == 1)

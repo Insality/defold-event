@@ -12,7 +12,7 @@ This is particularly useful for events that need to be handled by multiple scrip
 - [clear_all](#clear_all)
 - [get](#get)
 - [subscribe](#subscribe)
-- [once](#once)
+- [subscribe_once](#subscribe_once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [is_empty](#is_empty)
@@ -124,11 +124,11 @@ function init(self)
 end
 ```
 
-### once
+### subscribe_once
 
 ---
 ```lua
-events.once(event_id, callback, [callback_context])
+events.subscribe_once(event_id, callback, [callback_context])
 ```
 
 Subscribe a callback to the specified global event for a single trigger. After the first trigger the callback is automatically unsubscribed.

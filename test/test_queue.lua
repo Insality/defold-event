@@ -64,11 +64,11 @@ local function test_queue()
 			assert(#queue_instance:get_events() == 0)
 		end)
 
-		it("once: handler called once then auto-unsubscribed", function()
+		it("subscribe_once: handler called once then auto-unsubscribed", function()
 			local test_data = "test_data"
 			local call_count = 0
 
-			queue_instance:once(function(data)
+			queue_instance:subscribe_once(function(data)
 				call_count = call_count + 1
 				assert(data == test_data)
 				return true
@@ -83,9 +83,9 @@ local function test_queue()
 			assert(#queue_instance:get_events() == 1)
 		end)
 
-		it("once: unsubscribed only when handler returns non-nil", function()
+		it("subscribe_once: unsubscribed only when handler returns non-nil", function()
 			local call_count = 0
-			queue_instance:once(function(data)
+			queue_instance:subscribe_once(function(data)
 				call_count = call_count + 1
 				if call_count == 2 then
 					return true
@@ -104,20 +104,20 @@ local function test_queue()
 			assert(call_count == 3) -- still three
 		end)
 
-		it("once: same handler and context twice returns false", function()
+		it("subscribe_once: same handler and context twice returns false", function()
 			local handler = function() return true end
-			assert(queue_instance:once(handler) == true)
-			assert(queue_instance:once(handler) == false)
+			assert(queue_instance:subscribe_once(handler) == true)
+			assert(queue_instance:subscribe_once(handler) == false)
 		end)
 
-		it("once then unsubscribe before push: handler not called", function()
+		it("subscribe_once then unsubscribe before push: handler not called", function()
 			local call_count = 0
 			local handler = function()
 				call_count = call_count + 1
 				return true
 			end
 
-			queue_instance:once(handler)
+			queue_instance:subscribe_once(handler)
 			queue_instance:unsubscribe(handler)
 			queue_instance:push("data")
 			assert(call_count == 0)

@@ -12,7 +12,7 @@ The Event module, used to create and manage events. Allows to subscribe to event
 - [create](#create)
 
 - [subscribe](#subscribe)
-- [once](#once)
+- [subscribe_once](#subscribe_once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [trigger](#trigger)
@@ -118,11 +118,11 @@ event_2 = event.create()
 event_2:subscribe(event_1) -- Now event2 will trigger event1
 ```
 
-### once
+### subscribe_once
 
 ---
 ```lua
-event:once(callback, [callback_context])
+event:subscribe_once(callback, [callback_context])
 ```
 
 Subscribe a callback for a single trigger. After the first trigger the callback is automatically unsubscribed.

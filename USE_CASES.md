@@ -232,9 +232,9 @@ function final(self)
 end
 ```
 
-### 8. Using once: subscribe for a single invocation
+### 8. Using subscribe_once: subscribe for a single invocation
 
-Use `once` when you want a handler to run only one time; it is automatically unsubscribed after the first trigger. Same API exists on `event`, `events`, `queue`, and `queues`.
+Use `subscribe_once` when you want a handler to run only one time; it is automatically unsubscribed after the first trigger. Same API exists on `event`, `events`, `queue`, and `queues`.
 
 **Event / global events:**
 
@@ -244,14 +244,14 @@ local events = require("event.events")
 
 -- Local event: callback runs once, then is removed
 local on_ready = event.create()
-on_ready:once(function()
+on_ready:subscribe_once(function()
     print("Ready! This will not run again.")
 end)
 on_ready:trigger() -- prints
 on_ready:trigger() -- does nothing
 
 -- Global event
-events.once("game_over", function(self)
+events.subscribe_once("game_over", function(self)
     self:show_game_over_screen()
 end, self)
 ```

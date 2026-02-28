@@ -9,7 +9,7 @@ This is particularly useful for events that need to be handled by multiple scrip
 
 - [push](#push)
 - [subscribe](#subscribe)
-- [once](#once)
+- [subscribe_once](#subscribe_once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [process](#process)
@@ -75,11 +75,11 @@ function init(self)
 end
 ```
 
-### once
+### subscribe_once
 
 ---
 ```lua
-queues.once(queue_id, handler, [context])
+queues.subscribe_once(queue_id, handler, [context])
 ```
 
 Subscribe a handler to the specified global queue for a single event. After the first event is handled the handler is automatically unsubscribed.

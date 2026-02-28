@@ -94,7 +94,7 @@ end
 ---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
-function M:once(handler, context)
+function M:subscribe_once(handler, context)
 	if self:is_subscribed(handler, context) then
 		return false
 	end

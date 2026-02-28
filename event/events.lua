@@ -61,9 +61,9 @@ end
 ---@param callback function The callback function to be executed once when the global event occurs.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if subscribed
-function M.once(event_id, callback, callback_context)
+function M.subscribe_once(event_id, callback, callback_context)
 	M.events[event_id] = M.events[event_id] or Event.create()
-	return M.events[event_id]:once(callback, callback_context)
+	return M.events[event_id]:subscribe_once(callback, callback_context)
 end
 
 

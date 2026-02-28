@@ -17,7 +17,7 @@ local USE_NONE = event_mode == "none"
 ---The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
 ---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 ---@class event
----@field package _trigger_depth number The depth of the event trigger.
+---@field package _defer_unsubscribe boolean When true, unsubscribe marks for deferred removal instead of removing immediately.
 local M = {}
 
 -- Forward declaration
@@ -112,7 +112,7 @@ end
 local function subscribe_event(self, callback, callback_context, once)
 	if not callback_context or callback_context == callback then
 		if once then
-			return self:once(callback.trigger, callback)
+			return self:subscribe_once(callback.trigger, callback)
 		end
 		return self:subscribe(callback.trigger, callback)
 	end
@@ -143,7 +143,7 @@ local function unsubscribe_event(self, callback, callback_context)
 		return self:unsubscribe(callback.trigger, callback)
 	end
 
-	if self._trigger_depth and self._trigger_depth > 0 then
+	if self._defer_unsubscribe then
 		for index = 1, #self do
 			local cb = self[index]
 			if cb[4] == callback and cb[2] == callback_context then
@@ -227,7 +227,7 @@ end
 ---@param callback function|event The function or event to run once.
 ---@param callback_context any|nil Same as subscribe.
 ---@return boolean is_subscribed True if subscribed
-function M:once(callback, callback_context)
+function M:subscribe_once(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
 	if M.is_event(callback) then
@@ -263,7 +263,7 @@ function M:unsubscribe(callback, callback_context)
 
 	---@cast callback function
 
-	if self._trigger_depth and self._trigger_depth > 0 then
+	if self._defer_unsubscribe then
 		local marked = false
 		for index = 1, #self do
 			local cb = self[index]
@@ -340,7 +340,7 @@ function M:trigger(...)
 		return
 	end
 
-	self._trigger_depth = (self._trigger_depth or 0) + 1
+	self._defer_unsubscribe = true
 	local result = nil
 	local current_script_context = get_context()
 
@@ -401,6 +401,13 @@ function M:trigger(...)
 		-- Handle errors
 		if not ok then
 			if USE_NONE then
+				local current_index = index
+				for i = current_index - 1, 1, -1 do
+					if self[i][5] == true then
+						table_remove(self, i)
+					end
+				end
+				self._defer_unsubscribe = false
 				error(result_or_error, 2)
 			end
 
@@ -413,13 +420,14 @@ function M:trigger(...)
 		result = result_or_error
 	end
 
+	-- Remove deferred unsubscribed callbacks
 	for index = #self, 1, -1 do
 		if self[index][5] == true then
 			table_remove(self, index)
 		end
 	end
 
-	self._trigger_depth = self._trigger_depth - 1
+	self._defer_unsubscribe = false
 	return result
 end
 

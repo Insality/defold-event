@@ -56,11 +56,11 @@ return function()
 			assert(events.is_subscribed("test", f) == true)
 		end)
 
-		it("Events once: callback called once then auto-unsubscribed", function()
+		it("Events subscribe_once: callback called once then auto-unsubscribed", function()
 			local counter = 0
 			local f = function() counter = counter + 1 end
 
-			events.once("test", f)
+			events.subscribe_once("test", f)
 			assert(events.is_subscribed("test", f) == true)
 			events.trigger("test")
 			assert(counter == 1)

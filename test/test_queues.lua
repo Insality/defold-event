@@ -63,11 +63,11 @@ local function test_queues()
 			assert(#queues.get_events(TEST_EVENT) == 0)
 		end)
 
-		it("once: handler called once then auto-unsubscribed", function()
+		it("subscribe_once: handler called once then auto-unsubscribed", function()
 			local test_data = "test_data"
 			local call_count = 0
 
-			queues.once(TEST_EVENT, function(data)
+			queues.subscribe_once(TEST_EVENT, function(data)
 				call_count = call_count + 1
 				assert(data == test_data)
 				return true

@@ -244,7 +244,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- In "none" mode callbacks are run with xpcall; on error, error is rethrown with `error()` (full traceback)
 
 ### **V15**
-	- once: Added `event:once`, `events.once`, `queue:once`, and `queues.once` to subscribe a handler for a single invocation; the handler is automatically unsubscribed after the first call.
+	- subscribe_once: Added `event:subscribe_once`, `events.subscribe_once`, `queue:subscribe_once`, and `queues.subscribe_once` to subscribe a handler for a single invocation; the handler is automatically unsubscribed after the first call.
 	- Unsubscribe during trigger: Calling `unsubscribe` from inside a callback no longer breaks the current trigger iteration; removals are applied after the trigger finishes, so all callbacks in the current trigger still run.
 	- Event as callback: Support for `callback_context` when subscribing an event to another event (e.g. `event_2:subscribe(event_1, context)`).
 	- Unsubscribe event from event: Fixed unsubscribing one event from another so the correct subscription is found and removed.
