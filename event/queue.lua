@@ -183,7 +183,7 @@ end
 
 ---Process exactly one queued event with a specific handler (subscribers will NOT be called).
 ---If the handler returns non-nil the event will be removed from the queue.
----@param event_handler function|event Specific handler or event to process the event. If this function returns non-nil, the event will be removed from the queue.
+---@param event_handler function|event|nil Specific handler or event to process the event. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 ---@return boolean handled True if the head event was handled and removed
 function M:process_next(event_handler, context)
