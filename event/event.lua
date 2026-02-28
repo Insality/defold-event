@@ -3,7 +3,7 @@ local USE_XPCALL = event_mode == "xpcall"
 local USE_PCALL = event_mode == "pcall"
 local USE_NONE = event_mode == "none"
 
----Array of next items: { callback, callback_context, script_context [, subscribed_event] [, delete] }
+---Array of next items: { [1] callback, [2] callback_context, [3] script_context [, [4] subscribed_event] [, [5] delete] }
 ---@class event.callback_data: table
 
 ---A logger object for event module should match the following interface
@@ -102,89 +102,81 @@ function M.create(callback, callback_context)
 end
 
 
+---Check if an event is subscribed to the event.
+---@param self event The event instance to check.
+---@param event event The event to trigger.
+---@param event_context any|nil The first parameter to be passed to the callback function.
+---@return boolean is_subscribed True if the event is subscribed
+---@return number|nil index Index of the event subscription in the list.
+local function is_subscribed_event(self, event, event_context)
+	if not event_context or event_context == event then
+		return self:is_subscribed(event.trigger, event)
+	end
+
+	for index = 1, #self do
+		local cb = self[index]
+		if cb[4] == event and cb[2] == event_context then
+			return true, index
+		end
+	end
+
+	return false, nil
+end
+
+
 ---Subscribe an event to the event.
----@param self event The event to subscribe to.
----@param callback event The event callback to subscribe to.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param self event The event instance to subscribe to.
+---@param event event The event to trigger.
+---@param event_context any|nil The first parameter to be passed to the callback function.
 ---@param once boolean|nil If true, subscription is removed at end of trigger (once).
 ---@return boolean is_subscribed True if the event is subscribed
 ---@return number|nil index Index of the event subscription in the list.
-local function subscribe_event(self, callback, callback_context, once)
-	if not callback_context or callback_context == callback then
-		if once then
-			return self:subscribe_once(callback.trigger, callback)
-		end
-		return self:subscribe(callback.trigger, callback)
-	end
-
-	if self:is_subscribed(callback, callback_context) then
-		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
-		return false
+local function subscribe_event(self, event, event_context, once)
+	if not event_context or event_context == event then
+		table_insert(self, { event.trigger, event, get_context(), nil, once })
+		return true
 	end
 
 	local wrapper = function(context, ...)
-		return callback:trigger(...)
+		return event:trigger(...)
 	end
 
-	table_insert(self, { wrapper, callback_context, get_context(), callback, once })
+	table_insert(self, { wrapper, event_context, get_context(), event, once })
 
 	return true
 end
 
 
 ---Unsubscribe an event from the event.
----@param self event The event to unsubscribe from.
----@param callback event The event callback to unsubscribe from.
----@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param self event The event instance to unsubscribe from.
+---@param event event The event to trigger.
+---@param event_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_unsubscribed True if the event is unsubscribed
 ---@return number|nil index Index of the event subscription in the list.
-local function unsubscribe_event(self, callback, callback_context)
-	if not callback_context or callback_context == callback then
-		return self:unsubscribe(callback.trigger, callback)
+local function unsubscribe_event(self, event, event_context)
+	if not event_context or event_context == event then
+		return self:unsubscribe(event.trigger, event)
 	end
 
 	if self._defer_unsubscribe then
 		for index = 1, #self do
 			local cb = self[index]
-			if cb[4] == callback and cb[2] == callback_context then
+			if cb[4] == event and cb[2] == event_context then
 				cb[5] = true
 				return true
 			end
 		end
-		return false
-	end
-
-	for index = 1, #self do
-		local cb = self[index]
-		if cb[4] == callback and cb[2] == callback_context then
-			table_remove(self, index)
-			return true
+	else
+		for index = 1, #self do
+			local cb = self[index]
+			if cb[4] == event and cb[2] == event_context then
+				table_remove(self, index)
+				return true
+			end
 		end
 	end
 
 	return false
-end
-
-
----Check if an event is subscribed to the event.
----@param self event The event to check.
----@param callback event The event callback to check for subscription.
----@param callback_context any|nil The first parameter to be passed to the callback function.
----@return boolean is_subscribed True if the event is subscribed
----@return number|nil index Index of the event subscription in the list.
-local function is_subscribed_event(self, callback, callback_context)
-	if not callback_context or callback_context == callback then
-		return self:is_subscribed(callback.trigger, callback)
-	end
-
-	for index = 1, #self do
-		local cb = self[index]
-		if cb[4] == callback and cb[2] == callback_context then
-			return true, index
-		end
-	end
-
-	return false, nil
 end
 
 
@@ -207,15 +199,14 @@ end
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
-	if M.is_event(callback) then
-		---@cast callback event
-		return subscribe_event(self, callback, callback_context)
-	end
-
-	---@cast callback function
 	if self:is_subscribed(callback, callback_context) then
 		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
+	end
+
+	if M.is_event(callback) then
+		---@cast callback event
+		return subscribe_event(self, callback, callback_context)
 	end
 
 	table_insert(self, { callback, callback_context, get_context() })
@@ -230,15 +221,14 @@ end
 function M:subscribe_once(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
 
-	if M.is_event(callback) then
-		---@cast callback event
-		return subscribe_event(self, callback, callback_context, true)
-	end
-
-	---@cast callback function
 	if self:is_subscribed(callback, callback_context) then
 		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
+	end
+
+	if M.is_event(callback) then
+		---@cast callback event
+		return subscribe_event(self, callback, callback_context, true)
 	end
 
 	table_insert(self, { callback, callback_context, get_context(), nil, true })
@@ -261,26 +251,23 @@ function M:unsubscribe(callback, callback_context)
 		return unsubscribe_event(self, callback, callback_context)
 	end
 
-	---@cast callback function
+	local is_removed = false
 
 	if self._defer_unsubscribe then
-		local marked = false
 		for index = 1, #self do
 			local cb = self[index]
 			if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
 				cb[5] = true
-				marked = true
+				is_removed = true
 			end
 		end
-		return marked
-	end
-
-	local is_removed = false
-	for index = #self, 1, -1 do
-		local cb = self[index]
-		if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
-			table_remove(self, index)
-			is_removed = true
+	else
+		for index = #self, 1, -1 do
+			local cb = self[index]
+			if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
+				table_remove(self, index)
+				is_removed = true
+			end
 		end
 	end
 

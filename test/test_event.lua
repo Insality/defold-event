@@ -74,6 +74,21 @@ return function()
 			assert(#test_event == 1)
 		end)
 
+		it("One event can be subscribed only once", function()
+			local test_event = event.create()
+			local event2 = event.create()
+
+			assert(test_event:subscribe(event2) == true)
+			assert(test_event:subscribe(event2) == false)
+			assert(#test_event == 1)
+			test_event:clear()
+
+			assert(test_event:subscribe(event2, "context") == true)
+			assert(test_event:subscribe(event2, "other_context") == true)
+			assert(test_event:subscribe(event2, "other_context") == false)
+			assert(#test_event == 2)
+		end)
+
 		it("Event is_subscribed", function()
 			local test_event = event.create()
 			local f = function() end
