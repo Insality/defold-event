@@ -1,4 +1,4 @@
-local queue = require("event.queue")
+local Queue = require("event.queue")
 
 ---Global queues module that allows creation and management of global FIFO event queues that can be accessed from anywhere in your game.
 ---This is particularly useful for events that need to be handled by multiple scripts or systems using a queue-based approach.
@@ -18,7 +18,7 @@ M.queues = {}
 ---@param on_handle function|nil Callback function to be called when the event is handled.
 ---@param context any|nil The context to be passed as the first parameter to the on_handle function when the event is handled.
 function M.push(queue_id, data, on_handle, context)
-	M.queues[queue_id] = M.queues[queue_id] or queue.create()
+	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
 	M.queues[queue_id]:push(data, on_handle, context)
 end
 
@@ -33,7 +33,7 @@ end
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M.subscribe(queue_id, handler, context)
-	M.queues[queue_id] = M.queues[queue_id] or queue.create()
+	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
 	return M.queues[queue_id]:subscribe(handler, context)
 end
 
@@ -44,7 +44,7 @@ end
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M.once(queue_id, handler, context)
-	M.queues[queue_id] = M.queues[queue_id] or queue.create()
+	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
 	return M.queues[queue_id]:once(handler, context)
 end
 

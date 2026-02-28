@@ -83,6 +83,27 @@ local function test_queue()
 			assert(#queue_instance:get_events() == 1)
 		end)
 
+		it("once: unsubscribed only when handler returns non-nil", function()
+			local call_count = 0
+			queue_instance:once(function(data)
+				call_count = call_count + 1
+				if call_count == 2 then
+					return true
+				end
+				return nil
+			end)
+
+			queue_instance:push("first")
+			assert(call_count == 1)
+			assert(#queue_instance:get_events() == 1)
+
+			queue_instance:push("second")
+			assert(call_count == 3) -- first, and first and second
+
+			queue_instance:push("third")
+			assert(call_count == 3) -- still three
+		end)
+
 		it("once: same handler and context twice returns false", function()
 			local handler = function() return true end
 			assert(queue_instance:once(handler) == true)

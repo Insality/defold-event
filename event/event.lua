@@ -104,8 +104,8 @@ end
 
 ---Subscribe an event to the event.
 ---@param self event The event to subscribe to.
----@param callback event The event to subscribe to.
----@param callback_context any|nil The context to subscribe to.
+---@param callback event The event callback to subscribe to.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@param once boolean|nil If true, subscription is removed at end of trigger (once).
 ---@return boolean is_subscribed True if the event is subscribed
 ---@return number|nil index Index of the event subscription in the list.
@@ -134,8 +134,8 @@ end
 
 ---Unsubscribe an event from the event.
 ---@param self event The event to unsubscribe from.
----@param callback event The event to unsubscribe from.
----@param callback_context any|nil The context to unsubscribe from.
+---@param callback event The event callback to unsubscribe from.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_unsubscribed True if the event is unsubscribed
 ---@return number|nil index Index of the event subscription in the list.
 local function unsubscribe_event(self, callback, callback_context)
@@ -168,8 +168,8 @@ end
 
 ---Check if an event is subscribed to the event.
 ---@param self event The event to check.
----@param callback event The event to check.
----@param callback_context any|nil The context to check.
+---@param callback event The event callback to check for subscription.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if the event is subscribed
 ---@return number|nil index Index of the event subscription in the list.
 local function is_subscribed_event(self, callback, callback_context)

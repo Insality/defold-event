@@ -9,12 +9,15 @@ local event = require("event.event")
 ---@class queue
 ---@field private events queue.event_data[]
 ---@field private handlers event[]
+---@field private once_state table<event, number>
 local M = {}
 
 -- Forward declaration
 local QUEUE_METATABLE = { __index = M }
 
 -- Local versions
+local ONCE_STATE_SET = 0
+local ONCE_STATE_REMOVE = 1
 local table_insert = table.insert
 local table_remove = table.remove
 
@@ -30,7 +33,8 @@ function M.create(handler, handler_context)
 	---@type queue
 	local self = setmetatable({
 		events = {},
-		handlers = {}
+		handlers = {},
+		once_state = {}
 	}, QUEUE_METATABLE)
 
 	if handler then
@@ -86,8 +90,8 @@ function M:subscribe(handler, context)
 end
 
 
----Subscribe a handler for a single event. After the first event is handled the handler is automatically unsubscribed.
----@param handler function|event The handler function or event to be called once when an event is pushed.
+---Subscribe a handler until it handles one event. After the first event is handled (handler returns non-nil) the handler is automatically unsubscribed.
+---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M:once(handler, context)
@@ -95,8 +99,8 @@ function M:once(handler, context)
 		return false
 	end
 
-	local handler_event = event.create()
-	handler_event:once(handler, context)
+	local handler_event = event.create(handler, context)
+	self.once_state[handler_event] = ONCE_STATE_SET
 	table_insert(self.handlers, handler_event)
 	self:_check_subscribers()
 	return true
@@ -272,6 +276,9 @@ function M:_check_subscribers()
 
 			local handle_result = event_handler:trigger(event_data.data)
 			if handle_result ~= nil then
+				if self.once_state[event_handler] == ONCE_STATE_SET then
+					self.once_state[event_handler] = ONCE_STATE_REMOVE
+				end
 				if event_data.on_handle then
 					event_data.on_handle(handle_result)
 				end
@@ -287,7 +294,9 @@ function M:_check_subscribers()
 	end
 
 	for index = #self.handlers, 1, -1 do
-		if self.handlers[index]:is_empty() then
+		local handler = self.handlers[index]
+		if handler:is_empty() or self.once_state[handler] == ONCE_STATE_REMOVE then
+			self.once_state[handler] = nil
 			table_remove(self.handlers, index)
 		end
 	end

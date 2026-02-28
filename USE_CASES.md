@@ -255,25 +255,3 @@ events.once("game_over", function(self)
     self:show_game_over_screen()
 end, self)
 ```
-
-**Queue / global queues:**
-
-```lua
-local queue = require("event.queue")
-local queues = require("event.queues")
-
--- Handle exactly one item from the queue, then unsubscribe
-local save_queue = queue.create()
-save_queue:once(function(data)
-    do_save(data)
-    return true
-end)
-save_queue:push(save_data)
-
--- Global queue
-queues.once("toast", function(self, message)
-    self:show_toast(message)
-    return true
-end, self)
-```
-
