@@ -100,7 +100,7 @@ Allocate 160 bytes per first subscription and 104 bytes per next subscriptions.
 
 - **Parameters:**
 	- `callback` *(function|event)*: The function to be executed when the event occurs.
-	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. Not used if the callback is an event.
+	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
 
 - **Returns:**
 	- `is_subscribed` *(boolean)*: True if event is subscribed (Will return false if the callback is already subscribed)
@@ -148,7 +148,7 @@ If there is no callback_context provided, all callbacks with the same function w
 
 - **Parameters:**
 	- `callback` *(function|event)*: The callback function to unsubscribe.
-	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function. Not used for event instances.
+	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function.
 
 - **Returns:**
 	- `is_unsubscribed` *(boolean)*: True if event is unsubscribed

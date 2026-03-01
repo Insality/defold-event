@@ -108,6 +108,10 @@ local function test_queue()
 			local handler = function() return true end
 			assert(queue_instance:subscribe_once(handler) == true)
 			assert(queue_instance:subscribe_once(handler) == false)
+
+			assert(queue_instance:subscribe_once(handler, "context") == true)
+			assert(queue_instance:subscribe_once(handler, "context") == false)
+			assert(queue_instance:subscribe_once(handler, "other_context") == true)
 		end)
 
 		it("subscribe_once then unsubscribe before push: handler not called", function()

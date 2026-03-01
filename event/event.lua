@@ -135,7 +135,7 @@ end
 ---		event_2 = event.create()
 ---		event_2:subscribe(event_1) -- Now event2 will trigger event1
 ---@param callback function|event The function to be executed when the event occurs.
----@param callback_context any|nil The first parameter to be passed to the callback function. Not used if the callback is an event.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
@@ -158,7 +158,7 @@ end
 ---If there is no callback_context provided, all callbacks with the same function will be unsubscribed.
 ---		on_click_event:unsubscribe(callback, self)
 ---@param callback function|event The callback function to unsubscribe.
----@param callback_context any|nil The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function. Not used for event instances.
+---@param callback_context any|nil The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")

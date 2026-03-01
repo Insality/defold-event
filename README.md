@@ -19,7 +19,7 @@ It helps you decouple systems using publish-subscribe patterns, delayed queues, 
 - **Cross-Context**: You can subscribe to events from different scripts.
 - **Callback Management**: Attach callbacks to events with optional context.
 - **Global Events**: Use string identifiers to trigger events from anywhere in your game.
-- **Queue**: Store events in a queue until they are processed by subscribers. A handler must return a non-nil value to mark the event as handled and remove it from the queue.
+- **Queue**: Store events in a queue until they are processed by subscribers.
 - **Global Queues**: Access queue instances from anywhere in your game using string identifiers.
 - **Promise**: Handle asynchronous operations with promise-style chaining.
 - **Logging**: Set a logger to log event activities.

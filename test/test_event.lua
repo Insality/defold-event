@@ -385,6 +385,31 @@ return function()
 			collectgarbage("restart")
 		end)
 
+		it("Unsubscribe(function, nil) removes all subscriptions of that function regardless of context", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:subscribe(f)
+			test_event:subscribe(f, "ctx_a")
+			test_event:subscribe(f, "ctx_b")
+			test_event:subscribe(f, "ctx_c")
+			assert(#test_event == 4)
+
+			test_event:trigger()
+			assert(counter == 4)
+
+			test_event:unsubscribe(f, nil)
+			assert(#test_event == 0)
+			assert(test_event:is_subscribed(f) == false)
+			assert(test_event:is_subscribed(f, "ctx_a") == false)
+			assert(test_event:is_subscribed(f, "ctx_b") == false)
+			assert(test_event:is_subscribed(f, "ctx_c") == false)
+
+			test_event:trigger()
+			assert(counter == 4)
+		end)
+
 		it("Event should unsubscribe all callbacks by passin unsubscribe without context", function()
 			local test_event = event.create()
 			local counter = 0
