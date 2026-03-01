@@ -112,12 +112,14 @@ local function subscribe(self, callback, callback_context, remaining)
 			end
 			table_insert(self, { wrapper, callback_context, get_context(), remaining, callback })
 		end
+
+		return true
+	else
+		---@cast callback function
+		table_insert(self, { callback, callback_context, get_context(), remaining, nil })
+
 		return true
 	end
-
-	table_insert(self, { callback, callback_context, get_context(), remaining, nil })
-
-	return true
 end
 
 
@@ -165,38 +167,41 @@ function M:unsubscribe(callback, callback_context)
 
 	if M.is_event(callback) then
 		---@cast callback event
-		if not callback_context or callback_context == callback then
-			return self:unsubscribe(callback.trigger, callback)
-		end
+		local is_removed = false
 		for index = #self, 1, -1 do
 			local cb = self[index]
-			if cb[5] == callback and cb[2] == callback_context then
+			local is_this_event = (cb[5] == callback) or (cb[1] == callback.trigger and cb[2] == callback)
+			local is_matching_context = not callback_context or cb[2] == callback_context
+			if is_this_event and is_matching_context then
 				if self._defer_unsubscribe then
 					cb[4] = 0
 				else
 					table_remove(self, index)
 				end
-				return true
+				is_removed = true
 			end
 		end
-		return false
-	end
 
-	local is_removed = false
-
-	for index = #self, 1, -1 do
-		local cb = self[index]
-		if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
-			if self._defer_unsubscribe then
-				cb[4] = 0
-			else
-				table_remove(self, index)
+		return is_removed
+	else
+		---@cast callback function
+		local is_removed = false
+		for index = #self, 1, -1 do
+			local cb = self[index]
+			local is_this_subscription = (cb[1] == callback) and (not callback_context or cb[2] == callback_context)
+			local is_matching_context = not callback_context or cb[2] == callback_context
+			if is_this_subscription and is_matching_context then
+				if self._defer_unsubscribe then
+					cb[4] = 0
+				else
+					table_remove(self, index)
+				end
+				is_removed = true
 			end
-			is_removed = true
 		end
-	end
 
-	return is_removed
+		return is_removed
+	end
 end
 
 
@@ -214,9 +219,10 @@ function M:is_subscribed(callback, callback_context)
 
 	if M.is_event(callback) then
 		---@cast callback event
-		if not callback_context or callback_context == callback then
+		if not callback_context then
 			return self:is_subscribed(callback.trigger, callback)
 		end
+
 		for index = 1, #self do
 			local cb = self[index]
 			local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
@@ -226,19 +232,18 @@ function M:is_subscribed(callback, callback_context)
 			end
 		end
 		return false, nil
-	end
-
-	---@cast callback function
-	for index = 1, #self do
-		local cb = self[index]
-		local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
-		local is_same_subscription = cb[1] == callback and cb[2] == callback_context
-		if not is_pending_delete and is_same_subscription then
-			return true, index
+	else
+		---@cast callback function
+		for index = 1, #self do
+			local cb = self[index]
+			local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
+			local is_same_subscription = cb[1] == callback and cb[2] == callback_context
+			if not is_pending_delete and is_same_subscription then
+				return true, index
+			end
 		end
+		return false, nil
 	end
-
-	return false, nil
 end
 
 
