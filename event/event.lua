@@ -250,6 +250,17 @@ local function event_error_handler(error_message)
 end
 
 
+---Clear deferred subscribers from the event.
+---@param self event The event instance
+local function clear_deferred_subscribers(self)
+	for index = #self, 1, -1 do
+		if self[index][4] == 0 then
+			table_remove(self, index)
+		end
+	end
+end
+
+
 ---Trigger the event, causing all subscribed callbacks to be executed.
 ---Any parameters passed to trigger will be forwarded to the callbacks.
 ---The return value of the last executed callback is returned.
@@ -331,13 +342,7 @@ function M:trigger(...)
 		-- Handle errors
 		if not ok then
 			if USE_NONE then
-				-- Clear before error
-				local current_index = index
-				for i = current_index - 1, 1, -1 do
-					if self[i][4] == 0 then
-						table_remove(self, i)
-					end
-				end
+				clear_deferred_subscribers(self)
 				self._defer_unsubscribe = false
 
 				error(result_or_error, 2)
@@ -352,13 +357,7 @@ function M:trigger(...)
 		result = result_or_error
 	end
 
-	-- Remove deferred unsubscribed callbacks
-	for index = #self, 1, -1 do
-		if self[index][4] == 0 then
-			table_remove(self, index)
-		end
-	end
-
+	clear_deferred_subscribers(self)
 	self._defer_unsubscribe = false
 
 	return result

@@ -271,7 +271,6 @@ return function()
 			local event_b = event.create(display_width, { display_text = "Width: " })
 			event_b:trigger(event_a:trigger())
 
-			pprint(result)
 			assert(result == "Width: 100")
 		end)
 
@@ -320,6 +319,32 @@ return function()
 
 			parent:unsubscribe(child)
 			assert(#parent == 0)
+		end)
+
+		it("Unsubscribe event with nil context removes no-context and all context-wrapped subscriptions", function()
+			local parent = event.create()
+			local child = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			child:subscribe(f)
+			parent:subscribe(child)
+			parent:subscribe(child, "ctx_a")
+			parent:subscribe(child, "ctx_b")
+			assert(#parent == 3)
+
+			parent:trigger()
+			assert(counter == 3)
+
+			local removed = parent:unsubscribe(child, nil)
+			assert(removed == true)
+			assert(#parent == 0)
+			assert(parent:is_subscribed(child) == false)
+			assert(parent:is_subscribed(child, "ctx_a") == false)
+			assert(parent:is_subscribed(child, "ctx_b") == false)
+
+			parent:trigger()
+			assert(counter == 3)
 		end)
 
 		it("Print memory allocations per function", function()
@@ -410,7 +435,7 @@ return function()
 			assert(counter == 4)
 		end)
 
-		it("Event should unsubscribe all callbacks by passin unsubscribe without context", function()
+		it("Event should unsubscribe all callbacks by passing unsubscribe without context", function()
 			local test_event = event.create()
 			local counter = 0
 			local f1 = function(amount) counter = counter + amount end

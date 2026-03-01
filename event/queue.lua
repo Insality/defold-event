@@ -119,6 +119,7 @@ function M:unsubscribe(handler, context)
 	for index = #self.handlers, 1, -1 do
 		local handler_event = self.handlers[index]
 		if handler_event:is_subscribed(handler, context) then
+			self.once_state[handler_event] = nil
 			table_remove(self.handlers, index)
 			is_removed = true
 		end
@@ -231,6 +232,7 @@ end
 ---Clear all subscribers from this queue instance.
 function M:clear_subscribers()
 	for index = #self.handlers, 1, -1 do
+		self.once_state[self.handlers[index]] = nil
 		self.handlers[index] = nil
 	end
 end

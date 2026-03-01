@@ -29,7 +29,7 @@ end
 ---			queues.subscribe("save_game", save_handler, self)
 ---		end
 ---@param queue_id string The id of the global queue to subscribe to.
----@param handler function The handler function to be called when an event is pushed. Return true from the handler to mark the event as handled.
+---@param handler function|event The handler function or event to be called when an event is pushed. Return a non-nil value from the handler to mark the event as handled.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M.subscribe(queue_id, handler, context)
