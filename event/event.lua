@@ -104,7 +104,7 @@ local function subscribe(self, callback, callback_context, remaining)
 	-- With event subscription we need to store the event instance to be able to unsubscribe it later.
 	if M.is_event(callback) then
 		---@cast callback event
-		if not callback_context or callback_context == callback then
+		if not callback_context then
 			table_insert(self, { callback.trigger, callback, get_context(), remaining, nil })
 		else
 			local wrapper = function(context, ...)
@@ -140,7 +140,7 @@ end
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
-	assert(callback, "A function must be passed to subscribe to an event")
+	assert(callback, "A function or event must be passed to subscribe to an event")
 	return subscribe(self, callback, callback_context, nil)
 end
 
@@ -150,7 +150,7 @@ end
 ---@param callback_context any|nil Same as subscribe.
 ---@return boolean is_subscribed True if subscribed
 function M:subscribe_once(callback, callback_context)
-	assert(callback, "A function must be passed to subscribe to an event")
+	assert(callback, "A function or event must be passed to subscribe to an event")
 	return subscribe(self, callback, callback_context, 1)
 end
 
@@ -163,7 +163,7 @@ end
 ---@param callback_context any|nil The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M:unsubscribe(callback, callback_context)
-	assert(callback, "A function must be passed to subscribe to an event")
+	assert(callback, "A function or event must be passed to unsubscribe from an event")
 
 	if M.is_event(callback) then
 		---@cast callback event
