@@ -15,7 +15,7 @@ M.queues = {}
 ---		queues.push("save_game", save_data, on_save_complete, self)
 ---@param queue_id string The id of the global queue to push to.
 ---@param data any The data associated with the event.
----@param on_handle function|nil Callback function to be called when the event is handled.
+---@param on_handle function|event|nil Callback function or event to be called when the event is handled.
 ---@param context any|nil The context to be passed as the first parameter to the on_handle function when the event is handled.
 function M.push(queue_id, data, on_handle, context)
 	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
@@ -38,9 +38,10 @@ function M.subscribe(queue_id, handler, context)
 end
 
 
----Subscribe a handler to the specified global queue for a single event. After the first event is handled the handler is automatically unsubscribed.
+---Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event)
+---Then it is automatically unsubscribed and will not be invoked again, even if more events remain.
 ---@param queue_id string The id of the global queue to subscribe to.
----@param handler function The handler function to be called once when an event is pushed.
+---@param handler function|event The handler function or event to be called when events are processed until it returns non-nil.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M.subscribe_once(queue_id, handler, context)

@@ -74,6 +74,17 @@ return function()
 			assert(result[4] == "X")
 		end)
 
+		it("Event subscribed with context false: child receives false as first arg", function()
+			local parent = event.create()
+			local child = event.create()
+			local received_context
+
+			child:subscribe(function(ctx) received_context = ctx end)
+			parent:subscribe(child, false)
+			parent:trigger()
+			assert(received_context == false)
+		end)
+
 		it("Event subscribed with event and context receives context and can be unsubscribed", function()
 			local parent = event.create()
 			local child = event.create()

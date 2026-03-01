@@ -101,10 +101,10 @@ Return a non-nil value from the handler to mark the event as handled and remove 
 queue:subscribe_once(handler, [context])
 ```
 
-Subscribe a handler for a single event. After the first invocation the handler is automatically unsubscribed. Return a non-nil value from the handler to mark the event as handled. Returns false if the same handler (and context) is already subscribed.
+Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event). Then it is automatically unsubscribed and will not be invoked again, even if more events remain. Returns false if the same handler (and context) is already subscribed.
 
 - **Parameters:**
-	- `handler` *(function|event)*: The handler function or event to be called once when an event is pushed.
+	- `handler` *(function|event)*: The handler function or event to be called when events are processed until it returns non-nil.
 	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
 
 - **Returns:**

@@ -91,8 +91,7 @@ function M:subscribe(handler, context)
 end
 
 
----Subscribe a handler until it handles one event. After the first event is handled (handler returns non-nil) the handler is automatically unsubscribed.
----If there a several events in the queue, the handler will be called only once.
+---Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event); then it is automatically unsubscribed and will not be invoked again, even if more events remain in the queue.
 ---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully

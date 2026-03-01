@@ -104,7 +104,7 @@ local function subscribe(self, callback, callback_context, remaining)
 	-- With event subscription we need to store the event instance to be able to unsubscribe it later.
 	if M.is_event(callback) then
 		---@cast callback event
-		if not callback_context then
+		if callback_context == nil then
 			table_insert(self, { callback.trigger, callback, get_context(), remaining, nil })
 		else
 			local wrapper = function(context, ...)
@@ -171,7 +171,7 @@ function M:unsubscribe(callback, callback_context)
 		for index = #self, 1, -1 do
 			local cb = self[index]
 			local is_this_event = (cb[5] == callback) or (cb[1] == callback.trigger and cb[2] == callback)
-			local is_matching_context = not callback_context or cb[2] == callback_context
+			local is_matching_context = callback_context == nil or cb[2] == callback_context
 			if is_this_event and is_matching_context then
 				if self._defer_unsubscribe then
 					cb[4] = 0
@@ -188,8 +188,8 @@ function M:unsubscribe(callback, callback_context)
 		local is_removed = false
 		for index = #self, 1, -1 do
 			local cb = self[index]
-			local is_this_subscription = (cb[1] == callback) and (not callback_context or cb[2] == callback_context)
-			local is_matching_context = not callback_context or cb[2] == callback_context
+			local is_this_subscription = (cb[1] == callback) and (callback_context == nil or cb[2] == callback_context)
+			local is_matching_context = callback_context == nil or cb[2] == callback_context
 			if is_this_subscription and is_matching_context then
 				if self._defer_unsubscribe then
 					cb[4] = 0
@@ -219,7 +219,7 @@ function M:is_subscribed(callback, callback_context)
 
 	if M.is_event(callback) then
 		---@cast callback event
-		if not callback_context then
+		if callback_context == nil then
 			return self:is_subscribed(callback.trigger, callback)
 		end
 
@@ -303,7 +303,7 @@ function M:trigger(...)
 
 		-- Call callback
 		local ok, result_or_error
-		if event_callback_context then
+		if event_callback_context ~= nil then
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
 			elseif USE_XPCALL or USE_NONE then

@@ -41,7 +41,7 @@ If there are already subscribers for this queue_id, they will be called immediat
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to push to.
 	- `[data]` *(any)*: The data associated with the event.
-	- `[on_handle]` *(function|nil)*: Callback function to be called when the event is handled.
+	- `[on_handle]` *(function|event|nil)*: Callback function or event to be called when the event is handled.
 	- `[context]` *(any)*: The context to be passed as the first parameter to the on_handle function when the event is handled.
 
 - **Example Usage:**
@@ -82,11 +82,11 @@ end
 queues.subscribe_once(queue_id, handler, [context])
 ```
 
-Subscribe a handler to the specified global queue for a single event. After the first event is handled the handler is automatically unsubscribed.
+Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event). Then it is automatically unsubscribed and will not be invoked again, even if more events remain.
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to subscribe to.
-	- `handler` *(function)*: The handler function to be called once when an event is pushed.
+	- `handler` *(function|event)*: The handler function or event to be called when events are processed until it returns non-nil.
 	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
 
 - **Returns:**

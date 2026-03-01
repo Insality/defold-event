@@ -24,6 +24,17 @@ return function()
 			test_event:trigger("arg")
 		end)
 
+		it("Instantiate Event with callback and context false", function()
+			local f = function(ctx, arg)
+				assert(ctx == false)
+				assert(arg == "arg")
+			end
+
+			local test_event = event.create(f, false)
+			assert(#test_event == 1)
+			test_event:trigger("arg")
+		end)
+
 		it("Subscribe and Unsubscribe", function()
 			local test_event = event.create()
 			local f = function() end
@@ -92,6 +103,49 @@ return function()
 			test_event:subscribe(f, "context")
 			test_event:trigger("foo", "bar")
 			assert(last_context == "context")
+		end)
+
+		it("Subscribe with context false: callback receives false as first argument", function()
+			local test_event = event.create()
+			local received
+			local f = function(ctx) received = ctx end
+
+			test_event:subscribe(f, false)
+			test_event:trigger("ignored")
+			assert(received == false)
+		end)
+
+		it("is_subscribed(callback, false) when subscribed with context false", function()
+			local test_event = event.create()
+			local f = function() end
+
+			test_event:subscribe(f, false)
+			assert(test_event:is_subscribed(f, false) == true)
+			assert(test_event:is_subscribed(f) == false)
+			assert(test_event:is_subscribed(f, true) == false)
+		end)
+
+		it("unsubscribe(callback, false) removes only subscription with context false", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:subscribe(f)
+			test_event:subscribe(f, false)
+			test_event:subscribe(f, true)
+			assert(#test_event == 3)
+
+			test_event:trigger()
+			assert(counter == 3)
+
+			test_event:unsubscribe(f, false)
+			assert(#test_event == 2)
+			assert(test_event:is_subscribed(f, false) == false)
+			assert(test_event:is_subscribed(f) == true)
+			assert(test_event:is_subscribed(f, true) == true)
+
+			test_event:trigger()
+			assert(counter == 5)
 		end)
 
 		it("Event is_empty", function()
