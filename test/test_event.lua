@@ -566,6 +566,101 @@ return function()
 			assert(#order == 3)
 		end)
 
+		it("subscribe_once: handler can re-subscribe itself from inside trigger", function()
+			local test_event = event.create()
+			local counter = 0
+			local f
+			f = function()
+				counter = counter + 1
+				test_event:subscribe_once(f)
+			end
+
+			test_event:subscribe_once(f)
+			test_event:trigger()
+			assert(counter == 1)
+			test_event:trigger()
+			assert(counter == 2)
+			test_event:trigger()
+			assert(counter == 3)
+		end)
+
+		it("subscribe_once: handler can subscribe itself with regular subscribe so it remains", function()
+			local test_event = event.create()
+			local counter = 0
+			local f
+			f = function()
+				counter = counter + 1
+				test_event:subscribe(f)
+			end
+
+			test_event:subscribe_once(f)
+			test_event:trigger()
+			assert(counter == 1)
+			test_event:trigger()
+			assert(counter == 2)
+			test_event:trigger()
+			assert(counter == 3)
+		end)
+
+		it("subscribe: handler subscribing itself again returns false and does nothing", function()
+			local test_event = event.create()
+			local counter = 0
+			local subscribe_return
+			local f
+			f = function()
+				counter = counter + 1
+				subscribe_return = test_event:subscribe(f)
+			end
+
+			test_event:subscribe(f)
+			test_event:trigger()
+			assert(counter == 1)
+			assert(subscribe_return == false)
+			assert(#test_event == 1)
+			test_event:trigger()
+			assert(counter == 2)
+		end)
+
+		it("Unsubscribe then subscribe same handler during trigger: re-subscription succeeds", function()
+			local test_event = event.create()
+			local counter = 0
+			local f
+			f = function()
+				counter = counter + 1
+				test_event:unsubscribe(f)
+				test_event:subscribe(f)
+			end
+
+			test_event:subscribe(f)
+			test_event:trigger()
+			assert(counter == 1)
+			test_event:trigger()
+			assert(counter == 2)
+		end)
+
+		it("During trigger: one handler unsubscribes another and re-subscribes it", function()
+			local test_event = event.create()
+			local a_count, b_count = 0, 0
+			local a, b
+			a = function()
+				a_count = a_count + 1
+				test_event:unsubscribe(b)
+				test_event:subscribe(b)
+			end
+			b = function()
+				b_count = b_count + 1
+			end
+
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:trigger()
+			assert(a_count == 1)
+			assert(b_count == 1)
+			test_event:trigger()
+			assert(a_count == 2)
+			assert(b_count == 2)
+		end)
+
 		it("Trigger with context passes all args under xpcall (nil in middle)", function()
 			event.set_mode("xpcall")
 

@@ -3,7 +3,12 @@ local USE_XPCALL = event_mode == "xpcall"
 local USE_PCALL = event_mode == "pcall"
 local USE_NONE = event_mode == "none"
 
----Array of next items: { [1] callback, [2] callback_context, [3] script_context [, [4] subscribed_event] [, [5] delete] }
+---Array of next items:
+---[1] callback,
+---[2] callback_context,
+---[3] script_context
+---[4] remaining: nil=infinite, number=fires left, 0=pending delete.
+---[5] subscribed_event: event when callback is event with context.
 ---@class event.callback_data: table
 
 ---A logger object for event module should match the following interface
@@ -58,31 +63,6 @@ local logger = {
 }
 
 
----Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger.
----By default, the module uses the `pprint` logger for errors.
----@param logger_instance event.logger|table|nil A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
-function M.set_logger(logger_instance)
-	logger = logger_instance or empty_logger
-end
-
-
----Set the mode of the event module.
----@param mode "pcall" | "xpcall" | "none" The mode to set.
-function M.set_mode(mode)
-	USE_PCALL = mode == "pcall"
-	USE_XPCALL = mode == "xpcall"
-	USE_NONE = mode == "none"
-end
-
-
----Check if the table is an event instance.
----@param value any
----@return boolean is_event
-function M.is_event(value)
-	return type(value) == "table" and getmetatable(value) == EVENT_METATABLE
-end
-
-
 ---Generate a new event instance. This instance can then be used to subscribe to and trigger events.
 ---The callback function will be called when the event is triggered. The callback_context parameter is optional
 ---and will be passed as the first parameter to the callback function. Usually, it is used to pass the self instance.
@@ -99,6 +79,45 @@ function M.create(callback, callback_context)
 	end
 
 	return instance
+end
+
+
+---Check if the table is an event instance.
+---@param value any
+---@return boolean is_event
+function M.is_event(value)
+	return type(value) == "table" and getmetatable(value) == EVENT_METATABLE
+end
+
+
+---Subscribe a callback to the event or other event. The callback will be invoked whenever the event is triggered.
+---@param self event The event instance
+---@param callback function|event The function to be executed when the event occurs.
+---@param callback_context any|nil The first parameter to be passed to the callback function.
+---@param remaining number|nil nil = infinite, number = fires left then remove
+local function subscribe(self, callback, callback_context, remaining)
+	if self:is_subscribed(callback, callback_context) then
+		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
+		return false
+	end
+
+	-- With event subscription we need to store the event instance to be able to unsubscribe it later.
+	if M.is_event(callback) then
+		---@cast callback event
+		if not callback_context or callback_context == callback then
+			table_insert(self, { callback.trigger, callback, get_context(), remaining, nil })
+		else
+			local wrapper = function(context, ...)
+				return callback:trigger(...)
+			end
+			table_insert(self, { wrapper, callback_context, get_context(), remaining, callback })
+		end
+		return true
+	end
+
+	table_insert(self, { callback, callback_context, get_context(), remaining, nil })
+
+	return true
 end
 
 
@@ -120,27 +139,7 @@ end
 ---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
-
-	if self:is_subscribed(callback, callback_context) then
-		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
-		return false
-	end
-
-	if M.is_event(callback) then
-		---@cast callback event
-		if not callback_context or callback_context == callback then
-			table_insert(self, { callback.trigger, callback, get_context(), nil, nil })
-		else
-			local wrapper = function(context, ...)
-				return callback:trigger(...)
-			end
-			table_insert(self, { wrapper, callback_context, get_context(), callback, nil })
-		end
-		return true
-	end
-
-	table_insert(self, { callback, callback_context, get_context() })
-	return true
+	return subscribe(self, callback, callback_context, nil)
 end
 
 
@@ -150,27 +149,7 @@ end
 ---@return boolean is_subscribed True if subscribed
 function M:subscribe_once(callback, callback_context)
 	assert(callback, "A function must be passed to subscribe to an event")
-
-	if self:is_subscribed(callback, callback_context) then
-		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
-		return false
-	end
-
-	if M.is_event(callback) then
-		---@cast callback event
-		if not callback_context or callback_context == callback then
-			table_insert(self, { callback.trigger, callback, get_context(), nil, true })
-		else
-			local wrapper = function(context, ...)
-				return callback:trigger(...)
-			end
-			table_insert(self, { wrapper, callback_context, get_context(), callback, true })
-		end
-		return true
-	end
-
-	table_insert(self, { callback, callback_context, get_context(), nil, true })
-	return true
+	return subscribe(self, callback, callback_context, 1)
 end
 
 
@@ -191,9 +170,9 @@ function M:unsubscribe(callback, callback_context)
 		end
 		for index = #self, 1, -1 do
 			local cb = self[index]
-			if cb[4] == callback and cb[2] == callback_context then
+			if cb[5] == callback and cb[2] == callback_context then
 				if self._defer_unsubscribe then
-					cb[5] = true
+					cb[4] = 0
 				else
 					table_remove(self, index)
 				end
@@ -209,7 +188,7 @@ function M:unsubscribe(callback, callback_context)
 		local cb = self[index]
 		if cb[1] == callback and (not callback_context or cb[2] == callback_context) then
 			if self._defer_unsubscribe then
-				cb[5] = true
+				cb[4] = 0
 			else
 				table_remove(self, index)
 			end
@@ -240,7 +219,9 @@ function M:is_subscribed(callback, callback_context)
 		end
 		for index = 1, #self do
 			local cb = self[index]
-			if cb[4] == callback and cb[2] == callback_context then
+			local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
+			local is_same_subscription = cb[5] == callback and cb[2] == callback_context
+			if not is_pending_delete and is_same_subscription then
 				return true, index
 			end
 		end
@@ -250,7 +231,9 @@ function M:is_subscribed(callback, callback_context)
 	---@cast callback function
 	for index = 1, #self do
 		local cb = self[index]
-		if cb[1] == callback and cb[2] == callback_context then
+		local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
+		local is_same_subscription = cb[1] == callback and cb[2] == callback_context
+		if not is_pending_delete and is_same_subscription then
 			return true, index
 		end
 	end
@@ -291,6 +274,11 @@ function M:trigger(...)
 		local event_callback = callback[1]
 		local event_callback_context = callback[2]
 		local event_script_context = callback[3]
+
+		-- Decrement remaining count if it is a number and greater than 0
+		if callback[4] and callback[4] > 0 then
+			callback[4] = callback[4] - 1
+		end
 
 		-- Set context for the callback
 		if current_script_context ~= event_script_context then
@@ -343,13 +331,15 @@ function M:trigger(...)
 		-- Handle errors
 		if not ok then
 			if USE_NONE then
+				-- Clear before error
 				local current_index = index
 				for i = current_index - 1, 1, -1 do
-					if self[i][5] == true then
+					if self[i][4] == 0 then
 						table_remove(self, i)
 					end
 				end
 				self._defer_unsubscribe = false
+
 				error(result_or_error, 2)
 			end
 
@@ -364,12 +354,13 @@ function M:trigger(...)
 
 	-- Remove deferred unsubscribed callbacks
 	for index = #self, 1, -1 do
-		if self[index][5] == true then
+		if self[index][4] == 0 then
 			table_remove(self, index)
 		end
 	end
 
 	self._defer_unsubscribe = false
+
 	return result
 end
 
@@ -382,6 +373,23 @@ function M:is_empty()
 end
 
 
+---Customize the logging mechanism used by Event module. You can use **Defold Log** library or provide a custom logger.
+---By default, the module uses the `pprint` logger for errors.
+---@param logger_instance event.logger|table|nil A logger object that follows the specified logging interface, including methods for `trace`, `debug`, `info`, `warn`, `error`. Pass `nil` to remove the default logger.
+function M.set_logger(logger_instance)
+	logger = logger_instance or empty_logger
+end
+
+
+---Set the mode of the event module.
+---@param mode "pcall" | "xpcall" | "none" The mode to set.
+function M.set_mode(mode)
+	USE_PCALL = mode == "pcall"
+	USE_XPCALL = mode == "xpcall"
+	USE_NONE = mode == "none"
+end
+
+
 ---Remove all callbacks subscribed to the event, effectively resetting it.
 ---		on_click_event:clear()
 function M:clear()
@@ -389,6 +397,7 @@ function M:clear()
 		self[index] = nil
 	end
 end
+
 
 -- Construct event metatable
 EVENT_METATABLE = {
