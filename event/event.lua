@@ -108,7 +108,7 @@ local function subscribe(self, callback, callback_context, remaining)
 			table_insert(self, { callback.trigger, callback, get_context(), remaining, nil })
 		else
 			local wrapper = function(context, ...)
-				return callback:trigger(...)
+				return callback:trigger(context, ...)
 			end
 			table_insert(self, { wrapper, callback_context, get_context(), remaining, callback })
 		end

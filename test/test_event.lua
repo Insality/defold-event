@@ -217,30 +217,88 @@ return function()
 			assert(test_event2:is_subscribed(test_event1) == false)
 		end)
 
+		it("Chain of three events with context: contexts accumulate in trigger args", function()
+			local event_A = event.create()
+			local event_B = event.create()
+			local event_C = event.create()
+
+			event_A:subscribe(event_B, "A")
+			event_B:subscribe(event_C, "B")
+			event_C:subscribe(function(c, b, a, value)
+				return { c, b, a, value }
+			end, "C")
+
+			local result = event_A:trigger("X")
+			assert(result[1] == "C")
+			assert(result[2] == "B")
+			assert(result[3] == "A")
+			assert(result[4] == "X")
+		end)
+
+		it("Three plain functions with context on one event: order and context per call", function()
+			local e = event.create()
+			local order = {}
+
+			e:subscribe(function(ctx, x)
+				order[#order + 1] = { ctx, x }
+			end, "A")
+			e:subscribe(function(ctx, x)
+				order[#order + 1] = { ctx, x }
+			end, "B")
+			e:subscribe(function(ctx, x)
+				order[#order + 1] = { ctx, x }
+			end, "C")
+
+			e:trigger("X")
+			assert(#order == 3)
+			assert(order[1][1] == "A" and order[1][2] == "X")
+			assert(order[2][1] == "B" and order[2][2] == "X")
+			assert(order[3][1] == "C" and order[3][2] == "X")
+		end)
+
+		it("Should accumulate context in function calls", function()
+			local get_width = function(object)
+				return object.width
+			end
+
+			local event_a = event.create(get_width, { width = 100 })
+
+			local result
+			local display_width = function(object, width)
+				result = object.display_text .. width
+			end
+
+			local event_b = event.create(display_width, { display_text = "Width: " })
+			event_b:trigger(event_a:trigger())
+
+			pprint(result)
+			assert(result == "Width: 100")
+		end)
+
 		it("Event subscribed with event and context receives context and can be unsubscribed", function()
 			local parent = event.create()
 			local child = event.create()
 			local counter = 0
 			local last_context
-			local f = function(ctx, amount)
+			local f = function(ctx, _parent_ctx, amount)
 				last_context = ctx
 				counter = counter + amount
 			end
 
-			child:subscribe(f, "my_context")
-			parent:subscribe(child, "my_context")
+			child:subscribe(f, "child_ctx")
+			parent:subscribe(child, "parent_ctx")
 
 			parent:trigger(1)
 			assert(counter == 1)
-			assert(last_context == "my_context")
+			assert(last_context == "child_ctx")
 
 			parent:trigger(2)
 			assert(counter == 3)
 
-			assert(parent:is_subscribed(child, "my_context") == true)
-			local ok = parent:unsubscribe(child, "my_context")
+			assert(parent:is_subscribed(child, "parent_ctx") == true)
+			local ok = parent:unsubscribe(child, "parent_ctx")
 			assert(ok == true)
-			assert(parent:is_subscribed(child, "my_context") == false)
+			assert(parent:is_subscribed(child, "parent_ctx") == false)
 
 			parent:trigger(10)
 			assert(counter == 3)
