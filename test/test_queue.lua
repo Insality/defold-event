@@ -98,10 +98,10 @@ local function test_queue()
 			assert(#queue_instance:get_events() == 1)
 
 			queue_instance:push("second")
-			assert(call_count == 3) -- first, and first and second
+			assert(call_count == 2)
 
 			queue_instance:push("third")
-			assert(call_count == 3) -- still three
+			assert(call_count == 2)
 		end)
 
 		it("subscribe_once: same handler and context twice returns false", function()
@@ -125,6 +125,19 @@ local function test_queue()
 			queue_instance:unsubscribe(handler)
 			queue_instance:push("data")
 			assert(call_count == 0)
+		end)
+
+		it("subscribe_once: handler called only once when multiple events processed in same run", function()
+			local call_count = 0
+			local instance = queue.create()
+			instance:push("first")
+			instance:push("second")
+			instance:subscribe_once(function(data)
+				call_count = call_count + 1
+				return true
+			end)
+			assert(call_count == 1)
+			assert(#instance:get_events() == 1)
 		end)
 
 		it("Should call on_handle callback when event is handled", function()

@@ -92,6 +92,7 @@ end
 
 
 ---Subscribe a handler until it handles one event. After the first event is handled (handler returns non-nil) the handler is automatically unsubscribed.
+---If there a several events in the queue, the handler will be called only once.
 ---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
@@ -276,16 +277,17 @@ function M:_check_subscribers()
 
 		for index = 1, #self.handlers do
 			local event_handler = self.handlers[index]
-
-			local handle_result = event_handler:trigger(event_data.data)
-			if handle_result ~= nil then
-				if self.once_state[event_handler] == ONCE_STATE_SET then
-					self.once_state[event_handler] = ONCE_STATE_REMOVE
+			if self.once_state[event_handler] ~= ONCE_STATE_REMOVE then
+				local handle_result = event_handler:trigger(event_data.data)
+				if handle_result ~= nil then
+					if self.once_state[event_handler] == ONCE_STATE_SET then
+						self.once_state[event_handler] = ONCE_STATE_REMOVE
+					end
+					if event_data.on_handle then
+						event_data.on_handle(handle_result)
+					end
+					is_handled = true
 				end
-				if event_data.on_handle then
-					event_data.on_handle(handle_result)
-				end
-				is_handled = true
 			end
 		end
 
