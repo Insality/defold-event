@@ -85,9 +85,10 @@ queue:subscribe(handler, [context])
 
 Subscribe a handler to this queue instance. When an event is pushed to this queue,
 the handler will be called. If there are already events in the queue, they will be processed immediately.
+Return a non-nil value from the handler to mark the event as handled and remove it from the queue.
 
 - **Parameters:**
-	- `handler` *(function|event)*: The handler function or event to be called when an event is pushed. Return true from the handler to mark the event as handled.
+	- `handler` *(function|event)*: The handler function or event to be called when an event is pushed.
 	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
 
 - **Returns:**
@@ -100,7 +101,7 @@ the handler will be called. If there are already events in the queue, they will 
 queue:subscribe_once(handler, [context])
 ```
 
-Subscribe a handler for a single event. When an event is pushed and handled by this handler, the handler is automatically unsubscribed. Returns false if the same handler (and context) is already subscribed.
+Subscribe a handler for a single event. After the first invocation the handler is automatically unsubscribed. Return a non-nil value from the handler to mark the event as handled. Returns false if the same handler (and context) is already subscribed.
 
 - **Parameters:**
 	- `handler` *(function|event)*: The handler function or event to be called once when an event is pushed.

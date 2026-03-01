@@ -19,7 +19,7 @@ It helps you decouple systems using publish-subscribe patterns, delayed queues, 
 - **Cross-Context**: You can subscribe to events from different scripts.
 - **Callback Management**: Attach callbacks to events with optional context.
 - **Global Events**: Use string identifiers to trigger events from anywhere in your game.
-- **Queue**: Store events in a queue until they are processed by subscribers.
+- **Queue**: Store events in a queue until they are processed by subscribers. A handler must return a non-nil value to mark the event as handled and remove it from the queue.
 - **Global Queues**: Access queue instances from anywhere in your game using string identifiers.
 - **Promise**: Handle asynchronous operations with promise-style chaining.
 - **Logging**: Set a logger to log event activities.
@@ -44,8 +44,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/14.zip
 
 | Platform         | Event Size   | Events Size   | Queue Size   | Queues Size  | Promise Size |
 | ---------------- | ------------ | ------------- | ------------ | ------------ | ------------ |
-| HTML5            | **2.06 KB**  | **0.5 KB**   | **1.28 KB**  | **0.56 KB**  | **1.72 KB**  |
-| Desktop / Mobile | **4.02 KB**  | **0.93 KB**   | **2.57 KB**  | **1.02 KB**  | **3.29 KB**  |
+| HTML5            | **2.14 KB**  | **0.5 KB**   | **1.28 KB**  | **0.56 KB**  | **1.72 KB**  |
+| Desktop / Mobile | **3.94 KB**  | **0.93 KB**   | **2.57 KB**  | **1.02 KB**  | **3.29 KB**  |
 
 
 ## Event Mode

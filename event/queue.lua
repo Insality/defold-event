@@ -73,7 +73,8 @@ end
 
 ---Subscribe a handler to this queue instance. When an event is pushed to this queue,
 ---the handler will be called. If there are already events in the queue, they will be processed immediately.
----@param handler function|event The handler function or event to be called when an event is pushed. Return true from the handler to mark the event as handled.
+---Return a non-nil value from the handler to mark the event as handled and remove it from the queue.
+---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M:subscribe(handler, context)
