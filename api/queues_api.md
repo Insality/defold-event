@@ -157,7 +157,7 @@ Events can be handled and removed in event handler callback. If event is handled
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to process.
-	- `event_handler` *(function|event)*: Specific handler to process the events. If this function returns true, the event will be removed from the queue.
+	- `event_handler` *(function|event)*: Specific handler to process the events. If this function returns non-nil, the event will be removed from the queue.
 	- `[context]` *(any)*: The context to be passed to the handler.
 
 - **Example Usage:**

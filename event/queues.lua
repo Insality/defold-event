@@ -90,7 +90,7 @@ end
 ---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 ---		queues.process("save_game", process_save_handler, self)
 ---@param queue_id string The id of the global queue to process.
----@param event_handler function|event Specific handler to process the events. If this function returns true, the event will be removed from the queue.
+---@param event_handler function|event Specific handler to process the events. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 function M.process(queue_id, event_handler, context)
 	if not M.queues[queue_id] then

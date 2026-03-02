@@ -165,7 +165,7 @@ end
 ---Process all events in this queue immediately. Subscribers will not be called in this function.
 ---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 ---		my_queue:process(function(self, data) return handle(data) end, self)
----@param event_handler function|event Specific handler or event to process the events. If this function returns true, the event will be removed from the queue.
+---@param event_handler function|event Specific handler or event to process the events. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 function M:process(event_handler, context)
 	if #self.events == 0 then

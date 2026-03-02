@@ -196,7 +196,7 @@ Process all events in this queue immediately. Subscribers will not be called in 
 Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 
 - **Parameters:**
-	- `event_handler` *(function|event)*: Specific handler or event to process the events. If this function returns true, the event will be removed from the queue.
+	- `event_handler` *(function|event)*: Specific handler or event to process the events. If this function returns non-nil, the event will be removed from the queue.
 	- `[context]` *(any)*: The context to be passed to the handler.
 
 - **Example Usage:**
