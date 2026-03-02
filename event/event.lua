@@ -22,7 +22,7 @@ local USE_PCALL = event_mode == "pcall" or (not USE_NONE and not USE_XPCALL)
 ---The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
 ---@overload fun(vararg:any): any|nil Trigger the event. All subscribed callbacks will be called in the order they were subscribed.
 ---@class event
----@field package _defer_unsubscribe boolean When true, unsubscribe marks for deferred removal instead of removing immediately.
+---Index self[0] holds re-entrant trigger depth while triggering; when > 0 unsubscribe is deferred. Not used for callbacks.
 local M = {}
 
 -- Forward declaration
@@ -66,7 +66,6 @@ local logger = {
 ---Generate a new event instance. This instance can then be used to subscribe to and trigger events.
 ---The callback function will be called when the event is triggered. The callback_context parameter is optional
 ---and will be passed as the first parameter to the callback function. Usually, it is used to pass the self instance.
----Allocate 64 bytes per instance.
 ---		local e = event.create()
 ---		local e = event.create(function(self) print("ok") end, self)
 ---@param callback function|event|nil The function to be called when the event is triggered. Or the event instance to subscribe.
@@ -74,7 +73,7 @@ local logger = {
 ---@return event event_instance A new event instance.
 ---@nodiscard
 function M.create(callback, callback_context)
-	local instance = setmetatable({}, EVENT_METATABLE)
+	local instance = setmetatable({ [0] = 0 }, EVENT_METATABLE)
 
 	if callback then
 		instance:subscribe(callback, callback_context)
@@ -101,8 +100,6 @@ end
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@param remaining number|nil nil = infinite, number = fires left then remove
 local function subscribe(self, callback, callback_context, remaining)
-	assert(callback, "A function or event must be passed to subscribe to an event")
-
 	if self:is_subscribed(callback, callback_context) then
 		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
@@ -130,10 +127,17 @@ local function subscribe(self, callback, callback_context, remaining)
 end
 
 
+---Check if the event is in defer unsubscribe mode. Used 0 index to reduce memory allocations.
+---@param self event The event instance
+---@return boolean is_defer_unsubscribe True if the event is in defer unsubscribe mode
+local function is_defer_mode(self)
+	return self[0] > 0
+end
+
+
 ---Subscribe a callback to the event or other event. The callback will be invoked whenever the event is triggered.
 ---The callback_context parameter is optional and will be passed as the first parameter to the callback function.
 ---If the callback with context is already subscribed, the warning will be logged.
----Allocate 160 bytes per first subscription and 104 bytes per next subscriptions.
 ---		local function callback(self)
 ---			print("clicked!")
 ---		end
@@ -147,6 +151,7 @@ end
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
+	assert(callback, "A function or event must be passed to subscribe to an event")
 	return subscribe(self, callback, callback_context, nil)
 end
 
@@ -157,6 +162,7 @@ end
 ---@param callback_context any|nil Same as subscribe.
 ---@return boolean is_subscribed True if subscribed
 function M:subscribe_once(callback, callback_context)
+	assert(callback, "A function or event must be passed to subscribe_once to an event")
 	return subscribe(self, callback, callback_context, 1)
 end
 
@@ -179,7 +185,7 @@ function M:unsubscribe(callback, callback_context)
 			local is_this_event = (cb[5] == callback) or (cb[1] == callback.trigger and cb[2] == callback)
 			local is_matching_context = callback_context == nil or cb[2] == callback_context
 			if is_this_event and is_matching_context then
-				if self._defer_unsubscribe then
+				if is_defer_mode(self) then
 					cb[4] = 0
 				else
 					table_remove(self, index)
@@ -197,7 +203,7 @@ function M:unsubscribe(callback, callback_context)
 			local is_this_subscription = (cb[1] == callback) and (callback_context == nil or cb[2] == callback_context)
 			local is_matching_context = callback_context == nil or cb[2] == callback_context
 			if is_this_subscription and is_matching_context then
-				if self._defer_unsubscribe then
+				if is_defer_mode(self) then
 					cb[4] = 0
 				else
 					table_remove(self, index)
@@ -231,7 +237,7 @@ function M:is_subscribed(callback, callback_context)
 
 		for index = 1, #self do
 			local cb = self[index]
-			local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
+			local is_pending_delete = is_defer_mode(self) and cb[4] == 0
 			local is_same_subscription = cb[5] == callback and cb[2] == callback_context
 			if not is_pending_delete and is_same_subscription then
 				return true, index
@@ -242,7 +248,7 @@ function M:is_subscribed(callback, callback_context)
 		---@cast callback function
 		for index = 1, #self do
 			local cb = self[index]
-			local is_pending_delete = self._defer_unsubscribe and cb[4] == 0
+			local is_pending_delete = is_defer_mode(self) and cb[4] == 0
 			local is_same_subscription = cb[1] == callback and cb[2] == callback_context
 			if not is_pending_delete and is_same_subscription then
 				return true, index
@@ -287,7 +293,7 @@ function M:trigger(...)
 		return
 	end
 
-	self._defer_unsubscribe = true
+	self[0] = self[0] + 1
 	local result = nil
 	local current_script_context = get_context()
 
@@ -347,9 +353,10 @@ function M:trigger(...)
 		-- Handle errors
 		if not ok then
 			if USE_NONE then
-				clear_deferred_subscribers(self)
-				self._defer_unsubscribe = false
-
+				self[0] = self[0] - 1
+				if self[0] == 0 then
+					clear_deferred_subscribers(self)
+				end
 				error(result_or_error, 2)
 			end
 
@@ -362,8 +369,10 @@ function M:trigger(...)
 		result = result_or_error
 	end
 
-	clear_deferred_subscribers(self)
-	self._defer_unsubscribe = false
+	self[0] = self[0] - 1
+	if self[0] == 0 then
+		clear_deferred_subscribers(self)
+	end
 
 	return result
 end

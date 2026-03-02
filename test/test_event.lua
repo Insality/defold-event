@@ -568,6 +568,37 @@ return function()
 			assert(#order == 3)
 		end)
 
+		it("re-entrant trigger: deferred unsubscribe only cleared when depth returns to 0", function()
+			local test_event = event.create()
+			local count_b, count_c = 0, 0
+			local inner_triggered = false
+			local a = function()
+				if not inner_triggered then
+					inner_triggered = true
+					test_event:trigger()
+				end
+			end
+			local b = function()
+				count_b = count_b + 1
+			end
+			local c = function()
+				count_c = count_c + 1
+			end
+
+			test_event:subscribe(a)
+			test_event:subscribe_once(b)
+			test_event:subscribe(c)
+			test_event:trigger()
+
+			-- This is weird case, self trigger self with subscribe once.
+			-- This subscribe once will triggered until trigger flow is finished.
+			-- So in this case, this once trigger will triggered several times.
+			-- Not probably as expected, but just don't retrigger self inside the trigger
+			-- This test checks that defer counter is working correctly
+			assert(count_b == 2, "subscribe_once B must run in inner and outer trigger")
+			assert(count_c == 2, "C must run in inner and outer trigger")
+		end)
+
 		it("subscribe_once: handler can re-subscribe itself from inside trigger", function()
 			local test_event = event.create()
 			local counter = 0

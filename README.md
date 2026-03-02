@@ -249,8 +249,10 @@ If you have any issues, questions or suggestions please [create an issue](https:
 ### **V15**
 	- subscribe_once: Added `event:subscribe_once`, `events.subscribe_once`, `queue:subscribe_once`, and `queues.subscribe_once` to subscribe a handler for a single invocation; the handler is automatically unsubscribed after the first call.
 	- Unsubscribe during trigger: Calling `unsubscribe` from inside a callback no longer breaks the current trigger iteration; removals are applied after the trigger finishes, so all callbacks in the current trigger still run.
+	- Fix when `callback_context` for subscription can't be `false`
 	- Event as callback: Support for `callback_context` when subscribing an event to another event (e.g. `event_2:subscribe(event_1, "any additional data")`).
 	- Unsubscribe event from event: Fixed unsubscribing one event from another so the correct subscription is found and removed.
+	- Documentation and API pages updates.
 
 </details>
 

@@ -29,7 +29,6 @@ event.create([callback], [callback_context])
 Generate a new event instance. This instance can then be used to subscribe to and trigger events.
 The callback function will be called when the event is triggered. The callback_context parameter is optional
 and will be passed as the first parameter to the callback function. Usually, it is used to pass the self instance.
-Allocate 64 bytes per instance.
 
 - **Parameters:**
 	- `[callback]` *(function|event|nil)*: The function to be called when the event is triggered. Or the event instance to subscribe.
@@ -107,7 +106,6 @@ event:subscribe(callback, [callback_context])
 Subscribe a callback to the event or other event. The callback will be invoked whenever the event is triggered.
 The callback_context parameter is optional and will be passed as the first parameter to the callback function.
 If the callback with context is already subscribed, the warning will be logged.
-Allocate 160 bytes per first subscription and 104 bytes per next subscriptions.
 
 - **Parameters:**
 	- `callback` *(function|event)*: The function to be executed when the event occurs.

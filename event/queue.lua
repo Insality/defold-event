@@ -214,7 +214,7 @@ function M:process_next(event_handler, context)
 	local event_data = self.events[1]
 	local handle_result
 
-	if context then
+	if context ~= nil then
 		handle_result = event_handler(context, event_data.data)
 	else
 		handle_result = event_handler(event_data.data)
