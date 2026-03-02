@@ -179,7 +179,7 @@ function M:process(event_handler, context)
 		local handle_result = nil
 
 		if event_handler then
-			if context then
+			if context ~= nil then
 				handle_result = event_handler(context, event_data.data)
 			else
 				handle_result = event_handler(event_data.data)

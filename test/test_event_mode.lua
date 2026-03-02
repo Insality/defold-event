@@ -87,6 +87,60 @@ return function()
 			assert(logged_msg and tostring(logged_msg):find(err_msg))
 		end)
 
+		it("pcall mode: trigger returns nil when only callback errors", function()
+			event.set_mode("pcall")
+
+			local test_event = event.create()
+			test_event:subscribe(function()
+				error("pcall error")
+			end)
+
+			local result = test_event:trigger()
+			assert(result == nil)
+		end)
+
+		it("pcall mode: trigger returns last successful result when later callback errors", function()
+			event.set_mode("pcall")
+
+			local test_event = event.create()
+			test_event:subscribe(function()
+				return 42
+			end)
+			test_event:subscribe(function()
+				error("second callback error")
+			end)
+
+			local result = test_event:trigger()
+			assert(result == 42)
+		end)
+
+		it("xpcall mode: trigger returns nil when only callback errors", function()
+			event.set_mode("xpcall")
+
+			local test_event = event.create()
+			test_event:subscribe(function()
+				error("xpcall error")
+			end)
+
+			local result = test_event:trigger()
+			assert(result == nil)
+		end)
+
+		it("xpcall mode: trigger returns last successful result when later callback errors", function()
+			event.set_mode("xpcall")
+
+			local test_event = event.create()
+			test_event:subscribe(function()
+				return "ok"
+			end)
+			test_event:subscribe(function()
+				error("second callback error")
+			end)
+
+			local result = test_event:trigger()
+			assert(result == "ok")
+		end)
+
 		it("none mode: error in callback rethrows from trigger", function()
 			event.set_mode("none")
 

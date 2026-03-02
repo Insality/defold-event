@@ -252,6 +252,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Fix when `callback_context` for subscription can't be `false`
 	- Event as callback: Support for `callback_context` when subscribing an event to another event (e.g. `event_2:subscribe(event_1, "any additional data")`).
 	- Unsubscribe event from event: Fixed unsubscribing one event from another so the correct subscription is found and removed.
+	- Various edge cases fixes and improvements.
 	- Documentation and API pages updates.
 
 </details>

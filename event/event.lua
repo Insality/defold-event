@@ -364,9 +364,9 @@ function M:trigger(...)
 			local place = caller_info.short_src .. ":" .. caller_info.currentline
 			logger:error("Error from trigger event here: " .. place, 2)
 			logger:error(USE_XPCALL and result_or_error or debug.traceback(result_or_error, 2))
+		else
+			result = result_or_error
 		end
-
-		result = result_or_error
 	end
 
 	self[0] = self[0] - 1
