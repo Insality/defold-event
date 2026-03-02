@@ -96,6 +96,8 @@ end
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@param remaining number|nil nil = infinite, number = fires left then remove
 local function subscribe(self, callback, callback_context, remaining)
+	assert(callback, "A function or event must be passed to subscribe to an event")
+
 	if self:is_subscribed(callback, callback_context) then
 		logger:warn("Callback is already subscribed to the event. Callback will not be subscribed again.")
 		return false
@@ -140,7 +142,6 @@ end
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if event is subscribed (Will return false if the callback is already subscribed)
 function M:subscribe(callback, callback_context)
-	assert(callback, "A function or event must be passed to subscribe to an event")
 	return subscribe(self, callback, callback_context, nil)
 end
 
@@ -150,7 +151,6 @@ end
 ---@param callback_context any|nil Same as subscribe.
 ---@return boolean is_subscribed True if subscribed
 function M:subscribe_once(callback, callback_context)
-	assert(callback, "A function or event must be passed to subscribe to an event")
 	return subscribe(self, callback, callback_context, 1)
 end
 

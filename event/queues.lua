@@ -56,7 +56,7 @@ end
 ---			queues.unsubscribe("save_game", save_handler, self)
 ---		end
 ---@param queue_id string The id of the global queue to unsubscribe from.
----@param handler function The handler function to unsubscribe.
+---@param handler function|event The handler function or event to unsubscribe.
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_unsubscribed True if handler was unsubscribed successfully
 function M.unsubscribe(queue_id, handler, context)
@@ -72,7 +72,7 @@ end
 ---The context should be the same as the one used when subscribing the handler.
 ---		local is_subscribed = queues.is_subscribed("save_game", save_handler, self)
 ---@param queue_id string The id of the global queue in question.
----@param handler function The handler function to check.
+---@param handler function|event The handler function or event to check.
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_subscribed True if handler is subscribed
 ---@return number|nil index Index of handler if subscribed
@@ -89,7 +89,7 @@ end
 ---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 ---		queues.process("save_game", process_save_handler, self)
 ---@param queue_id string The id of the global queue to process.
----@param event_handler function Specific handler to process the events. If this function returns true, the event will be removed from the queue.
+---@param event_handler function|event Specific handler to process the events. If this function returns true, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 function M.process(queue_id, event_handler, context)
 	if not M.queues[queue_id] then
@@ -104,7 +104,7 @@ end
 ---If the handler returns non-nil the event will be removed from the queue.
 ---		queues.process_next("save_game", process_save_handler, self)
 ---@param queue_id string The id of the global queue to process.
----@param event_handler function Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
+---@param event_handler function|event Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 ---@return boolean handled True if the head event was handled and removed
 function M.process_next(queue_id, event_handler, context)

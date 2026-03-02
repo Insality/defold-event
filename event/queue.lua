@@ -91,7 +91,8 @@ function M:subscribe(handler, context)
 end
 
 
----Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event); then it is automatically unsubscribed and will not be invoked again, even if more events remain in the queue.
+---Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event)
+---then it is automatically unsubscribed and will not be invoked again, even if more events remain in the queue.
 ---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
@@ -113,7 +114,7 @@ end
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_unsubscribed True if handler was unsubscribed successfully
 function M:unsubscribe(handler, context)
-	assert(handler, "A function must be passed to unsubscribe from a queue")
+	assert(handler, "A function or event must be passed to unsubscribe from a queue")
 
 	local is_removed = false
 	for index = #self.handlers, 1, -1 do
