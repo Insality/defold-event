@@ -6,6 +6,10 @@ return function()
 			event = require("event.event")
 		end)
 
+		after(function()
+			event.set_logger(nil)
+		end)
+
 		it("Instantiate Event", function()
 			local test_event = event.create()
 			assert(test_event)
@@ -590,11 +594,14 @@ return function()
 			test_event:subscribe(c)
 			test_event:trigger()
 
-			-- This is weird case, self trigger self with subscribe once.
-			-- This subscribe once will triggered until trigger flow is finished.
-			-- So in this case, this once trigger will triggered several times.
-			-- Not probably as expected, but just don't retrigger self inside the trigger
-			-- This test checks that defer counter is working correctly
+			-- This is a corner case where a handler re-triggers the same event while a
+			-- subscribe_once handler is still active.
+			-- Because unsubscribe for subscribe_once handlers is deferred until the
+			-- outermost trigger completes, the once handler is invoked once per trigger
+			-- depth (inner and outer) instead of only once overall. Callers should avoid
+			-- re-triggering the same event from inside its own handlers when using
+			-- subscribe_once. This test verifies that the deferred-unsubscribe depth
+			-- counter works correctly.
 			assert(count_b == 2, "subscribe_once B must run in inner and outer trigger")
 			assert(count_c == 2, "C must run in inner and outer trigger")
 		end)

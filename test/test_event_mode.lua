@@ -8,6 +8,7 @@ return function()
 
 		after(function()
 			event.set_mode("pcall")
+			event.set_logger(nil)
 		end)
 
 		it("pcall mode: error in callback is caught, trigger does not rethrow", function()
