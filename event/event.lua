@@ -200,7 +200,7 @@ function M:unsubscribe(callback, callback_context)
 		local is_removed = false
 		for index = #self, 1, -1 do
 			local cb = self[index]
-			local is_this_subscription = (cb[1] == callback) and (callback_context == nil or cb[2] == callback_context)
+			local is_this_subscription = (cb[1] == callback)
 			local is_matching_context = callback_context == nil or cb[2] == callback_context
 			if is_this_subscription and is_matching_context then
 				if is_defer_mode(self) then

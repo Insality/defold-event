@@ -46,7 +46,7 @@ end
 ---			events.subscribe("on_game_over", callback, self)
 ---		end
 ---@param event_id string The id of the global event to subscribe to.
----@param callback function The callback function to be executed when the global event occurs.
+---@param callback function|event The callback function or event to be executed when the global event occurs.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if event is subscribed (Will return false if callback is already subscribed)
 function M.subscribe(event_id, callback, callback_context)
@@ -59,7 +59,7 @@ end
 ---Subscribe a callback to the specified global event for a single trigger. After the first trigger the callback is automatically unsubscribed.
 ---		events.subscribe_once("on_game_over", function(self) show_game_over_screen(self) end, self)
 ---@param event_id string The id of the global event to subscribe to.
----@param callback function The callback function to be executed once when the global event occurs.
+---@param callback function|event The callback function or event to be executed once when the global event occurs.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if subscribed
 function M.subscribe_once(event_id, callback, callback_context)
@@ -75,7 +75,7 @@ end
 ---			events.unsubscribe("on_game_over", callback, self)
 ---		end
 ---@param event_id string The id of the global event to unsubscribe from.
----@param callback function The callback function to unsubscribe.
+---@param callback function|event The callback function or event to unsubscribe.
 ---@param callback_context any|nil The first parameter to be passed to the callback function. If not provided, all callbacks with the same function will be unsubscribed.
 ---@return boolean is_unsubscribed True if event is unsubscribed
 function M.unsubscribe(event_id, callback, callback_context)
@@ -91,7 +91,7 @@ end
 ---The callback_context should be the same as the one used when subscribing the callback.
 ---		local is_subscribed = events.is_subscribed("on_game_over", callback, self)
 ---@param event_id string The id of the global event in question.
----@param callback function The callback function in question.
+---@param callback function|event The callback function or event in question.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return boolean is_subscribed True if the callback is subscribed to the global event
 ---@return number|nil index Index of callback in event if subscribed

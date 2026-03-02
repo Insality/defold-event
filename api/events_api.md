@@ -88,7 +88,7 @@ The callback will be invoked whenever the global event is triggered.
 
 - **Parameters:**
 	- `event_id` *(string)*: The id of the global event to subscribe to.
-	- `callback` *(function)*: The callback function to be executed when the global event occurs.
+	- `callback` *(function|event)*: The callback function or event to be executed when the global event occurs.
 	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
 
 - **Returns:**
@@ -112,7 +112,7 @@ Subscribe a callback to the specified global event for a single trigger. After t
 
 - **Parameters:**
 	- `event_id` *(string)*: The id of the global event to subscribe to.
-	- `callback` *(function)*: The callback function to be executed once when the global event occurs.
+	- `callback` *(function|event)*: The callback function or event to be executed once when the global event occurs.
 	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
 
 - **Returns:**
@@ -136,7 +136,7 @@ If there is no callback_context provided, all callbacks with the same function w
 
 - **Parameters:**
 	- `event_id` *(string)*: The id of the global event to unsubscribe from.
-	- `callback` *(function)*: The callback function to unsubscribe.
+	- `callback` *(function|event)*: The callback function or event to unsubscribe.
 	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. If not provided, all callbacks with the same function will be unsubscribed.
 
 - **Returns:**
@@ -161,7 +161,7 @@ The callback_context should be the same as the one used when subscribing the cal
 
 - **Parameters:**
 	- `event_id` *(string)*: The id of the global event in question.
-	- `callback` *(function)*: The callback function in question.
+	- `callback` *(function|event)*: The callback function or event in question.
 	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
 
 - **Returns:**
