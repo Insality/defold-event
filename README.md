@@ -44,8 +44,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/14.zip
 
 | Platform         | Event Size   | Events Size   | Queue Size   | Queues Size  | Promise Size |
 | ---------------- | ------------ | ------------- | ------------ | ------------ | ------------ |
-| HTML5            | **2.14 KB**  | **0.5 KB**   | **1.28 KB**  | **0.56 KB**  | **1.72 KB**  |
-| Desktop / Mobile | **3.94 KB**  | **0.93 KB**   | **2.57 KB**  | **1.02 KB**  | **3.29 KB**  |
+| HTML5            | **2.18 KB**  | **0.5 KB**   | **1.43 KB**  | **0.56 KB**  | **1.73 KB**  |
+| Desktop / Mobile | **4.05 KB**  | **0.93 KB**   | **2.85 KB**  | **1.03 KB**  | **3.29 KB**  |
 
 
 ## Event Mode
