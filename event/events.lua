@@ -57,6 +57,7 @@ end
 
 
 ---Subscribe a callback to the specified global event for a single trigger. After the first trigger the callback is automatically unsubscribed.
+---		events.subscribe_once("on_game_over", function(self) show_game_over_screen(self) end, self)
 ---@param event_id string The id of the global event to subscribe to.
 ---@param callback function The callback function to be executed once when the global event occurs.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
@@ -117,6 +118,9 @@ end
 
 
 ---Get a event instance for the specified global event.
+---		local on_game_over = events.get("on_game_over")
+---		on_game_over:subscribe(callback, self)
+---		on_game_over:trigger(score)
 ---@param event_id string The id of the global event to get a callback for.
 ---@return event event_instance A event instance that can be used to subscribe to and trigger the event.
 function M.get(event_id)

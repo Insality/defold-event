@@ -1,6 +1,6 @@
 # events API
 
-> at event/events.lua
+> at /event/events.lua
 
 Global events module that allows creation and management of global events that can be triggered from anywhere in your game.
 This is particularly useful for events that need to be handled by multiple scripts or systems.
@@ -10,13 +10,12 @@ This is particularly useful for events that need to be handled by multiple scrip
 - [trigger](#trigger)
 - [clear](#clear)
 - [clear_all](#clear_all)
-- [get](#get)
 - [subscribe](#subscribe)
 - [subscribe_once](#subscribe_once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [is_empty](#is_empty)
-
+- [get](#get)
 ## Fields
 
 - [events](#events)
@@ -63,27 +62,6 @@ Remove all callbacks subscribed to the specified global event.
 ```lua
 events.clear("on_game_over")
 ```
-### get
-
----
-```lua
-events.get(event_id)
-```
-
-Get an event instance for the specified global event. Creates the event if it does not exist.
-
-- **Parameters:**
-	- `event_id` *(string)*: The id of the global event.
-
-- **Returns:**
-	- `event_instance` *(event)*: An event instance that can be used to subscribe to and trigger the event.
-
-- **Example Usage:**
-
-```lua
-local on_game_over = events.get("on_game_over")
-on_game_over:subscribe(callback, self)
-```
 ### clear_all
 
 ---
@@ -123,7 +101,6 @@ function init(self)
 	events.subscribe("on_game_over", callback, self)
 end
 ```
-
 ### subscribe_once
 
 ---
@@ -139,8 +116,13 @@ Subscribe a callback to the specified global event for a single trigger. After t
 	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
 
 - **Returns:**
-	- `is_subscribed` *(boolean)*: True if subscribed.
+	- `is_subscribed` *(boolean)*: True if subscribed
 
+- **Example Usage:**
+
+```lua
+events.subscribe_once("on_game_over", function(self) show_game_over_screen(self) end, self)
+```
 ### unsubscribe
 
 ---
@@ -210,6 +192,28 @@ Check if the specified global event has no subscribed callbacks.
 
 ```lua
 local is_empty = events.is_empty("on_game_over")
+```
+### get
+
+---
+```lua
+events.get(event_id)
+```
+
+Get a event instance for the specified global event.
+
+- **Parameters:**
+	- `event_id` *(string)*: The id of the global event to get a callback for.
+
+- **Returns:**
+	- `event_instance` *(event)*: A event instance that can be used to subscribe to and trigger the event.
+
+- **Example Usage:**
+
+```lua
+local on_game_over = events.get("on_game_over")
+on_game_over:subscribe(callback, self)
+on_game_over:trigger(score)
 ```
 
 ## Fields

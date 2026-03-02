@@ -25,6 +25,8 @@ local table_remove = table.remove
 ---Generate a new queue instance. This instance can then be used to push events and subscribe handlers.
 ---The handler function will be called when events are pushed to the queue. The handler_context parameter is optional
 ---and will be passed as the first parameter to the handler function. Usually, it is used to pass the self instance.
+---		local save_queue = queue.create()
+---		local save_queue = queue.create(function(self, data) return save_data(self, data) end, self)
 ---@param handler function|event|nil The function to be called when events are pushed to the queue.
 ---@param handler_context any|nil The first parameter to be passed to the handler function.
 ---@return queue queue_instance A new queue instance.
@@ -46,6 +48,9 @@ end
 
 
 ---Check if a value is a queue object
+---		if queue.is_queue(my_value) then
+---			my_value:push(data)
+---		end
 ---@param value any The value to check
 ---@return boolean is_queue True if the value is a queue
 function M.is_queue(value)
@@ -57,6 +62,8 @@ end
 ---If there are already subscribers for this queue instance, they will be called immediately.
 ---If multiple subscribers handle the event, all subscribers will still be called. The on_handle callback
 ---will be called for each subscriber that handles the event.
+---		my_queue:push(save_data)
+---		my_queue:push(save_data, function() print("saved!") end)
 ---@param data any The data associated with the event.
 ---@param on_handle function|event|nil Callback function or event to be called when the event is handled.
 ---@param context any|nil The context to be passed as the first parameter to the on_handle function when the event is handled.
@@ -74,6 +81,11 @@ end
 ---Subscribe a handler to this queue instance. When an event is pushed to this queue,
 ---the handler will be called. If there are already events in the queue, they will be processed immediately.
 ---Return a non-nil value from the handler to mark the event as handled and remove it from the queue.
+---		local function on_save(self, data)
+---			do_save(data)
+---			return true
+---		end
+---		my_queue:subscribe(on_save, self)
 ---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
@@ -93,6 +105,7 @@ end
 
 ---Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event)
 ---then it is automatically unsubscribed and will not be invoked again, even if more events remain in the queue.
+---		my_queue:subscribe_once(function(self, data) return process(data) end, self)
 ---@param handler function|event The handler function or event to be called when an event is pushed.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
@@ -110,6 +123,7 @@ end
 
 
 ---Unsubscribe a handler from this queue instance.
+---		my_queue:unsubscribe(on_save, self)
 ---@param handler function|event The handler function or event to unsubscribe.
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_unsubscribed True if handler was unsubscribed successfully
@@ -131,6 +145,7 @@ end
 
 
 ---Check if a handler is subscribed to this queue instance.
+---		local ok = my_queue:is_subscribed(on_save, self)
 ---@param handler function|event The handler function or event to check.
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_subscribed True if handler is subscribed
@@ -149,6 +164,7 @@ end
 
 ---Process all events in this queue immediately. Subscribers will not be called in this function.
 ---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
+---		my_queue:process(function(self, data) return handle(data) end, self)
 ---@param event_handler function|event Specific handler or event to process the events. If this function returns true, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 function M:process(event_handler, context)
@@ -186,6 +202,7 @@ end
 
 ---Process exactly one queued event with a specific handler (subscribers will NOT be called).
 ---If the handler returns non-nil the event will be removed from the queue.
+---		local handled = my_queue:process_next(function(data) return handle(data) end)
 ---@param event_handler function|event|nil Specific handler or event to process the event. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 ---@return boolean handled True if the head event was handled and removed
@@ -216,6 +233,9 @@ end
 
 
 ---Get all pending events in this queue.
+---		for _, event_data in ipairs(my_queue:get_events()) do
+---			print(event_data.data)
+---		end
 ---@return queue.event_data[] events A table of pending events.
 function M:get_events()
 	return self.events
@@ -223,6 +243,7 @@ end
 
 
 ---Clear all pending events in this queue.
+---		my_queue:clear_events()
 function M:clear_events()
 	for index = #self.events, 1, -1 do
 		self.events[index] = nil
@@ -231,6 +252,7 @@ end
 
 
 ---Clear all subscribers from this queue instance.
+---		my_queue:clear_subscribers()
 function M:clear_subscribers()
 	for index = #self.handlers, 1, -1 do
 		self.once_state[self.handlers[index]] = nil
@@ -240,6 +262,9 @@ end
 
 
 ---Check if this queue has no pending events.
+---		if my_queue:is_empty() then
+---			return
+---		end
 ---@return boolean is_empty True if the queue has no pending events
 function M:is_empty()
 	return #self.events == 0
@@ -247,6 +272,9 @@ end
 
 
 ---Check if this queue instance has no subscribed handlers.
+---		if my_queue:has_subscribers() then
+---			my_queue:push(data)
+---		end
 ---@return boolean has_subscribers True if the queue instance has subscribed handlers
 function M:has_subscribers()
 	return #self.handlers > 0
@@ -254,6 +282,7 @@ end
 
 
 ---Remove all events and handlers from this queue instance, effectively resetting it.
+---		my_queue:clear()
 function M:clear()
 	self:clear_events()
 	self:clear_subscribers()

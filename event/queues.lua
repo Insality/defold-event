@@ -40,6 +40,7 @@ end
 
 ---Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event)
 ---Then it is automatically unsubscribed and will not be invoked again, even if more events remain.
+---		queues.subscribe_once("save_game", function(self, data) return save_once(self, data) end, self)
 ---@param queue_id string The id of the global queue to subscribe to.
 ---@param handler function|event The handler function or event to be called when events are processed until it returns non-nil.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.

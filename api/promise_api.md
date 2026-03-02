@@ -1,6 +1,6 @@
 # promise API
 
-> at event/promise.lua
+> at /event/promise.lua
 
 The Promise module, used to create and manage promises.
 A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
@@ -13,7 +13,6 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [all](#all)
 - [race](#race)
 - [is_promise](#is_promise)
-
 - [next](#next)
 - [catch](#catch)
 - [finally](#finally)
@@ -26,7 +25,6 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [append](#append)
 - [tail](#tail)
 - [reset](#reset)
-
 ## Fields
 
 - [state](#state)
@@ -51,6 +49,13 @@ The executor function is called immediately with resolve and reject functions.
 - **Returns:**
 	- `promise_instance` *(promise)*: A new promise instance.
 
+- **Example Usage:**
+
+```lua
+local p = promise.create(function(resolve, reject)
+	async_load(url, function(data) resolve(data) end, function(err) reject(err) end)
+end)
+```
 ### resolved
 
 ---
@@ -66,6 +71,12 @@ Create a promise that is immediately resolved with the given value.
 - **Returns:**
 	- `promise_instance` *(promise)*: A resolved promise.
 
+- **Example Usage:**
+
+```lua
+local p = promise.resolved(42)
+p:next(function(v) print(v) end)
+```
 ### rejected
 
 ---
@@ -81,6 +92,12 @@ Create a promise that is immediately rejected with the given reason.
 - **Returns:**
 	- `promise_instance` *(promise)*: A rejected promise.
 
+- **Example Usage:**
+
+```lua
+local p = promise.rejected("error")
+p:catch(function(reason) print(reason) end)
+```
 ### all
 
 ---
@@ -97,6 +114,12 @@ If any promise rejects, the returned promise will reject with that reason.
 - **Returns:**
 	- `promise_instance` *(promise)*: A promise that resolves with an array of all resolved values.
 
+- **Example Usage:**
+
+```lua
+local p = promise.all({ load_asset(1), load_asset(2), load_asset(3) })
+p:next(function(results) print(#results) end)
+```
 ### race
 
 ---
@@ -112,6 +135,11 @@ Create a promise that resolves or rejects as soon as one of the given promises r
 - **Returns:**
 	- `promise_instance` *(promise)*: A promise that resolves or rejects with the first finished promise.
 
+- **Example Usage:**
+
+```lua
+local p = promise.race({ fetch_with_timeout(url, 1000), slow_fetch(url) })
+```
 ### is_promise
 
 ---
@@ -127,6 +155,13 @@ Check if a value is a promise object
 - **Returns:**
 	- `is_promise` *(boolean)*: True if the value is a promise
 
+- **Example Usage:**
+
+```lua
+if promise.is_promise(my_value) then
+	my_value:next(handler)
+end
+```
 ### next
 
 ---
@@ -145,6 +180,11 @@ Returns a new promise that will be resolved or rejected based on the handlers' r
 - **Returns:**
 	- `new_promise` *(promise)*: A new promise representing the result of the handlers.
 
+- **Example Usage:**
+
+```lua
+load_data():next(function(data) return process(data) end):next(display):catch(show_error)
+```
 ### catch
 
 ---
@@ -160,6 +200,11 @@ Attach a rejection handler to the promise. Equivalent to next(nil, on_rejected).
 - **Returns:**
 	- `new_promise` *(promise)*: A new promise representing the result of the handler.
 
+- **Example Usage:**
+
+```lua
+load_data():catch(function(err) print("Failed:", err) end)
+```
 ### finally
 
 ---
@@ -176,6 +221,11 @@ The handler receives no arguments and its return value is ignored.
 - **Returns:**
 	- `new_promise` *(promise)*: A new promise that resolves/rejects with the same value/reason as the original.
 
+- **Example Usage:**
+
+```lua
+load_data():finally(function() hide_loading_spinner() end)
+```
 ### is_pending
 
 ---
@@ -236,6 +286,11 @@ Resolve the promise.
 - **Parameters:**
 	- `[value]` *(any)*: The value to resolve with.
 
+- **Example Usage:**
+
+```lua
+my_promise:resolve(result)
+```
 ### reject
 
 ---
@@ -248,6 +303,11 @@ Reject the promise.
 - **Parameters:**
 	- `[reason]` *(any)*: The reason to reject with.
 
+- **Example Usage:**
+
+```lua
+my_promise:reject("failed")
+```
 ### append
 
 ---
@@ -265,6 +325,12 @@ Almost similar to `promise = promise:next(task)`, but without reassigning the pr
 - **Returns:**
 	- `self` *(promise)*:
 
+- **Example Usage:**
+
+```lua
+pipeline:append(step1):append(step2):append(step3)
+local result = pipeline:tail()
+```
 ### tail
 
 ---
@@ -277,6 +343,12 @@ Get the current tail promise representing all appended work.
 - **Returns:**
 	- `tail` *(promise)*:
 
+- **Example Usage:**
+
+```lua
+local last = pipeline:tail()
+last:next(on_complete)
+```
 ### reset
 
 ---
@@ -289,6 +361,12 @@ Reset the internal sequence to an already resolved promise.
 - **Returns:**
 	- `self` *(promise)*:
 
+- **Example Usage:**
+
+```lua
+pipeline:reset()
+pipeline:append(new_step)
+```
 
 ## Fields
 <a name="state"></a>

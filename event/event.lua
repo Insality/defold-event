@@ -67,6 +67,8 @@ local logger = {
 ---The callback function will be called when the event is triggered. The callback_context parameter is optional
 ---and will be passed as the first parameter to the callback function. Usually, it is used to pass the self instance.
 ---Allocate 64 bytes per instance.
+---		local e = event.create()
+---		local e = event.create(function(self) print("ok") end, self)
 ---@param callback function|event|nil The function to be called when the event is triggered. Or the event instance to subscribe.
 ---@param callback_context any|nil The first parameter to be passed to the callback function.
 ---@return event event_instance A new event instance.
@@ -83,6 +85,9 @@ end
 
 
 ---Check if the table is an event instance.
+---		if event.is_event(my_value) then
+---			my_value:trigger()
+---		end
 ---@param value any
 ---@return boolean is_event
 function M.is_event(value)
@@ -147,6 +152,7 @@ end
 
 
 ---Subscribe a callback for a single trigger. After the first trigger the callback is automatically unsubscribed.
+---		on_click_event:subscribe_once(function(self) print("one-time click!") end, self)
 ---@param callback function|event The function or event to run once.
 ---@param callback_context any|nil Same as subscribe.
 ---@return boolean is_subscribed True if subscribed

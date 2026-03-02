@@ -1,6 +1,6 @@
 # queues API
 
-> at event/queues.lua
+> at /event/queues.lua
 
 Global queues module that allows creation and management of global FIFO event queues that can be accessed from anywhere in your game.
 This is particularly useful for events that need to be handled by multiple scripts or systems using a queue-based approach.
@@ -21,7 +21,6 @@ This is particularly useful for events that need to be handled by multiple scrip
 - [clear_all](#clear_all)
 - [is_empty](#is_empty)
 - [has_subscribers](#has_subscribers)
-
 ## Fields
 
 - [queues](#queues)
@@ -61,7 +60,7 @@ When an event is pushed to this queue, the handler will be called.
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to subscribe to.
-	- `handler` *(function)*: The handler function to be called when an event is pushed. Return true from the handler to mark the event as handled.
+	- `handler` *(function|event)*: The handler function or event to be called when an event is pushed. Return a non-nil value from the handler to mark the event as handled.
 	- `[context]` *(any)*: The context to be passed as the first parameter to the handler function.
 
 - **Returns:**
@@ -74,7 +73,6 @@ function init(self)
 	queues.subscribe("save_game", save_handler, self)
 end
 ```
-
 ### subscribe_once
 
 ---
@@ -82,7 +80,8 @@ end
 queues.subscribe_once(queue_id, handler, [context])
 ```
 
-Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event). Then it is automatically unsubscribed and will not be invoked again, even if more events remain.
+Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event)
+Then it is automatically unsubscribed and will not be invoked again, even if more events remain.
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to subscribe to.
@@ -92,6 +91,11 @@ Subscribe a handler until it handles one event. The handler is invoked for each 
 - **Returns:**
 	- `is_subscribed` *(boolean)*: True if handler was subscribed successfully
 
+- **Example Usage:**
+
+```lua
+queues.subscribe_once("save_game", function(self, data) return save_once(self, data) end, self)
+```
 ### unsubscribe
 
 ---
@@ -104,7 +108,7 @@ The context should be the same as the one used when subscribing the handler.
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to unsubscribe from.
-	- `handler` *(function)*: The handler function to unsubscribe.
+	- `handler` *(function|event)*: The handler function or event to unsubscribe.
 	- `[context]` *(any)*: The context that was passed when subscribing.
 
 - **Returns:**
@@ -129,7 +133,7 @@ The context should be the same as the one used when subscribing the handler.
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue in question.
-	- `handler` *(function)*: The handler function to check.
+	- `handler` *(function|event)*: The handler function or event to check.
 	- `[context]` *(any)*: The context that was passed when subscribing.
 
 - **Returns:**
@@ -153,7 +157,7 @@ Events can be handled and removed in event handler callback. If event is handled
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to process.
-	- `event_handler` *(function)*: Specific handler to process the events. If this function returns true, the event will be removed from the queue.
+	- `event_handler` *(function|event)*: Specific handler to process the events. If this function returns true, the event will be removed from the queue.
 	- `[context]` *(any)*: The context to be passed to the handler.
 
 - **Example Usage:**
@@ -173,7 +177,7 @@ If the handler returns non-nil the event will be removed from the queue.
 
 - **Parameters:**
 	- `queue_id` *(string)*: The id of the global queue to process.
-	- `event_handler` *(function)*: Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
+	- `event_handler` *(function|event)*: Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
 	- `[context]` *(any)*: The context to be passed to the handler.
 
 - **Returns:**
