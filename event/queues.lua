@@ -1,4 +1,4 @@
-local queue = require("event.queue")
+local Queue = require("event.queue")
 
 ---Global queues module that allows creation and management of global FIFO event queues that can be accessed from anywhere in your game.
 ---This is particularly useful for events that need to be handled by multiple scripts or systems using a queue-based approach.
@@ -15,10 +15,10 @@ M.queues = {}
 ---		queues.push("save_game", save_data, on_save_complete, self)
 ---@param queue_id string The id of the global queue to push to.
 ---@param data any The data associated with the event.
----@param on_handle function|nil Callback function to be called when the event is handled.
+---@param on_handle function|event|nil Callback function or event to be called when the event is handled.
 ---@param context any|nil The context to be passed as the first parameter to the on_handle function when the event is handled.
 function M.push(queue_id, data, on_handle, context)
-	M.queues[queue_id] = M.queues[queue_id] or queue.create()
+	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
 	M.queues[queue_id]:push(data, on_handle, context)
 end
 
@@ -29,12 +29,25 @@ end
 ---			queues.subscribe("save_game", save_handler, self)
 ---		end
 ---@param queue_id string The id of the global queue to subscribe to.
----@param handler function The handler function to be called when an event is pushed. Return true from the handler to mark the event as handled.
+---@param handler function|event The handler function or event to be called when an event is pushed. Return a non-nil value from the handler to mark the event as handled.
 ---@param context any|nil The context to be passed as the first parameter to the handler function.
 ---@return boolean is_subscribed True if handler was subscribed successfully
 function M.subscribe(queue_id, handler, context)
-	M.queues[queue_id] = M.queues[queue_id] or queue.create()
+	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
 	return M.queues[queue_id]:subscribe(handler, context)
+end
+
+
+---Subscribe a handler until it handles one event. The handler is invoked for each event in the queue until it returns non-nil (handles an event)
+---Then it is automatically unsubscribed and will not be invoked again, even if more events remain.
+---		queues.subscribe_once("save_game", function(self, data) return save_once(self, data) end, self)
+---@param queue_id string The id of the global queue to subscribe to.
+---@param handler function|event The handler function or event to be called when events are processed until it returns non-nil.
+---@param context any|nil The context to be passed as the first parameter to the handler function.
+---@return boolean is_subscribed True if handler was subscribed successfully
+function M.subscribe_once(queue_id, handler, context)
+	M.queues[queue_id] = M.queues[queue_id] or Queue.create()
+	return M.queues[queue_id]:subscribe_once(handler, context)
 end
 
 
@@ -44,7 +57,7 @@ end
 ---			queues.unsubscribe("save_game", save_handler, self)
 ---		end
 ---@param queue_id string The id of the global queue to unsubscribe from.
----@param handler function The handler function to unsubscribe.
+---@param handler function|event The handler function or event to unsubscribe.
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_unsubscribed True if handler was unsubscribed successfully
 function M.unsubscribe(queue_id, handler, context)
@@ -60,7 +73,7 @@ end
 ---The context should be the same as the one used when subscribing the handler.
 ---		local is_subscribed = queues.is_subscribed("save_game", save_handler, self)
 ---@param queue_id string The id of the global queue in question.
----@param handler function The handler function to check.
+---@param handler function|event The handler function or event to check.
 ---@param context any|nil The context that was passed when subscribing.
 ---@return boolean is_subscribed True if handler is subscribed
 ---@return number|nil index Index of handler if subscribed
@@ -77,7 +90,7 @@ end
 ---Events can be handled and removed in event handler callback. If event is handled, it will be removed from the queue.
 ---		queues.process("save_game", process_save_handler, self)
 ---@param queue_id string The id of the global queue to process.
----@param event_handler function Specific handler to process the events. If this function returns true, the event will be removed from the queue.
+---@param event_handler function|event Specific handler to process the events. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 function M.process(queue_id, event_handler, context)
 	if not M.queues[queue_id] then
@@ -92,7 +105,7 @@ end
 ---If the handler returns non-nil the event will be removed from the queue.
 ---		queues.process_next("save_game", process_save_handler, self)
 ---@param queue_id string The id of the global queue to process.
----@param event_handler function Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
+---@param event_handler function|event Specific handler to process the head event. If this function returns non-nil, the event will be removed from the queue.
 ---@param context any|nil The context to be passed to the handler.
 ---@return boolean handled True if the head event was handled and removed
 function M.process_next(queue_id, event_handler, context)

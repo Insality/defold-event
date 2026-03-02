@@ -56,6 +56,19 @@ return function()
 			assert(events.is_subscribed("test", f) == true)
 		end)
 
+		it("Events subscribe_once: callback called once then auto-unsubscribed", function()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			events.subscribe_once("test", f)
+			assert(events.is_subscribed("test", f) == true)
+			events.trigger("test")
+			assert(counter == 1)
+			assert(events.is_subscribed("test", f) == false)
+			events.trigger("test")
+			assert(counter == 1)
+		end)
+
 		it("Events Clear", function()
 			local counter = 0
 			local f = function() counter = counter + 1 end

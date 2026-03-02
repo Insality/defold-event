@@ -19,6 +19,9 @@ local PROMISE_METATABLE
 
 ---Generate a new promise instance. This instance represents a single asynchronous operation.
 ---The executor function is called immediately with resolve and reject functions.
+---		local p = promise.create(function(resolve, reject)
+---			async_load(url, function(data) resolve(data) end, function(err) reject(err) end)
+---		end)
 ---@param executor function|event|nil The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
 ---@param context any|nil The context to call the executor function with.
 ---@return promise promise_instance A new promise instance.
@@ -45,6 +48,8 @@ end
 
 
 ---Create a promise that is immediately resolved with the given value.
+---		local p = promise.resolved(42)
+---		p:next(function(v) print(v) end)
 ---@param value any The value to resolve the promise with.
 ---@return promise promise_instance A resolved promise.
 ---@nodiscard
@@ -56,6 +61,8 @@ end
 
 
 ---Create a promise that is immediately rejected with the given reason.
+---		local p = promise.rejected("error")
+---		p:catch(function(reason) print(reason) end)
 ---@param reason any The reason to reject the promise with.
 ---@return promise promise_instance A rejected promise.
 ---@nodiscard
@@ -68,6 +75,8 @@ end
 
 ---Create a promise that resolves when all given promises resolve.
 ---If any promise rejects, the returned promise will reject with that reason.
+---		local p = promise.all({ load_asset(1), load_asset(2), load_asset(3) })
+---		p:next(function(results) print(#results) end)
 ---@param promises promise[] Array of promises to wait for.
 ---@return promise promise_instance A promise that resolves with an array of all resolved values.
 ---@nodiscard
@@ -111,6 +120,7 @@ end
 
 
 ---Create a promise that resolves or rejects as soon as one of the given promises resolves or rejects.
+---		local p = promise.race({ fetch_with_timeout(url, 1000), slow_fetch(url) })
 ---@param promises promise[] Array of promises to race.
 ---@return promise promise_instance A promise that resolves or rejects with the first finished promise.
 ---@nodiscard
@@ -147,6 +157,9 @@ end
 
 
 ---Check if a value is a promise object
+---		if promise.is_promise(my_value) then
+---			my_value:next(handler)
+---		end
 ---@param value any The value to check
 ---@return boolean is_promise True if the value is a promise
 function M.is_promise(value)
@@ -210,6 +223,7 @@ end
 
 ---Attach resolve and reject handlers to the promise.
 ---Returns a new promise that will be resolved or rejected based on the handlers' return values.
+---		load_data():next(function(data) return process(data) end):next(display):catch(show_error)
 ---@param on_resolved function|promise|event|nil Handler called when promise is resolved. If nil, value passes through.
 ---@param on_rejected function|promise|event|nil Handler called when promise is rejected. If nil, rejection passes through.
 ---@param context any|nil The context to call the handlers with.
@@ -239,6 +253,7 @@ end
 
 
 ---Attach a rejection handler to the promise. Equivalent to next(nil, on_rejected).
+---		load_data():catch(function(err) print("Failed:", err) end)
 ---@param on_rejected function|event Handler called when promise is rejected.
 ---@return promise new_promise A new promise representing the result of the handler.
 function M:catch(on_rejected)
@@ -248,6 +263,7 @@ end
 
 ---Attach a handler that is called regardless of whether the promise is resolved or rejected.
 ---The handler receives no arguments and its return value is ignored.
+---		load_data():finally(function() hide_loading_spinner() end)
 ---@param on_finally function|event Handler called when promise is finished (resolved or rejected).
 ---@return promise new_promise A new promise that resolves/rejects with the same value/reason as the original.
 function M:finally(on_finally)
@@ -312,6 +328,7 @@ end
 
 
 ---Resolve the promise.
+---		my_promise:resolve(result)
 ---@param value any The value to resolve with.
 function M:resolve(value)
 	if self.state ~= "pending" then
@@ -336,6 +353,7 @@ end
 
 
 ---Reject the promise.
+---		my_promise:reject("failed")
 ---@param reason any The reason to reject with.
 function M:reject(reason)
 	if self.state ~= "pending" then
@@ -356,6 +374,8 @@ end
 ---Append a task to this promise's internal sequence without reassigning.
 ---The task may return a value or a promise. Returns self for chaining.
 ---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
+---		pipeline:append(step1):append(step2):append(step3)
+---		local result = pipeline:tail()
 ---@param task fun(value:any):any
 ---@return promise self
 function M:append(task)
@@ -367,6 +387,8 @@ end
 
 
 ---Get the current tail promise representing all appended work.
+---		local last = pipeline:tail()
+---		last:next(on_complete)
 ---@return promise tail
 function M:tail()
 	return self._tail or self
@@ -374,6 +396,8 @@ end
 
 
 ---Reset the internal sequence to an already resolved promise.
+---		pipeline:reset()
+---		pipeline:append(new_step)
 ---@return promise self
 function M:reset()
 	self._tail = M.resolved()

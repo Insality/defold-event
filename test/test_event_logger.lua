@@ -6,6 +6,10 @@ return function()
 			event = require("event.event")
 		end)
 
+		after(function()
+			event.set_logger(nil)
+		end)
+
 		it("Event Set logger", function()
 			local EMPTY_FUNCTION = function(_, message, context) end
 			local logger =  {

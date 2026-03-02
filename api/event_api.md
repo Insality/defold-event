@@ -1,17 +1,17 @@
 # event API
 
-> at event/event.lua
+> at /event/event.lua
 
 The Event module, used to create and manage events. Allows to subscribe to events and trigger them.
 
 ## Functions
 
+- [create](#create)
+- [is_event](#is_event)
 - [set_logger](#set_logger)
 - [set_mode](#set_mode)
-- [is_event](#is_event)
-- [create](#create)
-
 - [subscribe](#subscribe)
+- [subscribe_once](#subscribe_once)
 - [unsubscribe](#unsubscribe)
 - [is_subscribed](#is_subscribed)
 - [trigger](#trigger)
@@ -19,7 +19,52 @@ The Event module, used to create and manage events. Allows to subscribe to event
 - [clear](#clear)
 
 
+### create
 
+---
+```lua
+event.create([callback], [callback_context])
+```
+
+Generate a new event instance. This instance can then be used to subscribe to and trigger events.
+The callback function will be called when the event is triggered. The callback_context parameter is optional
+and will be passed as the first parameter to the callback function. Usually, it is used to pass the self instance.
+
+- **Parameters:**
+	- `[callback]` *(function|event|nil)*: The function to be called when the event is triggered. Or the event instance to subscribe.
+	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
+
+- **Returns:**
+	- `event_instance` *(event)*: A new event instance.
+
+- **Example Usage:**
+
+```lua
+local e = event.create()
+local e = event.create(function(self) print("ok") end, self)
+```
+### is_event
+
+---
+```lua
+event.is_event([value])
+```
+
+Check if the table is an event instance.
+
+- **Parameters:**
+	- `[value]` *(any)*:
+
+- **Returns:**
+	- `is_event` *(boolean)*:
+
+- **Example Usage:**
+
+```lua
+if event.is_event(my_value) then
+	my_value:trigger()
+end
+```
 ### set_logger
 
 ---
@@ -40,7 +85,7 @@ By default, the module uses the `pprint` logger for errors.
 event.set_mode(mode)
 ```
 
-Set the mode of the event module. All modes support cross-context. In "none" mode callbacks run with xpcall; on error, the error is rethrown with full traceback.
+Set the mode of the event module.
 ```lua
 mode:
     | "pcall"
@@ -50,40 +95,6 @@ mode:
 
 - **Parameters:**
 	- `mode` *("none"|"pcall"|"xpcall")*: The mode to set.
-
-### is_event
-
----
-```lua
-event.is_event([value])
-```
-
-Check if the table is an event instance.
-
-- **Parameters:**
-	- `[value]` *(any)*:
-
-- **Returns:**
-	- `is_event` *(boolean)*:
-
-### create
-
----
-```lua
-event.create([callback], [callback_context])
-```
-
-Generate a new event instance. This instance can then be used to subscribe to and trigger events.
-The callback function will be called when the event is triggered. The callback_context parameter is optional
-and will be passed as the first parameter to the callback function. Usually, it is used to pass the self instance.
-Allocate 64 bytes per instance.
-
-- **Parameters:**
-	- `[callback]` *(function|event|nil)*: The function to be called when the event is triggered. Or the event instance to subscribe.
-	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
-
-- **Returns:**
-	- `event_instance` *(event)*: A new event instance.
 
 ### subscribe
 
@@ -95,11 +106,10 @@ event:subscribe(callback, [callback_context])
 Subscribe a callback to the event or other event. The callback will be invoked whenever the event is triggered.
 The callback_context parameter is optional and will be passed as the first parameter to the callback function.
 If the callback with context is already subscribed, the warning will be logged.
-Allocate 160 bytes per first subscription and 104 bytes per next subscriptions.
 
 - **Parameters:**
 	- `callback` *(function|event)*: The function to be executed when the event occurs.
-	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. Not used if the callback is an event.
+	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function.
 
 - **Returns:**
 	- `is_subscribed` *(boolean)*: True if event is subscribed (Will return false if the callback is already subscribed)
@@ -116,6 +126,27 @@ event_1 = event.create(callback)
 event_2 = event.create()
 event_2:subscribe(event_1) -- Now event2 will trigger event1
 ```
+### subscribe_once
+
+---
+```lua
+event:subscribe_once(callback, [callback_context])
+```
+
+Subscribe a callback for a single trigger. After the first trigger the callback is automatically unsubscribed.
+
+- **Parameters:**
+	- `callback` *(function|event)*: The function or event to run once.
+	- `[callback_context]` *(any)*: Same as subscribe.
+
+- **Returns:**
+	- `is_subscribed` *(boolean)*: True if subscribed
+
+- **Example Usage:**
+
+```lua
+on_click_event:subscribe_once(function(self) print("one-time click!") end, self)
+```
 ### unsubscribe
 
 ---
@@ -129,7 +160,7 @@ If there is no callback_context provided, all callbacks with the same function w
 
 - **Parameters:**
 	- `callback` *(function|event)*: The callback function to unsubscribe.
-	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function. Not used for event instances.
+	- `[callback_context]` *(any)*: The first parameter to be passed to the callback function. If not provided, will unsubscribe all callbacks with the same function.
 
 - **Returns:**
 	- `is_unsubscribed` *(boolean)*: True if event is unsubscribed

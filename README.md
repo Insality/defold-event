@@ -44,8 +44,8 @@ https://github.com/Insality/defold-event/archive/refs/tags/14.zip
 
 | Platform         | Event Size   | Events Size   | Queue Size   | Queues Size  | Promise Size |
 | ---------------- | ------------ | ------------- | ------------ | ------------ | ------------ |
-| HTML5            | **1.68 KB**  | **0.41 KB**   | **1.11 KB**  | **0.49 KB**  | **1.74 KB**  |
-| Desktop / Mobile | **2.88 KB**  | **0.71 KB**   | **2.03 KB**  | **0.97 KB**  | **3.22 KB**  |
+| HTML5            | **2.18 KB**  | **0.50 KB**   | **1.43 KB**  | **0.56 KB**  | **1.73 KB**  |
+| Desktop / Mobile | **4.05 KB**  | **0.93 KB**   | **2.85 KB**  | **1.03 KB**  | **3.29 KB**  |
 
 
 ## Event Mode
@@ -83,12 +83,15 @@ function M.set_value(self, value)
 end
 
 return M
+```
 
+```lua
 -- Lua script /my_script.script
 local my_module = require("my_module")
 
 local function on_value_changed(self, value)
 	print("Value changed to:", value)
+	label.set_text("#label", "Hello, " .. value)
 end
 
 function init(self)
@@ -242,6 +245,15 @@ If you have any issues, questions or suggestions please [create an issue](https:
 ### **V14**
 	- Enable cross-context for "none" event mode
 	- In "none" mode callbacks are run with xpcall; on error, error is rethrown with `error()` (full traceback)
+
+### **V15**
+	- subscribe_once: Added `event:subscribe_once`, `events.subscribe_once`, `queue:subscribe_once`, and `queues.subscribe_once` to subscribe a handler for a single invocation; the handler is automatically unsubscribed after the first call.
+	- Unsubscribe during trigger: Calling `unsubscribe` from inside a callback no longer breaks the current trigger iteration; removals are applied after the trigger finishes, so all callbacks in the current trigger still run.
+	- Fix when `callback_context` for subscription can't be `false`
+	- Event as callback: Support for `callback_context` when subscribing an event to another event (e.g. `event_2:subscribe(event_1, "any additional data")`).
+	- Unsubscribe event from event: Fixed unsubscribing one event from another so the correct subscription is found and removed.
+	- Various edge cases fixes and improvements.
+	- Documentation and API pages updates.
 
 </details>
 

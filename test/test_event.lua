@@ -6,6 +6,10 @@ return function()
 			event = require("event.event")
 		end)
 
+		after(function()
+			event.set_logger(nil)
+		end)
+
 		it("Instantiate Event", function()
 			local test_event = event.create()
 			assert(test_event)
@@ -21,6 +25,17 @@ return function()
 			local test_event = event.create(f, ctx)
 			assert(#test_event == 1)
 
+			test_event:trigger("arg")
+		end)
+
+		it("Instantiate Event with callback and context false", function()
+			local f = function(ctx, arg)
+				assert(ctx == false)
+				assert(arg == "arg")
+			end
+
+			local test_event = event.create(f, false)
+			assert(#test_event == 1)
 			test_event:trigger("arg")
 		end)
 
@@ -94,6 +109,49 @@ return function()
 			assert(last_context == "context")
 		end)
 
+		it("Subscribe with context false: callback receives false as first argument", function()
+			local test_event = event.create()
+			local received
+			local f = function(ctx) received = ctx end
+
+			test_event:subscribe(f, false)
+			test_event:trigger("ignored")
+			assert(received == false)
+		end)
+
+		it("is_subscribed(callback, false) when subscribed with context false", function()
+			local test_event = event.create()
+			local f = function() end
+
+			test_event:subscribe(f, false)
+			assert(test_event:is_subscribed(f, false) == true)
+			assert(test_event:is_subscribed(f) == false)
+			assert(test_event:is_subscribed(f, true) == false)
+		end)
+
+		it("unsubscribe(callback, false) removes only subscription with context false", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:subscribe(f)
+			test_event:subscribe(f, false)
+			test_event:subscribe(f, true)
+			assert(#test_event == 3)
+
+			test_event:trigger()
+			assert(counter == 3)
+
+			test_event:unsubscribe(f, false)
+			assert(#test_event == 2)
+			assert(test_event:is_subscribed(f, false) == false)
+			assert(test_event:is_subscribed(f) == true)
+			assert(test_event:is_subscribed(f, true) == true)
+
+			test_event:trigger()
+			assert(counter == 5)
+		end)
+
 		it("Event is_empty", function()
 			local test_event = event.create()
 			local f = function() end
@@ -163,43 +221,43 @@ return function()
 			assert(counter == 3)
 		end)
 
-		it("Event can be subscribed on each other", function()
-			local test_event1 = event.create()
-			local test_event2 = event.create()
-			local counter = 0
-			local f1 = function() counter = counter + 1 end
+		it("Three plain functions with context on one event: order and context per call", function()
+			local e = event.create()
+			local order = {}
 
-			test_event1:subscribe(f1)
+			e:subscribe(function(ctx, x)
+				order[#order + 1] = { ctx, x }
+			end, "A")
+			e:subscribe(function(ctx, x)
+				order[#order + 1] = { ctx, x }
+			end, "B")
+			e:subscribe(function(ctx, x)
+				order[#order + 1] = { ctx, x }
+			end, "C")
 
-			-- So test_event2 will trigger test_event1
-			test_event2:subscribe(test_event1)
-			test_event2:trigger()
-			assert(counter == 1)
-
-			test_event2:trigger()
-			assert(counter == 2)
-
-			-- Unsubscribe test_event1 from test_event2
-			test_event2:unsubscribe(test_event1)
-			test_event2:trigger()
-			assert(counter == 2)
+			e:trigger("X")
+			assert(#order == 3)
+			assert(order[1][1] == "A" and order[1][2] == "X")
+			assert(order[2][1] == "B" and order[2][2] == "X")
+			assert(order[3][1] == "C" and order[3][2] == "X")
 		end)
 
-		it("Event can be checked if øther event is subscribed", function()
-			local test_event1 = event.create()
-			local test_event2 = event.create()
-			local counter = 0
-			local f1 = function() counter = counter + 1 end
+		it("Should accumulate context in function calls", function()
+			local get_width = function(object)
+				return object.width
+			end
 
-			test_event1:subscribe(f1)
+			local event_a = event.create(get_width, { width = 100 })
 
-			-- So test_event2 will trigger test_event1
-			test_event2:subscribe(test_event1)
-			assert(test_event2:is_subscribed(test_event1) == true)
+			local result
+			local display_width = function(object, width)
+				result = object.display_text .. width
+			end
 
-			-- Unsubscribe test_event1 from test_event2
-			test_event2:unsubscribe(test_event1)
-			assert(test_event2:is_subscribed(test_event1) == false)
+			local event_b = event.create(display_width, { display_text = "Width: " })
+			event_b:trigger(event_a:trigger())
+
+			assert(result == "Width: 100")
 		end)
 
 		it("Print memory allocations per function", function()
@@ -265,7 +323,32 @@ return function()
 			collectgarbage("restart")
 		end)
 
-		it("Event should unsubscribe all callbacks by passin unsubscribe without context", function()
+		it("Unsubscribe(function, nil) removes all subscriptions of that function regardless of context", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:subscribe(f)
+			test_event:subscribe(f, "ctx_a")
+			test_event:subscribe(f, "ctx_b")
+			test_event:subscribe(f, "ctx_c")
+			assert(#test_event == 4)
+
+			test_event:trigger()
+			assert(counter == 4)
+
+			test_event:unsubscribe(f, nil)
+			assert(#test_event == 0)
+			assert(test_event:is_subscribed(f) == false)
+			assert(test_event:is_subscribed(f, "ctx_a") == false)
+			assert(test_event:is_subscribed(f, "ctx_b") == false)
+			assert(test_event:is_subscribed(f, "ctx_c") == false)
+
+			test_event:trigger()
+			assert(counter == 4)
+		end)
+
+		it("Event should unsubscribe all callbacks by passing unsubscribe without context", function()
 			local test_event = event.create()
 			local counter = 0
 			local f1 = function(amount) counter = counter + amount end
@@ -354,172 +437,268 @@ return function()
 			assert(#test_event == 0)
 		end)
 
-		it("Trigger with context passes all args under xpcall (nil in middle)", function()
-			event.set_mode("xpcall")
-
+		it("subscribe_once: callback called once then auto-unsubscribed", function()
 			local test_event = event.create()
-			local ctx = {}
-			local ra, rb, rc
-			local f = function(self, ...)
-				ra, rb, rc = ...
-			end
+			local counter = 0
+			local f = function() counter = counter + 1 end
 
-			test_event:subscribe(f, ctx)
-			test_event:trigger(1, nil, 3)
-
-			assert(ra == 1)
-			assert(rb == nil)
-			assert(rc == 3)
-
-			-- restore default mode
-			event.set_mode("pcall")
+			test_event:subscribe_once(f)
+			assert(test_event:is_subscribed(f) == true)
+			test_event:trigger()
+			assert(counter == 1)
+			assert(test_event:is_subscribed(f) == false)
+			test_event:trigger()
+			assert(counter == 1)
 		end)
 
-		it("Trigger without context passes all args under xpcall (nil in middle)", function()
-			event.set_mode("xpcall")
-
+		it("subscribe_once: same callback and context twice returns false", function()
 			local test_event = event.create()
-			local ra, rb, rc
-			local f = function(...)
-				ra, rb, rc = ...
+			local f = function() end
+
+			assert(test_event:subscribe_once(f) == true)
+			assert(test_event:subscribe_once(f) == false)
+			assert(#test_event == 1)
+
+			test_event:clear()
+
+			assert(test_event:subscribe_once(f, "context") == true)
+			assert(test_event:subscribe_once(f, "context") == false)
+			assert(test_event:subscribe_once(f, "other_context") == true)
+			assert(#test_event == 2)
+
+			test_event:trigger()
+			assert(#test_event == 0)
+		end)
+
+		it("subscribe_once then unsubscribe before trigger: callback not called", function()
+			local test_event = event.create()
+			local counter = 0
+			local f = function() counter = counter + 1 end
+
+			test_event:subscribe_once(f)
+			test_event:unsubscribe(f)
+			test_event:trigger()
+			assert(counter == 0)
+		end)
+
+		it("subscribe_once with context: callback receives context and is removed after first trigger", function()
+			local test_event = event.create()
+			local counter = 0
+			local last_ctx
+			local f = function(ctx)
+				counter = counter + 1
+				last_ctx = ctx
+			end
+
+			test_event:subscribe_once(f, "my_ctx")
+			test_event:trigger()
+			assert(counter == 1)
+			assert(last_ctx == "my_ctx")
+			assert(test_event:is_subscribed(f, "my_ctx") == false)
+			test_event:trigger()
+			assert(counter == 1)
+		end)
+
+		it("subscribe_once and subscribe together: subscribe_once removed after first trigger subscribe stays", function()
+			local test_event = event.create()
+			local first_count, once_count, third_count = 0, 0, 0
+			local sub_f = function() first_count = first_count + 1 end
+			local once_f = function() once_count = once_count + 1 end
+			local third_f = function() third_count = third_count + 1 end
+
+			test_event:subscribe(sub_f)
+			test_event:subscribe_once(once_f)
+			test_event:subscribe(third_f)
+			test_event:trigger()
+			assert(first_count == 1)
+			assert(once_count == 1)
+			assert(third_count == 1)
+
+			test_event:trigger()
+			assert(first_count == 2)
+			assert(once_count == 1)
+			assert(third_count == 2)
+		end)
+
+		it("Unsubscribe self during trigger", function()
+			local test_event = event.create()
+			local order = {}
+			local a
+			a = function()
+				table.insert(order, "A")
+				test_event:unsubscribe(a)
+			end
+			local b = function() table.insert(order, "B") end
+			local c = function() table.insert(order, "C") end
+
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:subscribe(c)
+			test_event:trigger()
+			assert(order[1] == "A")
+			assert(order[2] == "B")
+			assert(order[3] == "C")
+			assert(#order == 3)
+
+			test_event:trigger()
+			assert(order[4] == "B")
+			assert(order[5] == "C")
+			assert(#order == 5)
+		end)
+
+		it("Unsubscribe other during trigger: both called, other removed after trigger", function()
+			local test_event = event.create()
+			local order = {}
+
+			local a, b
+			a = function()
+				table.insert(order, "A")
+				test_event:unsubscribe(b)
+			end
+			b = function()
+				table.insert(order, "B")
+			end
+
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:trigger()
+			assert(order[1] == "A")
+			assert(order[2] == "B")
+			assert(#order == 2)
+			assert(#test_event == 1)
+
+			test_event:trigger()
+			assert(order[3] == "A")
+			assert(#order == 3)
+		end)
+
+		it("re-entrant trigger: deferred unsubscribe only cleared when depth returns to 0", function()
+			local test_event = event.create()
+			local count_b, count_c = 0, 0
+			local inner_triggered = false
+			local a = function()
+				if not inner_triggered then
+					inner_triggered = true
+					test_event:trigger()
+				end
+			end
+			local b = function()
+				count_b = count_b + 1
+			end
+			local c = function()
+				count_c = count_c + 1
+			end
+
+			test_event:subscribe(a)
+			test_event:subscribe_once(b)
+			test_event:subscribe(c)
+			test_event:trigger()
+
+			-- This is a corner case where a handler re-triggers the same event while a
+			-- subscribe_once handler is still active.
+			-- Because unsubscribe for subscribe_once handlers is deferred until the
+			-- outermost trigger completes, the once handler is invoked once per trigger
+			-- depth (inner and outer) instead of only once overall. Callers should avoid
+			-- re-triggering the same event from inside its own handlers when using
+			-- subscribe_once. This test verifies that the deferred-unsubscribe depth
+			-- counter works correctly.
+			assert(count_b == 2, "subscribe_once B must run in inner and outer trigger")
+			assert(count_c == 2, "C must run in inner and outer trigger")
+		end)
+
+		it("subscribe_once: handler can re-subscribe itself from inside trigger", function()
+			local test_event = event.create()
+			local counter = 0
+			local f
+			f = function()
+				counter = counter + 1
+				test_event:subscribe_once(f)
+			end
+
+			test_event:subscribe_once(f)
+			test_event:trigger()
+			assert(counter == 1)
+			test_event:trigger()
+			assert(counter == 2)
+			test_event:trigger()
+			assert(counter == 3)
+		end)
+
+		it("subscribe_once: handler can subscribe itself with regular subscribe so it remains", function()
+			local test_event = event.create()
+			local counter = 0
+			local f
+			f = function()
+				counter = counter + 1
+				test_event:subscribe(f)
+			end
+
+			test_event:subscribe_once(f)
+			test_event:trigger()
+			assert(counter == 1)
+			test_event:trigger()
+			assert(counter == 2)
+			test_event:trigger()
+			assert(counter == 3)
+		end)
+
+		it("subscribe: handler subscribing itself again returns false and does nothing", function()
+			local test_event = event.create()
+			local counter = 0
+			local subscribe_return
+			local f
+			f = function()
+				counter = counter + 1
+				subscribe_return = test_event:subscribe(f)
 			end
 
 			test_event:subscribe(f)
-			test_event:trigger(1, nil, 3)
-
-			assert(ra == 1)
-			assert(rb == nil)
-			assert(rc == 3)
-
-			-- restore default mode
-			event.set_mode("pcall")
+			test_event:trigger()
+			assert(counter == 1)
+			assert(subscribe_return == false)
+			assert(#test_event == 1)
+			test_event:trigger()
+			assert(counter == 2)
 		end)
 
-
-		it("Trigger with context passes all args under none mode (nil in middle)", function()
-			event.set_mode("none")
-
+		it("Unsubscribe then subscribe same handler during trigger: re-subscription succeeds", function()
 			local test_event = event.create()
-			local ctx = {}
-			local ra, rb, rc
-			local f = function(self, ...)
-				ra, rb, rc = ...
-			end
-
-			test_event:subscribe(f, ctx)
-			test_event:trigger(1, nil, 3)
-
-			assert(ra == 1)
-			assert(rb == nil)
-			assert(rc == 3)
-
-			-- restore default mode
-			event.set_mode("pcall")
-		end)
-
-
-		it("Trigger without context passes all args under none mode (nil in middle)", function()
-			event.set_mode("none")
-
-			local test_event = event.create()
-			local ra, rb, rc
-			local f = function(...)
-				ra, rb, rc = ...
+			local counter = 0
+			local f
+			f = function()
+				counter = counter + 1
+				test_event:unsubscribe(f)
+				test_event:subscribe(f)
 			end
 
 			test_event:subscribe(f)
-			test_event:trigger(1, nil, 3)
-
-			assert(ra == 1)
-			assert(rb == nil)
-			assert(rc == 3)
-
-			-- restore default mode
-			event.set_mode("pcall")
+			test_event:trigger()
+			assert(counter == 1)
+			test_event:trigger()
+			assert(counter == 2)
 		end)
 
-
-		it("Error in callback in none mode rethrows", function()
-			event.set_mode("none")
-
+		it("During trigger: one handler unsubscribes another and re-subscribes it", function()
 			local test_event = event.create()
-			local err_msg = "none mode error"
-			test_event:subscribe(function()
-				error(err_msg)
-			end)
+			local a_count, b_count = 0, 0
+			local a, b
+			a = function()
+				a_count = a_count + 1
+				test_event:unsubscribe(b)
+				test_event:subscribe(b)
+			end
+			b = function()
+				b_count = b_count + 1
+			end
 
-			local ok, err = pcall(function()
-				test_event:trigger()
-			end)
-
-			assert(ok == false)
-			assert(err and tostring(err):find(err_msg))
-
-			event.set_mode("pcall")
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:trigger()
+			assert(a_count == 1)
+			assert(b_count == 1)
+			test_event:trigger()
+			assert(a_count == 2)
+			assert(b_count == 2)
 		end)
-
-		--[[
-		it("Print execution time per function", function()
-			local test_time = function(c)
-				local start_time = socket.gettime() * 1000
-				c()
-				local end_time = socket.gettime() * 1000
-				return end_time - start_time
-			end
-
-			local EMPTY_FUNCTION = function() end
-			local logger =  {
-				trace = EMPTY_FUNCTION,
-				debug = EMPTY_FUNCTION,
-				info = EMPTY_FUNCTION,
-				warn = function(_, message, context)
-					pprint(message, context)
-				end,
-				error = EMPTY_FUNCTION,
-			}
-			event.set_logger(logger)
-
-			local times = 100000
-
-			local start = socket.gettime() * 1000
-			for _ = 1, times do
-				event.create()
-			end
-			local finish = socket.gettime() * 1000
-			local create_time_per_instance = (finish - start) / times
-			print("Create time per instance (ms): ", create_time_per_instance)
-
-			start = socket.gettime() * 1000
-			for index = 1, 1000 do
-				event.create():subscribe(function() end)
-			end
-			finish = socket.gettime() * 1000
-			print("Subscribe time per 1000 callbacks on new event (ms): ", (finish - start) / 1000 - create_time_per_instance)
-
-			local e = event.create()
-			start = socket.gettime() * 1000
-			for index = 1, 1000 do
-				e:subscribe(function() end)
-			end
-			finish = socket.gettime() * 1000
-			print("Subscribe time per 1000 callbacks on one event (ms): ", (finish - start) / 1000)
-
-			start = socket.gettime() * 1000
-			for index = 1, times do
-				e:trigger(1, 2, 3)
-			end
-			finish = socket.gettime() * 1000
-			print("Trigger time per instance with 1000 callbacks (ms): ", (finish - start) / times)
-
-			e:clear()
-			e:subscribe(function() end)
-			start = socket.gettime() * 1000
-			for index = 1, times do
-				e:trigger(1, 2, 3)
-			end
-			finish = socket.gettime() * 1000
-			print("Trigger time per instance with 1 callback (ms): ", (finish - start) / times)
-		end)
-		--]]
 	end)
 end

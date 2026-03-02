@@ -64,6 +64,82 @@ local function test_queue()
 			assert(#queue_instance:get_events() == 0)
 		end)
 
+		it("subscribe_once: handler called once then auto-unsubscribed", function()
+			local test_data = "test_data"
+			local call_count = 0
+
+			queue_instance:subscribe_once(function(data)
+				call_count = call_count + 1
+				assert(data == test_data)
+				return true
+			end)
+
+			queue_instance:push(test_data)
+			assert(call_count == 1)
+			assert(#queue_instance:get_events() == 0)
+
+			queue_instance:push(test_data)
+			assert(call_count == 1)
+			assert(#queue_instance:get_events() == 1)
+		end)
+
+		it("subscribe_once: unsubscribed only when handler returns non-nil", function()
+			local call_count = 0
+			queue_instance:subscribe_once(function(data)
+				call_count = call_count + 1
+				if call_count == 2 then
+					return true
+				end
+				return nil
+			end)
+
+			queue_instance:push("first")
+			assert(call_count == 1)
+			assert(#queue_instance:get_events() == 1)
+
+			queue_instance:push("second")
+			assert(call_count == 2)
+
+			queue_instance:push("third")
+			assert(call_count == 2)
+		end)
+
+		it("subscribe_once: same handler and context twice returns false", function()
+			local handler = function() return true end
+			assert(queue_instance:subscribe_once(handler) == true)
+			assert(queue_instance:subscribe_once(handler) == false)
+
+			assert(queue_instance:subscribe_once(handler, "context") == true)
+			assert(queue_instance:subscribe_once(handler, "context") == false)
+			assert(queue_instance:subscribe_once(handler, "other_context") == true)
+		end)
+
+		it("subscribe_once then unsubscribe before push: handler not called", function()
+			local call_count = 0
+			local handler = function()
+				call_count = call_count + 1
+				return true
+			end
+
+			queue_instance:subscribe_once(handler)
+			queue_instance:unsubscribe(handler)
+			queue_instance:push("data")
+			assert(call_count == 0)
+		end)
+
+		it("subscribe_once: handler called only once when multiple events processed in same run", function()
+			local call_count = 0
+			local instance = queue.create()
+			instance:push("first")
+			instance:push("second")
+			instance:subscribe_once(function(data)
+				call_count = call_count + 1
+				return true
+			end)
+			assert(call_count == 1)
+			assert(#instance:get_events() == 1)
+		end)
+
 		it("Should call on_handle callback when event is handled", function()
 			local test_data = "test_data"
 			local on_handle_called = false
@@ -138,6 +214,99 @@ local function test_queue()
 
 			assert(was_called == true)
 			assert(#queue_instance:get_events() == 0) -- Event should be removed
+		end)
+
+		describe("Queue process_next", function()
+			it("returns false when queue is empty", function()
+				assert(queue_instance:process_next(function() return true end) == false)
+			end)
+
+			it("returns false when event_handler is nil", function()
+				queue_instance:push("data")
+				assert(queue_instance:process_next(nil) == false)
+				assert(#queue_instance:get_events() == 1)
+			end)
+
+			it("processes head event only: handler returns non-nil removes event and returns true", function()
+				local called_with = nil
+				queue_instance:push("first")
+				queue_instance:push("second")
+
+				local result = queue_instance:process_next(function(data)
+					called_with = data
+					return true
+				end)
+
+				assert(result == true)
+				assert(called_with == "first")
+				assert(#queue_instance:get_events() == 1)
+				assert(queue_instance:get_events()[1].data == "second")
+
+				result = queue_instance:process_next(function(data)
+					called_with = data
+					return true
+				end)
+
+				assert(result == true)
+				assert(called_with == "second")
+				assert(#queue_instance:get_events() == 0)
+			end)
+
+			it("handler returns nil: event stays and returns false", function()
+				queue_instance:push("data")
+
+				local result = queue_instance:process_next(function(data)
+					return nil
+				end)
+
+				assert(result == false)
+				assert(#queue_instance:get_events() == 1)
+			end)
+
+			it("does not call subscribers", function()
+				local subscriber_called_counter = 0
+				queue_instance:subscribe(function()
+					subscriber_called_counter = subscriber_called_counter + 1
+					return nil
+				end)
+				queue_instance:push("data")
+
+				assert(subscriber_called_counter == 1)
+				assert(#queue_instance:get_events() == 1)
+
+				queue_instance:process_next(function(data)
+					return true
+				end)
+
+				assert(subscriber_called_counter == 1)
+				assert(#queue_instance:get_events() == 0)
+			end)
+
+			it("calls on_handle with result when handler returns non-nil", function()
+				local on_handle_result = nil
+				queue_instance:push("data", function(result)
+					on_handle_result = result
+				end)
+
+				queue_instance:process_next(function(data)
+					return "handled"
+				end)
+
+				assert(on_handle_result == "handled")
+			end)
+
+			it("passes context to handler", function()
+				local context = {}
+				local received_context = nil
+				queue_instance:push("data")
+
+				queue_instance:process_next(function(self, data)
+					received_context = self
+					return true
+				end, context)
+
+				assert(received_context == context)
+			end)
 		end)
 
 		it("Should keep events if not handled", function()
