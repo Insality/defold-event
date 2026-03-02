@@ -1,7 +1,7 @@
 local event_mode = sys.get_config_string("event.event_mode", "pcall")
-local USE_XPCALL = event_mode == "xpcall"
-local USE_PCALL = event_mode == "pcall"
 local USE_NONE = event_mode == "none"
+local USE_XPCALL = event_mode == "xpcall"
+local USE_PCALL = event_mode == "pcall" or (not USE_NONE and not USE_XPCALL)
 
 ---Array of next items:
 ---[1] callback,
@@ -306,7 +306,7 @@ function M:trigger(...)
 		if event_callback_context ~= nil then
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
-			elseif USE_XPCALL or USE_NONE then
+			else
 				local args = { event_callback_context }
 				local n = select("#", ...)
 				for i = 1, n do
@@ -316,14 +316,11 @@ function M:trigger(...)
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args, 1, n + 1))
 				end, event_error_handler)
-			else
-				result_or_error = event_callback(event_callback_context, ...)
-				ok = true
 			end
 		else
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, ...)
-			elseif USE_XPCALL or USE_NONE then
+			else
 				local args = {}
 				local n = select("#", ...)
 				for i = 1, n do
@@ -333,9 +330,6 @@ function M:trigger(...)
 				ok, result_or_error = xpcall(function()
 					return event_callback(unpack(args, 1, n))
 				end, event_error_handler)
-			else
-				result_or_error = event_callback(...)
-				ok = true
 			end
 		end
 
@@ -388,9 +382,9 @@ end
 ---Set the mode of the event module.
 ---@param mode "pcall" | "xpcall" | "none" The mode to set.
 function M.set_mode(mode)
-	USE_PCALL = mode == "pcall"
-	USE_XPCALL = mode == "xpcall"
 	USE_NONE = mode == "none"
+	USE_XPCALL = mode == "xpcall"
+	USE_PCALL = mode == "pcall" or (not USE_NONE and not USE_XPCALL)
 end
 
 
@@ -408,5 +402,6 @@ EVENT_METATABLE = {
 	__index = M,
 	__call = M.trigger,
 }
+
 
 return M
