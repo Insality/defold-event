@@ -83,12 +83,15 @@ function M.set_value(self, value)
 end
 
 return M
+```
 
+```lua
 -- Lua script /my_script.script
 local my_module = require("my_module")
 
 local function on_value_changed(self, value)
 	print("Value changed to:", value)
+	label.set_text("#label", "Hello, " .. value)
 end
 
 function init(self)
