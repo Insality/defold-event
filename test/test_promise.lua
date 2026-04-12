@@ -152,13 +152,13 @@ return function()
 			assert(test_promise.value == "manual_value")
 		end)
 
-		it("Manual reject by calling promise", function()
+		it("Manual resolve with nil by calling promise", function()
 			local test_promise = promise.create()
 			assert(test_promise:is_pending())
 
-			test_promise(nil, "manual_reason")
-			assert(test_promise:is_rejected())
-			assert(test_promise.value == "manual_reason")
+			test_promise(nil)
+			assert(test_promise:is_resolved())
+			assert(test_promise.value == nil)
 		end)
 
 		it("Cannot fulfill already resolved promise", function()
@@ -169,7 +169,7 @@ return function()
 
 		it("Cannot reject already rejected promise", function()
 			local test_promise = promise.rejected("first_reason")
-			test_promise(nil, "second_reason")
+			test_promise(nil)
 			assert(test_promise.value == "first_reason")
 		end)
 
@@ -422,13 +422,66 @@ return function()
 
 			-- Other promises shouldn't affect the result
 			promise1("first_late")
-			promise3(nil, "third_late")
+			promise3("third_late")
 			assert(race_promise.value == "second_wins")
 		end)
 
 		it("Promise.race with empty array", function()
 			local race_promise = promise.race({})
 			assert(race_promise:is_pending()) -- Never resolves
+		end)
+
+		it("Promise.append chains functions on tail and returns self", function()
+			local p = promise.create()
+			assert(p:append(function(v)
+				return v * 2
+			end):append(function(v)
+				return v + 1
+			end) == p)
+			p(5)
+			local t = p:tail()
+			assert(t:is_resolved())
+			assert(t.value == 11)
+		end)
+
+		it("Promise.tail is pipeline without appends", function()
+			local p = promise.create()
+			assert(p:tail() == p)
+		end)
+
+		it("Promise.reset replaces tail with resolved placeholder", function()
+			local p = promise.create()
+			p:append(function(v)
+				return v
+			end)
+			p:reset()
+			assert(p:tail():is_resolved())
+			assert(p:tail().value == nil)
+		end)
+
+		it("Promise.append with promise forwards value into inner", function()
+			local pipeline = promise.create()
+			local inner = promise.create()
+			pipeline:append(inner)
+			pipeline:resolve("upstream")
+			assert(inner:is_resolved())
+			assert(inner.value == "upstream")
+			local t = pipeline:tail()
+			assert(t:is_resolved())
+			assert(t.value == nil)
+		end)
+
+		it("Promise.append function may return a pending promise", function()
+			local pipeline = promise.create()
+			local inner = promise.create()
+			pipeline:append(function()
+				return inner
+			end)
+			pipeline:resolve(1)
+			assert(pipeline:tail():is_pending())
+			inner:resolve("done")
+			assert(pipeline:tail():is_resolved())
+			assert(pipeline:tail().value == "done")
 		end)
 
 		it("Complex promise chain", function()

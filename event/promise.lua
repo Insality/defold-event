@@ -4,8 +4,8 @@ local event = require("event.event")
 
 ---The Promise module, used to create and manage promises.
 ---A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
----@overload fun(value:any, reason:any|nil): nil Call the promise to resolve it with value or reject it with reason if value is nil
----@class promise
+---@overload fun(value:any): nil Call the promise to resolve it with value
+---@class promise: function
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
 ---@field private on_resolve event Event for resolve handlers
@@ -236,16 +236,12 @@ function M:next(on_resolved, on_rejected, context)
 	elseif self:is_rejected() then
 		handle_callback_result(new_promise, on_rejected, self.value, true, context)
 	else
-		local handle_resolve = function(value)
+		self.on_resolve:subscribe(function(value)
 			handle_callback_result(new_promise, on_resolved, value, false, context)
-		end
-
-		local handle_reject = function(reason)
+		end)
+		self.on_reject:subscribe(function(reason)
 			handle_callback_result(new_promise, on_rejected, reason, true, context)
-		end
-
-		self.on_resolve:subscribe(handle_resolve)
-		self.on_reject:subscribe(handle_reject)
+		end)
 	end
 
 	return new_promise
@@ -308,22 +304,15 @@ function M:is_finished()
 end
 
 
----Call the promise to resolve or reject it.
----If value is not nil, the promise will be resolved with that value.
----If value is nil and reason is provided, the promise will be rejected with that reason.
----@param value any The value to resolve with, or nil to indicate rejection.
----@param reason any|nil The reason to reject with (only used if value is nil).
+---Call the promise to resolve it with a single value (e.g. as a one-argument callback).
+---@param value any
 ---@private
-function M:__call(value, reason)
+function M:__call(value)
 	if not self:is_pending() then
 		return
 	end
 
-	if value ~= nil then
-		self:resolve(value)
-	else
-		self:reject(reason)
-	end
+	self:resolve(value)
 end
 
 
@@ -374,11 +363,20 @@ end
 ---Append a task to this promise's internal sequence without reassigning.
 ---The task may return a value or a promise. Returns self for chaining.
 ---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
----		pipeline:append(step1):append(step2):append(step3)
----		local result = pipeline:tail()
----@param task fun(value:any):any
+---		self.pipeline:append(step1)
+---		self.pipeline:append(step2)
+---		self.pipeline:append(step3)
+---		local last_promise_to_check_status = self.pipeline:tail()
+---		print("Is going to check status of", last_promise_to_check_status:is_pending())
+---@param task (fun(_, value:any):any)|promise
 ---@return promise self
-function M:append(task)
+function M:append(task, context, ...)
+	if M.is_promise(task) then
+		---@cast task promise
+		self._tail = (self._tail or self):next(task.resolve, nil, task)
+		return self
+	end
+
 	self._tail = (self._tail or self):next(function(value)
 		return task(value)
 	end)
