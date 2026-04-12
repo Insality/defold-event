@@ -363,12 +363,12 @@ end
 ---Append a task to this promise's internal sequence without reassigning.
 ---The task may return a value or a promise. Returns self for chaining.
 ---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
----		self.pipeline:append(step1)
----		self.pipeline:append(step2)
----		self.pipeline:append(step3)
----		local last_promise_to_check_status = self.pipeline:tail()
----		print("Is going to check status of", last_promise_to_check_status:is_pending())
----@param task (fun(_, value:any):any)|promise
+---		pipeline:append(step1)
+---		pipeline:append(step2)
+---		pipeline:append(step3)
+---		local last = pipeline:tail()
+---		print("Is going to check status of", last:is_pending())
+---@param task (fun(value:any):any)|promise
 ---@return promise self
 function M:append(task)
 	if M.is_promise(task) then

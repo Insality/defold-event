@@ -167,7 +167,7 @@ return function()
 			assert(test_promise.value == "first_value")
 		end)
 
-		it("Cannot reject already rejected promise", function()
+		it("Cannot fulfill already rejected promise", function()
 			local test_promise = promise.rejected("first_reason")
 			test_promise(nil)
 			assert(test_promise.value == "first_reason")

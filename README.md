@@ -258,9 +258,9 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Documentation and API pages updates.
 
 ### **V16**
-	- The `promise:__call` metamethod now can only resolve the promise with a single value (e.g. as a one-argument callback). Before it can be rejected with a second argument.
-		- This change allows safely pass promises as a callbacks to other functions instead callbacks to resolve the promise.
-	- The `promise:resolve` function can now accepts a promise as a value to resolve with.
+	- The `promise:__call` metamethod now resolves the promise with a single value only (as a one-argument callback). Previously, a second argument could reject the promise.
+		- This change allows safely passing promises as callbacks to other functions instead of using separate callbacks to resolve the promise.
+	- The `promise:resolve` function can now accept a promise as a value to resolve with.
 
 </details>
 
