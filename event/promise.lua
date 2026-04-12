@@ -370,7 +370,7 @@ end
 ---		print("Is going to check status of", last_promise_to_check_status:is_pending())
 ---@param task (fun(_, value:any):any)|promise
 ---@return promise self
-function M:append(task, context, ...)
+function M:append(task)
 	if M.is_promise(task) then
 		---@cast task promise
 		self._tail = (self._tail or self):next(task.resolve, nil, task)
