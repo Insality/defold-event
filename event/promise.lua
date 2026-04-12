@@ -361,7 +361,9 @@ end
 
 
 ---Append a task to this promise's internal sequence without reassigning.
----The task may return a value or a promise. Returns self for chaining.
+---The task may return a value or a promise. If `task` is a promise, it is resolved with the
+---incoming value and the pipeline tail follows that promise (same as returning it from a function).
+---Returns self for chaining.
 ---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
 ---		pipeline:append(step1)
 ---		pipeline:append(step2)
@@ -373,7 +375,10 @@ end
 function M:append(task)
 	if M.is_promise(task) then
 		---@cast task promise
-		self._tail = (self._tail or self):next(task.resolve, nil, task)
+		self._tail = (self._tail or self):next(function(value)
+			task:resolve(value)
+			return task
+		end)
 		return self
 	end
 

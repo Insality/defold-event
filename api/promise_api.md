@@ -312,15 +312,15 @@ my_promise:reject("failed")
 
 ---
 ```lua
-promise:append([task])
+promise:append(task)
 ```
 
 Append a task to this promise's internal sequence without reassigning.
-The task may return a value or a promise. Returns self for chaining.
+The task may be a function that returns a value or a promise, or a promise that receives the incoming value via `resolve` and is then chained like a returned promise. Returns self for chaining.
 Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
 
 - **Parameters:**
-	- `[task]` *(fun(value: any):any)*:
+	- `[task]` *(fun(value: any): any \| promise)*:
 
 - **Returns:**
 	- `self` *(promise)*:
