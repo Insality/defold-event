@@ -189,13 +189,14 @@ load_data():next(function(data) return process(data) end):next(display):catch(sh
 
 ---
 ```lua
-promise:catch(on_rejected)
+promise:catch(on_rejected, [context])
 ```
 
 Attach a rejection handler to the promise. Equivalent to next(nil, on_rejected).
 
 - **Parameters:**
 	- `on_rejected` *(function|event)*: Handler called when promise is rejected.
+	- `[context]` *(any)*: The context to call the handler with.
 
 - **Returns:**
 	- `new_promise` *(promise)*: A new promise representing the result of the handler.
@@ -209,7 +210,7 @@ load_data():catch(function(err) print("Failed:", err) end)
 
 ---
 ```lua
-promise:finally(on_finally)
+promise:finally(on_finally, [context])
 ```
 
 Attach a handler that is called regardless of whether the promise is resolved or rejected.
@@ -217,6 +218,7 @@ The handler receives no arguments and its return value is ignored.
 
 - **Parameters:**
 	- `on_finally` *(function|event)*: Handler called when promise is finished (resolved or rejected).
+	- `[context]` *(any)*: The context to call the handler with.
 
 - **Returns:**
 	- `new_promise` *(promise)*: A new promise that resolves/rejects with the same value/reason as the original.

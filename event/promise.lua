@@ -251,9 +251,10 @@ end
 ---Attach a rejection handler to the promise. Equivalent to next(nil, on_rejected).
 ---		load_data():catch(function(err) print("Failed:", err) end)
 ---@param on_rejected function|event Handler called when promise is rejected.
+---@param context any|nil The context to call the handler with.
 ---@return promise new_promise A new promise representing the result of the handler.
-function M:catch(on_rejected)
-	return self:next(nil, on_rejected)
+function M:catch(on_rejected, context)
+	return self:next(nil, on_rejected, context)
 end
 
 
@@ -261,15 +262,24 @@ end
 ---The handler receives no arguments and its return value is ignored.
 ---		load_data():finally(function() hide_loading_spinner() end)
 ---@param on_finally function|event Handler called when promise is finished (resolved or rejected).
+---@param context any|nil The context to call the handler with.
 ---@return promise new_promise A new promise that resolves/rejects with the same value/reason as the original.
-function M:finally(on_finally)
+function M:finally(on_finally, context)
 	return self:next(
 		function(value)
-			on_finally()
+			if context then
+				on_finally(context)
+			else
+				on_finally()
+			end
 			return value
 		end,
 		function(reason)
-			on_finally()
+			if context then
+				on_finally(context)
+			else
+				on_finally()
+			end
 			return M.rejected(reason)
 		end
 	)
