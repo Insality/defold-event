@@ -214,7 +214,9 @@ promise:finally(on_finally, [context])
 ```
 
 Attach a handler that is called regardless of whether the promise is resolved or rejected.
-The handler receives no arguments and its return value is ignored.
+The handler is called with the resolved value or rejection reason.
+When `context` is provided, it is passed as the first argument.
+The handler return value is ignored.
 
 - **Parameters:**
 	- `on_finally` *(function|event)*: Handler called when promise is finished (resolved or rejected).

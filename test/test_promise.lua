@@ -327,6 +327,20 @@ return function()
 			assert(catch_promise.value == "handled: error_reason")
 		end)
 
+		it("Promise catch with false context", function()
+			local test_promise = promise.rejected("error_reason")
+			local received_context = "not_set"
+
+			local catch_promise = test_promise:catch(function(self, reason)
+				received_context = self
+				return reason
+			end, false)
+
+			assert(received_context == false)
+			assert(catch_promise:is_resolved())
+			assert(catch_promise.value == "error_reason")
+		end)
+
 		it("Promise finally", function()
 			local finally_called = false
 			local test_promise = promise.resolved("success_value")
@@ -357,12 +371,15 @@ return function()
 			local test_promise = promise.resolved("success_value")
 			local context = { label = "cleanup" }
 			local received_context = nil
+			local received_value = nil
 
-			local final_promise = test_promise:finally(function(self)
+			local final_promise = test_promise:finally(function(self, value)
 				received_context = self
+				received_value = value
 			end, context)
 
 			assert(received_context == context)
+			assert(received_value == "success_value")
 			assert(final_promise:is_resolved())
 			assert(final_promise.value == "success_value")
 		end)
@@ -371,14 +388,33 @@ return function()
 			local test_promise = promise.rejected("error_reason")
 			local context = { label = "cleanup" }
 			local received_context = nil
+			local received_reason = nil
 
-			local final_promise = test_promise:finally(function(self)
+			local final_promise = test_promise:finally(function(self, reason)
 				received_context = self
+				received_reason = reason
 			end, context)
 
 			assert(received_context == context)
+			assert(received_reason == "error_reason")
 			assert(final_promise:is_rejected())
 			assert(final_promise.value == "error_reason")
+		end)
+
+		it("Promise finally with false context", function()
+			local test_promise = promise.resolved("success_value")
+			local received_context = "not_set"
+			local received_value = nil
+
+			local final_promise = test_promise:finally(function(self, value)
+				received_context = self
+				received_value = value
+			end, false)
+
+			assert(received_context == false)
+			assert(received_value == "success_value")
+			assert(final_promise:is_resolved())
+			assert(final_promise.value == "success_value")
 		end)
 
 		it("Promise.all with all resolved", function()
@@ -864,14 +900,17 @@ return function()
 				local test_promise = promise.resolved("success_value")
 				local context = { label = "done" }
 				local received_context = nil
+				local received_value = nil
 
-				local context_event = event.create(function(self)
+				local context_event = event.create(function(self, value)
 					received_context = self
+					received_value = value
 				end, context)
 
 				local final_promise = test_promise:finally(context_event)
 
 				assert(received_context == context)
+				assert(received_value == "success_value")
 				assert(final_promise:is_resolved())
 				assert(final_promise.value == "success_value")
 			end)

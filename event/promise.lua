@@ -36,7 +36,7 @@ function M.create(executor, context)
 	if executor then
 		local resolve_func = function(value) self:resolve(value) end
 		local reject_func = function(reason) self:reject(reason) end
-		if context then
+		if context ~= nil then
 			executor(context, resolve_func, reject_func)
 		else
 			executor(resolve_func, reject_func)
@@ -213,7 +213,7 @@ local function handle_callback_result(target_promise, callback, value, is_reject
 		return
 	end
 
-	if context then
+	if context ~= nil then
 		resolve_promise(target_promise, callback(context, value))
 	else
 		resolve_promise(target_promise, callback(value))
@@ -259,7 +259,9 @@ end
 
 
 ---Attach a handler that is called regardless of whether the promise is resolved or rejected.
----The handler receives no arguments and its return value is ignored.
+---The handler is called with the resolved value or rejection reason.
+---When context is provided, it is passed as the first argument.
+---The handler return value is ignored.
 ---		load_data():finally(function() hide_loading_spinner() end)
 ---@param on_finally function|event Handler called when promise is finished (resolved or rejected).
 ---@param context any|nil The context to call the handler with.
@@ -267,18 +269,18 @@ end
 function M:finally(on_finally, context)
 	return self:next(
 		function(value)
-			if context then
-				on_finally(context)
+			if context ~= nil then
+				on_finally(context, value)
 			else
-				on_finally()
+				on_finally(value)
 			end
 			return value
 		end,
 		function(reason)
-			if context then
-				on_finally(context)
+			if context ~= nil then
+				on_finally(context, reason)
 			else
-				on_finally()
+				on_finally(reason)
 			end
 			return M.rejected(reason)
 		end
