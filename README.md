@@ -31,10 +31,10 @@ It helps you decouple systems using publish-subscribe patterns, delayed queues, 
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/16.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/17.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/16.zip
+https://github.com/Insality/defold-event/archive/refs/tags/17.zip
 ```
 
 ### Library Size
@@ -261,6 +261,9 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- The `promise:__call` metamethod now resolves the promise with a single value only (as a one-argument callback). Previously, a second argument could reject the promise.
 		- This change allows safely passing promises as callbacks to other functions instead of using separate callbacks to resolve the promise.
 	- The `promise:resolve` function can now accept a promise as a value to resolve with.
+
+### **V17**
+	- Added optional `context` parameter to `promise:catch` and `promise:finally`, matching `promise:next`.
 
 </details>
 

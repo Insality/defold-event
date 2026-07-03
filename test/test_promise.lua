@@ -309,6 +309,24 @@ return function()
 			assert(catch_promise.value == "success_value")
 		end)
 
+		it("Promise catch with context", function()
+			local test_promise = promise.rejected("error_reason")
+			local context = { prefix = "handled" }
+			local received_context = nil
+			local received_reason = nil
+
+			local catch_promise = test_promise:catch(function(self, reason)
+				received_context = self
+				received_reason = reason
+				return self.prefix .. ": " .. reason
+			end, context)
+
+			assert(received_context == context)
+			assert(received_reason == "error_reason")
+			assert(catch_promise:is_resolved())
+			assert(catch_promise.value == "handled: error_reason")
+		end)
+
 		it("Promise finally", function()
 			local finally_called = false
 			local test_promise = promise.resolved("success_value")
@@ -331,6 +349,34 @@ return function()
 			end)
 
 			assert(finally_called)
+			assert(final_promise:is_rejected())
+			assert(final_promise.value == "error_reason")
+		end)
+
+		it("Promise finally with context on resolve", function()
+			local test_promise = promise.resolved("success_value")
+			local context = { label = "cleanup" }
+			local received_context = nil
+
+			local final_promise = test_promise:finally(function(self)
+				received_context = self
+			end, context)
+
+			assert(received_context == context)
+			assert(final_promise:is_resolved())
+			assert(final_promise.value == "success_value")
+		end)
+
+		it("Promise finally with context on reject", function()
+			local test_promise = promise.rejected("error_reason")
+			local context = { label = "cleanup" }
+			local received_context = nil
+
+			local final_promise = test_promise:finally(function(self)
+				received_context = self
+			end, context)
+
+			assert(received_context == context)
 			assert(final_promise:is_rejected())
 			assert(final_promise.value == "error_reason")
 		end)
@@ -792,6 +838,42 @@ return function()
 				assert(received_value == "test_value")
 				assert(next_promise:is_resolved())
 				assert(next_promise.value == "test_value_3")
+			end)
+
+			it("Promise catch with event handler that has context", function()
+				local test_promise = promise.rejected("error_reason")
+				local context = { prefix = "caught" }
+				local received_context = nil
+				local received_reason = nil
+
+				local context_event = event.create(function(self, reason)
+					received_context = self
+					received_reason = reason
+					return self.prefix .. ": " .. reason
+				end, context)
+
+				local catch_promise = test_promise:catch(context_event)
+
+				assert(received_context == context)
+				assert(received_reason == "error_reason")
+				assert(catch_promise:is_resolved())
+				assert(catch_promise.value == "caught: error_reason")
+			end)
+
+			it("Promise finally with event handler that has context", function()
+				local test_promise = promise.resolved("success_value")
+				local context = { label = "done" }
+				local received_context = nil
+
+				local context_event = event.create(function(self)
+					received_context = self
+				end, context)
+
+				local final_promise = test_promise:finally(context_event)
+
+				assert(received_context == context)
+				assert(final_promise:is_resolved())
+				assert(final_promise.value == "success_value")
 			end)
 
 			it("Promise with event that triggers multiple subscribers", function()
