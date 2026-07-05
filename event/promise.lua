@@ -419,7 +419,7 @@ function M:reject(reason)
 	end
 
 	if self.cancellation.is_cancelled and reason ~= CANCELLED then
-		return
+		reason = CANCELLED
 	end
 
 	if reason == CANCELLED then
@@ -533,6 +533,7 @@ function M:_cancel_promise()
 	end
 	self.cancellation.is_cancelled = true
 	self.cancellation.on_cancel:trigger()
+	self.cancellation.on_cancel:clear()
 end
 
 

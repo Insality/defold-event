@@ -269,8 +269,8 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Added promise cancellation: `promise:cancel()` and `promise:is_cancelled()`.
 	- `promise.create` executor now receives an `on_cancel` event for cleanup subscriptions.
 	- Cancellation is shared across promise chains (`:next`, `:append`, adopted promises).
-	- Cancelled promises reject with a `promise.cancelled` sentinel reason.
-	- `Promise.all` and `Promise.race` cancel pending input promises when the result promise is cancelled.
+	- Cancelled promises reject with an internal sentinel reason; use `promise:is_cancelled()` to detect cancellation.
+	- `promise.all` and `promise.race` cancel pending input promises when the result promise is cancelled.
 	- Resolve handlers are skipped on cancel; `.catch` and `.finally` still run.
 	- `promise.create` executor errors now reject the promise instead of propagating to the caller.
 	- Errors thrown in `:next` / `:catch` handlers now reject the returned promise.

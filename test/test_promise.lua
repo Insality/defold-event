@@ -775,7 +775,7 @@ return function()
 			end)
 
 
-			it("Promise reject after cancel ignores non-cancelled reason", function()
+			it("Promise reject after cancel rejects with cancelled sentinel", function()
 				local test_promise = promise.create(function(resolve, reject, on_cancel)
 					on_cancel:subscribe(function() end)
 				end)
@@ -785,6 +785,24 @@ return function()
 
 				assert(test_promise:is_rejected())
 				assert(test_promise:is_cancelled())
+			end)
+
+
+			it("Promise late reject after chain cancel rejects with cancelled sentinel", function()
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function() end)
+				end)
+				local tail = root:next(function(value)
+					return value
+				end)
+
+				tail:cancel()
+				assert(root:is_pending())
+
+				root:reject("too_late")
+
+				assert(root:is_rejected())
+				assert(root:is_cancelled())
 			end)
 
 
