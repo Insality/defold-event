@@ -513,6 +513,83 @@ return function()
 			assert(race_promise:is_pending()) -- Never resolves
 		end)
 
+		it("Promise.all cancel propagates to pending children", function()
+			local cleanup1 = false
+			local cleanup2 = false
+			local promise1 = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					cleanup1 = true
+				end)
+			end)
+			local promise2 = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					cleanup2 = true
+				end)
+			end)
+
+			local all_promise = promise.all({ promise1, promise2 })
+			all_promise:cancel()
+
+			assert(all_promise:is_cancelled())
+			assert(cleanup1)
+			assert(cleanup2)
+			assert(promise1:is_cancelled())
+			assert(promise2:is_cancelled())
+		end)
+
+		it("Promise.race cancel propagates to pending children", function()
+			local cleanup1 = false
+			local cleanup2 = false
+			local promise1 = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					cleanup1 = true
+				end)
+			end)
+			local promise2 = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					cleanup2 = true
+				end)
+			end)
+
+			local race_promise = promise.race({ promise1, promise2 })
+			race_promise:cancel()
+
+			assert(race_promise:is_cancelled())
+			assert(cleanup1)
+			assert(cleanup2)
+			assert(promise1:is_cancelled())
+			assert(promise2:is_cancelled())
+		end)
+
+		it("Promise.create rejects when executor throws", function()
+			local test_promise = promise.create(function()
+				error("executor_error")
+			end)
+
+			assert(test_promise:is_rejected())
+			assert(tostring(test_promise.value):find("executor_error"))
+		end)
+
+		it("Promise.next rejects when handler throws", function()
+			local test_promise = promise.resolved("ok")
+			local next_promise = test_promise:next(function()
+				error("handler_error")
+			end)
+
+			assert(next_promise:is_rejected())
+			assert(tostring(next_promise.value):find("handler_error"))
+		end)
+
+		it("Promise.catch rejects when handler throws", function()
+			local test_promise = promise.rejected("original")
+			local catch_promise = test_promise:catch(function()
+				error("catch_error")
+			end)
+
+			assert(catch_promise:is_rejected())
+			assert(tostring(catch_promise.value):find("catch_error"))
+		end)
+
 		it("Promise.append chains functions on tail and returns self", function()
 			local p = promise.create()
 			assert(p:append(function(v)
@@ -579,6 +656,446 @@ return function()
 			inner:resolve("done")
 			assert(pipeline:tail():is_resolved())
 			assert(pipeline:tail().value == "done")
+		end)
+
+		describe("Promise cancellation", function()
+			it("Promise is_cancelled after cancel", function()
+				local test_promise = promise.create()
+				test_promise:cancel()
+				assert(test_promise:is_cancelled())
+				assert(not test_promise:is_pending())
+				assert(not test_promise:is_resolved())
+				assert(test_promise:is_rejected())
+			end)
+
+
+			it("Promise.create passes on_cancel to executor", function()
+				local received_on_cancel = nil
+
+				promise.create(function(resolve, reject, on_cancel)
+					received_on_cancel = on_cancel
+				end)
+
+				assert(received_on_cancel)
+				assert(type(received_on_cancel.subscribe) == "function")
+			end)
+
+
+			it("Promise.create passes on_cancel with context", function()
+				local context = { id = "ctx" }
+				local received_context = nil
+				local received_on_cancel = nil
+
+				promise.create(function(self, resolve, reject, on_cancel)
+					received_context = self
+					received_on_cancel = on_cancel
+				end, context)
+
+				assert(received_context == context)
+				assert(received_on_cancel)
+			end)
+
+
+			it("Promise cancel triggers on_cancel cleanup", function()
+				local cleanup_called = false
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+				end)
+
+				test_promise:cancel()
+
+				assert(cleanup_called)
+				assert(test_promise:is_rejected())
+				assert(test_promise:is_cancelled())
+			end)
+
+
+			it("Promise cancel is idempotent", function()
+				local cleanup_count = 0
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_count = cleanup_count + 1
+					end)
+				end)
+
+				test_promise:cancel()
+				test_promise:cancel()
+
+				assert(cleanup_count == 1)
+			end)
+
+
+			it("Promise reject does not trigger on_cancel", function()
+				local cleanup_called = false
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+					reject("error")
+				end)
+
+				assert(not cleanup_called)
+				assert(test_promise:is_rejected())
+				assert(not test_promise:is_cancelled())
+				assert(test_promise.value == "error")
+			end)
+
+
+			it("Promise reject does not clear shared on_cancel handlers", function()
+				local cleanup_called = false
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+				end)
+				local tail = root:next(function()
+					return promise.create()
+				end)
+
+				tail:reject("tail_error")
+				root:cancel()
+
+				assert(cleanup_called)
+				assert(root:is_cancelled())
+			end)
+
+
+			it("Promise resolve after cancel rejects with cancelled sentinel", function()
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function() end)
+				end)
+
+				test_promise:cancel()
+				test_promise:resolve("too_late")
+
+				assert(test_promise:is_rejected())
+				assert(test_promise:is_cancelled())
+			end)
+
+
+			it("Promise reject after cancel ignores non-cancelled reason", function()
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function() end)
+				end)
+
+				test_promise:cancel()
+				test_promise:reject("too_late")
+
+				assert(test_promise:is_rejected())
+				assert(test_promise:is_cancelled())
+			end)
+
+
+			it("Promise next chain shares cancel context", function()
+				local root = promise.create()
+				local middle = root:next(function(value)
+					return value + 1
+				end)
+				local tail = middle:next(function(value)
+					return value + 1
+				end)
+
+				assert(root.cancellation == middle.cancellation)
+				assert(middle.cancellation == tail.cancellation)
+			end)
+
+
+			it("Promise cancel on tail rejects tail and triggers root cleanup", function()
+				local cleanup_called = false
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+				end)
+				local tail = root:next(function(value)
+					return value
+				end)
+
+				tail:cancel()
+
+				assert(cleanup_called)
+				assert(root:is_cancelled())
+				assert(root:is_pending())
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise cancel on head rejects pending tail", function()
+				local root = promise.create()
+				local tail = root:next(function(value)
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function() end)
+					end)
+				end)
+
+				root:cancel()
+
+				assert(root:is_rejected())
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise next returning pending inner promise inherits cancel cleanup", function()
+				local cleanup_called = false
+				local root = promise.create()
+				local tail = root:next(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				root:resolve("go")
+				tail:cancel()
+
+				assert(cleanup_called)
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise cancel on settled head rejects pending next tail", function()
+				local cleanup_called = false
+				local root = promise.create()
+				local tail = root:next(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				root:resolve("go")
+				root:cancel()
+
+				assert(cleanup_called)
+				assert(root:is_resolved())
+				assert(root:is_cancelled())
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise append pipeline cancel triggers cleanup when root is resolved", function()
+				local cleanup_called = false
+				local pipeline = promise.create()
+				pipeline:append(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				pipeline:resolve("start")
+				assert(pipeline:tail():is_pending())
+
+				pipeline:cancel()
+
+				assert(cleanup_called)
+				assert(pipeline:is_resolved())
+				assert(pipeline:tail():is_rejected())
+				assert(pipeline:is_cancelled())
+			end)
+
+
+			it("Promise tail cancel on pipeline", function()
+				local cleanup_called = false
+				local pipeline = promise.create()
+				pipeline:append(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				pipeline:resolve("start")
+				pipeline:tail():cancel()
+
+				assert(cleanup_called)
+				assert(pipeline:tail():is_rejected())
+				assert(pipeline:is_cancelled())
+			end)
+
+
+			it("Promise append with inner promise inherits cancel cleanup", function()
+				local cleanup_called = false
+				local pipeline = promise.create()
+				local inner = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+				end)
+
+				pipeline:append(inner)
+				pipeline:resolve("start")
+				pipeline:cancel()
+
+				assert(cleanup_called)
+				assert(pipeline:is_cancelled())
+				assert(pipeline:is_resolved())
+				assert(pipeline:tail():is_resolved())
+				assert(pipeline:tail().value == "start")
+			end)
+
+
+			it("Promise reset keeps shared cancel context", function()
+				local cleanup_called = false
+				local pipeline = promise.create()
+				pipeline:append(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				pipeline:reset()
+				pipeline:append(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				pipeline:resolve("start")
+				pipeline:cancel()
+
+				assert(cleanup_called)
+				assert(pipeline:tail():is_rejected())
+			end)
+
+
+			it("Promise cancel skips next handler when cancelled before resolve", function()
+				local root = promise.create()
+				local handler_called = false
+				local tail = root:next(function(value)
+					handler_called = true
+					return value
+				end)
+
+				root:cancel()
+
+				assert(not handler_called)
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise cancel propagates through next without catch", function()
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function() end)
+				end)
+				local middle = root:next(function(value)
+					return value
+				end)
+				local tail = middle:next(function(value)
+					return value
+				end)
+
+				root:cancel()
+
+				assert(root:is_rejected())
+				assert(middle:is_rejected())
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise catch receives cancelled reason", function()
+				local catch_called = false
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function() end)
+				end)
+
+				test_promise:catch(function(reason)
+					catch_called = true
+				end)
+
+				test_promise:cancel()
+
+				assert(catch_called)
+				assert(test_promise:is_cancelled())
+			end)
+
+
+			it("Promise finally runs on cancel", function()
+				local finally_called = false
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function() end)
+				end)
+
+				test_promise:finally(function(reason)
+					finally_called = true
+				end)
+
+				test_promise:cancel()
+
+				assert(finally_called)
+				assert(test_promise:is_cancelled())
+			end)
+
+
+			it("Promise resolve without cancel does not trigger on_cancel", function()
+				local cleanup_called = false
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+					resolve("done")
+				end)
+
+				assert(not cleanup_called)
+				assert(test_promise:is_resolved())
+				assert(not test_promise:is_cancelled())
+			end)
+
+
+			it("Promise tail cancel after root resolved rejects active inner step", function()
+				local cleanup_called = false
+				local root = promise.create()
+				local tail = root:next(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_called = true
+						end)
+					end)
+				end)
+
+				root:resolve("go")
+				tail:cancel()
+
+				assert(cleanup_called)
+				assert(tail:is_rejected())
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise resolve with pending inner promise propagates cancel", function()
+				local cleanup_called = false
+				local outer = promise.create()
+				local inner = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+				end)
+
+				outer:resolve(inner)
+				outer:cancel()
+
+				assert(cleanup_called)
+				assert(outer:is_rejected())
+				assert(outer:is_cancelled())
+				assert(inner:is_rejected())
+				assert(inner:is_cancelled())
+			end)
 		end)
 
 		it("Complex promise chain", function()
