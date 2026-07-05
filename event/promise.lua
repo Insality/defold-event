@@ -526,6 +526,7 @@ end
 
 
 ---Cancel the promise chain.
+---@private
 function M:_cancel_promise()
 	if self.cancellation.is_cancelled then
 		return
@@ -536,6 +537,7 @@ end
 
 
 ---Share the cancellation context from the parent promise with the child promise.
+---@private
 ---@param parent promise The parent promise
 ---@param child promise The child promise
 function M._share_cancellation(parent, child)
@@ -551,6 +553,7 @@ end
 
 
 ---Invoke a callback with the given context and value.
+---@private
 ---@param callback function|event The callback to invoke.
 ---@param context any|nil The context to call the callback with.
 ---@param value any The value to pass to the callback.

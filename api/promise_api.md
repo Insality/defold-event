@@ -20,8 +20,10 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [is_resolved](#is_resolved)
 - [is_rejected](#is_rejected)
 - [is_finished](#is_finished)
+- [is_cancelled](#is_cancelled)
 - [resolve](#resolve)
 - [reject](#reject)
+- [cancel](#cancel)
 - [append](#append)
 - [tail](#tail)
 - [reset](#reset)
@@ -29,6 +31,7 @@ A promise represents a single asynchronous operation that will either resolve wi
 
 - [state](#state)
 - [value](#value)
+- [cancellation](#cancellation)
 
 
 
@@ -40,10 +43,10 @@ promise.create([executor], [context])
 ```
 
 Generate a new promise instance. This instance represents a single asynchronous operation.
-The executor function is called immediately with resolve and reject functions.
+The executor function is called immediately with resolve, reject functions and on_cancel event.
 
 - **Parameters:**
-	- `[executor]` *(function|event|nil)*: The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
+	- `[executor]` *(function|event|nil)*: The function or event that will be called with resolve, reject functions and cancel event. Optional for manual promise creation.
 	- `[context]` *(any)*: The context to call the executor function with.
 
 - **Returns:**
@@ -52,8 +55,9 @@ The executor function is called immediately with resolve and reject functions.
 - **Example Usage:**
 
 ```lua
-local p = promise.create(function(resolve, reject)
-	async_load(url, function(data) resolve(data) end, function(err) reject(err) end)
+local p = promise.create(function(resolve, reject, on_cancel)
+	local handle = timer.delay(1, false, resolve)
+	on_cancel:subscribe(function() timer.cancel(handle) end)
 end)
 ```
 ### resolved
@@ -215,7 +219,7 @@ promise:finally(on_finally, [context])
 
 Attach a handler that is called regardless of whether the promise is resolved or rejected.
 The handler is called with the resolved value or rejection reason.
-When `context` is provided, it is passed as the first argument.
+When context is provided, it is passed as the first argument.
 The handler return value is ignored.
 
 - **Parameters:**
@@ -278,6 +282,18 @@ Check if the promise is finished (either resolved or rejected).
 - **Returns:**
 	- `is_finished` *(boolean)*: True if the promise is finished.
 
+### is_cancelled
+
+---
+```lua
+promise:is_cancelled()
+```
+
+Check if the shared cancel_context was cancelled.
+
+- **Returns:**
+	- `is_cancelled` *(boolean)*: True if the promise chain was cancelled.
+
 ### resolve
 
 ---
@@ -312,19 +328,35 @@ Reject the promise.
 ```lua
 my_promise:reject("failed")
 ```
+### cancel
+
+---
+```lua
+promise:cancel()
+```
+
+Cancel the promise chain. Triggers cleanup and rejects if still pending.
+
+- **Example Usage:**
+
+```lua
+my_promise:cancel()
+```
 ### append
 
 ---
 ```lua
-promise:append(task)
+promise:append([task])
 ```
 
 Append a task to this promise's internal sequence without reassigning.
-The task may be a function that returns a value or a promise, or a promise that receives the incoming value via `resolve` and is then chained like a returned promise. Returns self for chaining.
+The task may return a value or a promise. If `task` is a promise, it is resolved with the
+incoming value and the pipeline tail follows that promise (same as returning it from a function).
+Returns self for chaining.
 Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
 
 - **Parameters:**
-	- `[task]` *(fun(value: any): any \| promise)*:
+	- `[task]` *(fun(value: any):any|promise)*: The Promise module, used to create and manage promises.
 
 - **Returns:**
 	- `self` *(promise)*:
@@ -332,8 +364,11 @@ Almost similar to `promise = promise:next(task)`, but without reassigning the pr
 - **Example Usage:**
 
 ```lua
-pipeline:append(step1):append(step2):append(step3)
-local result = pipeline:tail()
+pipeline:append(step1)
+pipeline:append(step2)
+pipeline:append(step3)
+local last = pipeline:tail()
+print("Is going to check status of", last:is_pending())
 ```
 ### tail
 
@@ -378,4 +413,7 @@ pipeline:append(new_step)
 
 <a name="value"></a>
 - **value** (_any_): The resolved value or rejection reason
+
+<a name="cancellation"></a>
+- **cancellation** (_promise.cancelled_context_): Shared cancelled context for a promise chain
 
