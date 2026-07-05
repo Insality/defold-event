@@ -2,44 +2,63 @@ local event = require("event.event")
 
 ---@alias promise.state "pending" | "resolved" | "rejected"
 
+---@class promise.cancelled_context
+---@field is_cancelled boolean
+---@field on_cancel event
+
 ---The Promise module, used to create and manage promises.
 ---A promise represents a single asynchronous operation that will either resolve with a value or reject with a reason.
 ---@overload fun(value:any): nil Call the promise to resolve it with value
 ---@class promise: function
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
+---@field cancellation promise.cancelled_context Shared cancelled context for a promise chain
 ---@field private on_resolve event Event for resolve handlers
 ---@field private on_reject event Event for rejection handlers
 ---@field private _tail promise|nil Internal tail promise for append chaining
+---@field private _cancel_children table<promise, boolean>|nil Promises linked via next or adopt
 local M = {}
 
 -- Forward declaration
 local PROMISE_METATABLE
 
+---Unique sentinel rejection reason for cancelled promises.
+local CANCELLED = { "promise.cancelled" }
+
 
 ---Generate a new promise instance. This instance represents a single asynchronous operation.
----The executor function is called immediately with resolve and reject functions.
----		local p = promise.create(function(resolve, reject)
----			async_load(url, function(data) resolve(data) end, function(err) reject(err) end)
+---The executor function is called immediately with resolve, reject functions and on_cancel event.
+---		local p = promise.create(function(resolve, reject, on_cancel)
+---			local handle = timer.delay(1, false, resolve)
+---			on_cancel:subscribe(function() timer.cancel(handle) end)
 ---		end)
----@param executor function|event|nil The function or event that will be called with resolve and reject functions. Optional for manual promise creation.
+---@param executor function|event|nil The function or event that will be called with resolve, reject functions and cancel event. Optional for manual promise creation.
 ---@param context any|nil The context to call the executor function with.
 ---@return promise promise_instance A new promise instance.
 function M.create(executor, context)
 	local self = setmetatable({
 		state = "pending",
 		value = nil,
+		cancellation = { is_cancelled = false, on_cancel = event.create() },
 		on_resolve = event.create(),
 		on_reject = event.create()
 	}, PROMISE_METATABLE)
 
 	if executor then
+		---@cast executor function
+
 		local resolve_func = function(value) self:resolve(value) end
 		local reject_func = function(reason) self:reject(reason) end
+
+		local ok, err
 		if context ~= nil then
-			executor(context, resolve_func, reject_func)
+			ok, err = pcall(executor, context, resolve_func, reject_func, self.cancellation.on_cancel)
 		else
-			executor(resolve_func, reject_func)
+			ok, err = pcall(executor, resolve_func, reject_func, self.cancellation.on_cancel)
+		end
+
+		if not ok then
+			self:reject(err)
 		end
 	end
 
@@ -90,6 +109,14 @@ function M.all(promises)
 	local completed_count = 0
 	local total_count = #promises
 
+	result_promise.cancellation.on_cancel:subscribe(function()
+		for _, promise_instance in ipairs(promises) do
+			if promise_instance:is_pending() then
+				promise_instance:cancel()
+			end
+		end
+	end)
+
 	local function check_completion()
 		if completed_count == total_count then
 			result_promise:resolve(results)
@@ -130,6 +157,14 @@ function M.race(promises)
 	end
 
 	local result_promise = M.create()
+
+	result_promise.cancellation.on_cancel:subscribe(function()
+		for _, promise_instance in ipairs(promises) do
+			if promise_instance:is_pending() then
+				promise_instance:cancel()
+			end
+		end
+	end)
 
 	for _, promise_instance in ipairs(promises) do
 		if promise_instance:is_finished() then
@@ -176,6 +211,8 @@ local function resolve_promise(target_promise, value)
 		return
 	end
 
+	M._share_cancellation(target_promise, value)
+
 	if value:is_resolved() then
 		target_promise:resolve(value.value)
 	elseif value:is_rejected() then
@@ -207,17 +244,24 @@ local function handle_callback_result(target_promise, callback, value, is_reject
 		return
 	end
 
+	if not is_rejection and target_promise.cancellation.is_cancelled then
+		target_promise:reject(CANCELLED)
+		return
+	end
+
 	-- If callback is a promise, resolve target_promise with it directly
 	if M.is_promise(callback) then
 		resolve_promise(target_promise, callback)
 		return
 	end
 
-	if context ~= nil then
-		resolve_promise(target_promise, callback(context, value))
-	else
-		resolve_promise(target_promise, callback(value))
+	local ok, result = pcall(M._invoke_callback, callback, context, value)
+	if not ok then
+		target_promise:reject(result)
+		return
 	end
+
+	resolve_promise(target_promise, result)
 end
 
 
@@ -230,6 +274,7 @@ end
 ---@return promise new_promise A new promise representing the result of the handlers.
 function M:next(on_resolved, on_rejected, context)
 	local new_promise = M.create()
+	M._share_cancellation(self, new_promise)
 
 	if self:is_resolved() then
 		handle_callback_result(new_promise, on_resolved, self.value, false, context)
@@ -316,6 +361,13 @@ function M:is_finished()
 end
 
 
+---Check if the shared cancel_context was cancelled.
+---@return boolean is_cancelled True if the promise chain was cancelled.
+function M:is_cancelled()
+	return self.cancellation.is_cancelled
+end
+
+
 ---Call the promise to resolve it with a single value (e.g. as a one-argument callback).
 ---@param value any
 ---@private
@@ -333,6 +385,11 @@ end
 ---@param value any The value to resolve with.
 function M:resolve(value)
 	if self.state ~= "pending" then
+		return
+	end
+
+	if self.cancellation.is_cancelled then
+		self:reject(CANCELLED)
 		return
 	end
 
@@ -361,6 +418,14 @@ function M:reject(reason)
 		return
 	end
 
+	if self.cancellation.is_cancelled and reason ~= CANCELLED then
+		return
+	end
+
+	if reason == CANCELLED then
+		self:_cancel_promise()
+	end
+
 	-- Inline settle_promise logic for rejected state
 	self.state = "rejected"
 	self.value = reason
@@ -369,6 +434,27 @@ function M:reject(reason)
 	-- Clear handlers to prevent memory leaks
 	self.on_resolve:clear()
 	self.on_reject:clear()
+
+	if reason == CANCELLED then
+		self.cancellation.on_cancel:clear()
+	end
+end
+
+
+---Cancel the promise chain. Triggers cleanup and rejects if still pending.
+---		my_promise:cancel()
+function M:cancel()
+	if self.cancellation.is_cancelled then
+		return
+	end
+
+	if self:is_pending() then
+		self:reject(CANCELLED)
+	else
+		self:_cancel_promise()
+	end
+
+	self:_reject_cancel_children()
 end
 
 
@@ -387,6 +473,7 @@ end
 function M:append(task)
 	if M.is_promise(task) then
 		---@cast task promise
+		M._share_cancellation(self._tail or self, task)
 		self._tail = (self._tail or self):next(function(value)
 			task:resolve(value)
 			return task
@@ -415,8 +502,73 @@ end
 ---		pipeline:append(new_step)
 ---@return promise self
 function M:reset()
-	self._tail = M.resolved()
+	self._tail = M.create()
+	M._share_cancellation(self, self._tail)
+	self._tail:resolve(nil)
 	return self
+end
+
+
+---Reject pending child promises when a settled promise is cancelled.
+function M:_reject_cancel_children()
+	local children = self._cancel_children
+	if not children then
+		return
+	end
+
+	for child in pairs(children) do
+		if child:is_pending() then
+			child:reject(CANCELLED)
+		end
+		child:_reject_cancel_children()
+	end
+end
+
+
+---Cancel the promise chain.
+function M:_cancel_promise()
+	if self.cancellation.is_cancelled then
+		return
+	end
+	self.cancellation.is_cancelled = true
+	self.cancellation.on_cancel:trigger()
+end
+
+
+---Share the cancellation context from the parent promise with the child promise.
+---@param parent promise The parent promise
+---@param child promise The child promise
+function M._share_cancellation(parent, child)
+	local old_cancellation = child.cancellation
+	child.cancellation = parent.cancellation
+	if old_cancellation.on_cancel ~= child.cancellation.on_cancel then
+		-- event.subscribe accepts another event and forwards triggers to it
+		child.cancellation.on_cancel:subscribe(old_cancellation.on_cancel)
+	end
+	parent._cancel_children = parent._cancel_children or {}
+	parent._cancel_children[child] = true
+end
+
+
+---Invoke a callback with the given context and value.
+---@param callback function|event The callback to invoke.
+---@param context any|nil The context to call the callback with.
+---@param value any The value to pass to the callback.
+---@return any result The result of the callback.
+function M._invoke_callback(callback, context, value)
+	if event.is_event(callback) then
+		if context ~= nil then
+			return callback:trigger(context, value)
+		else
+			return callback:trigger(value)
+		end
+	else
+		if context ~= nil then
+			return callback(context, value)
+		else
+			return callback(value)
+		end
+	end
 end
 
 
@@ -425,5 +577,6 @@ PROMISE_METATABLE = {
 	__index = M,
 	__call = M.__call,
 }
+
 
 return M
