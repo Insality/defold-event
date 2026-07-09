@@ -277,6 +277,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 ### **V19**
 	- `promise:append(promise)` should wait end of this promise, instead of instant resolve
+	- Fix `event:clear` while `event:trigger` is in progress
 
 </details>
 
