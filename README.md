@@ -274,6 +274,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Resolve handlers are skipped on cancel; `.catch` and `.finally` still run.
 	- `promise.create` executor errors now reject the promise instead of propagating to the caller.
 	- Errors thrown in `:next` / `:catch` handlers now reject the returned promise.
+	- `promise:append(promise)` should wait end of this promise, instead of instant resolve
 
 </details>
 
