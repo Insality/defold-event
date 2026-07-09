@@ -350,8 +350,9 @@ promise:append([task])
 ```
 
 Append a task to this promise's internal sequence without reassigning.
-The task may return a value or a promise. If `task` is a promise, it is resolved with the
-incoming value and the pipeline tail follows that promise (same as returning it from a function).
+The task may return a value or a promise. If `task` is a promise, the pipeline waits for it
+to finish and adopts its result. The incoming value is not forwarded into `task`
+(same as `append(function() return task end)`).
 Returns self for chaining.
 Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
 

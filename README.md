@@ -31,10 +31,10 @@ It helps you decouple systems using publish-subscribe patterns, delayed queues, 
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/18.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/19.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/18.zip
+https://github.com/Insality/defold-event/archive/refs/tags/19.zip
 ```
 
 ### Library Size
@@ -274,6 +274,9 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Resolve handlers are skipped on cancel; `.catch` and `.finally` still run.
 	- `promise.create` executor errors now reject the promise instead of propagating to the caller.
 	- Errors thrown in `:next` / `:catch` handlers now reject the returned promise.
+
+### **V19**
+	- `promise:append(promise)` should wait end of this promise, instead of instant resolve
 
 </details>
 

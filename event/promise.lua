@@ -459,8 +459,9 @@ end
 
 
 ---Append a task to this promise's internal sequence without reassigning.
----The task may return a value or a promise. If `task` is a promise, it is resolved with the
----incoming value and the pipeline tail follows that promise (same as returning it from a function).
+---The task may return a value or a promise. If `task` is a promise, the pipeline waits for it
+---to finish and adopts its result. The incoming value is not forwarded into `task`
+---(same as `append(function() return task end)`).
 ---Returns self for chaining.
 ---Almost similar to `promise = promise:next(task)`, but without reassigning the promise.
 ---		pipeline:append(step1)
@@ -474,8 +475,7 @@ function M:append(task)
 	if M.is_promise(task) then
 		---@cast task promise
 		M._share_cancellation(self._tail or self, task)
-		self._tail = (self._tail or self):next(function(value)
-			task:resolve(value)
+		self._tail = (self._tail or self):next(function()
 			return task
 		end)
 		return self
