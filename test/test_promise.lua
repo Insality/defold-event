@@ -777,6 +777,70 @@ return function()
 			end)
 
 
+			it("Promise reject during on_cancel trigger does not skip remaining handlers", function()
+				local cleanup_order = {}
+				local tail
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						table.insert(cleanup_order, "first")
+						tail:reject("during cleanup")
+					end)
+					on_cancel:subscribe(function()
+						table.insert(cleanup_order, "second")
+					end)
+				end)
+				tail = root:next(function()
+					return promise.create()
+				end)
+
+				root:cancel()
+
+				assert(cleanup_order[1] == "first")
+				assert(cleanup_order[2] == "second")
+			end)
+
+
+			it("Promise on_cancel clear during trigger does not skip remaining handlers", function()
+				local cleanup_order = {}
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						table.insert(cleanup_order, "first")
+						on_cancel:clear()
+					end)
+					on_cancel:subscribe(function()
+						table.insert(cleanup_order, "second")
+					end)
+				end)
+
+				root:cancel()
+
+				assert(cleanup_order[1] == "first")
+				assert(cleanup_order[2] == "second")
+			end)
+
+
+			it("Promise cancel during on_cancel trigger does not skip remaining handlers", function()
+				local cleanup_order = {}
+				local other = nil
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						table.insert(cleanup_order, "first")
+						other:cancel()
+					end)
+					on_cancel:subscribe(function()
+						table.insert(cleanup_order, "second")
+					end)
+				end)
+				other = promise.create()
+
+				root:cancel()
+
+				assert(cleanup_order[1] == "first")
+				assert(cleanup_order[2] == "second")
+				assert(other:is_cancelled())
+			end)
+
+
 			it("Promise resolve after cancel rejects with cancelled sentinel", function()
 				local test_promise = promise.create(function(resolve, reject, on_cancel)
 					on_cancel:subscribe(function() end)

@@ -406,6 +406,13 @@ end
 ---Remove all callbacks subscribed to the event, effectively resetting it.
 ---		on_click_event:clear()
 function M:clear()
+	if is_defer_mode(self) then
+		for index = 1, #self do
+			self[index][4] = 0
+		end
+		return
+	end
+
 	for index = #self, 1, -1 do
 		self[index] = nil
 	end
