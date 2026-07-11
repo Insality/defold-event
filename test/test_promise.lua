@@ -1108,17 +1108,21 @@ return function()
 
 			it("Promise catch receives cancelled reason", function()
 				local catch_called = false
+				local cancellation_reason = nil
 				local test_promise = promise.create(function(resolve, reject, on_cancel)
 					on_cancel:subscribe(function() end)
 				end)
 
 				test_promise:catch(function(reason)
 					catch_called = true
+					cancellation_reason = reason
 				end)
 
 				test_promise:cancel()
 
 				assert(catch_called)
+				assert(promise.is_cancelled_reason(cancellation_reason))
+				assert(not promise.is_cancelled_reason("error"))
 				assert(test_promise:is_cancelled())
 			end)
 

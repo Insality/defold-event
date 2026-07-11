@@ -65,6 +65,19 @@ Context is the Defold script environment where the callback runs (`script`, `gui
 Context forwarding lets a callback execute in the correct place, so GUI-only calls such as `gui.set_text()` can be safely triggered from outside GUI code.
 
 
+## Modules Overview
+
+The library consists of five modules. Everything is built on top of `event`; pick the others when you need them.
+
+| Module | Require | Use it for |
+| ------ | ------- | ---------- |
+| **Event** | `require("event.event")` | A callback list on an object: subscribe, trigger, unsubscribe. |
+| **Events** | `require("event.events")` | Global events by string id, triggered from anywhere. |
+| **Queue** | `require("event.queue")` | Events that must not be lost: stored until a subscriber handles them. |
+| **Queues** | `require("event.queues")` | Global queues by string id. |
+| **Promise** | `require("event.promise")` | Asynchronous operations: chaining, parallel execution, cancellation. |
+
+
 ## Basic Usage
 
 ```lua
@@ -106,6 +119,29 @@ function final(self)
 end
 ```
 
+**Promises** for asynchronous operations:
+
+```lua
+local promise = require("event.promise")
+
+-- Wrap an async operation into a promise
+local function delay(seconds)
+	return promise.create(function(resolve, reject, on_cancel)
+		local handle = timer.delay(seconds, false, resolve)
+
+		on_cancel:subscribe(timer.cancel, handle)
+	end)
+end
+
+-- Chain steps; each handler can return a value or another promise
+delay(1)
+	:next(function() print("One second passed") end)
+	:next(function() return delay(2) end)
+	:next(function() print("Three seconds passed") end)
+	:catch(function(reason) print("Failed:", reason) end)
+```
+
+
 ## API Reference
 
 ### Quick API Reference
@@ -135,6 +171,40 @@ events.is_subscribed(event_id, callback, [callback_context])
 events.is_empty(event_id)
 events.clear(event_id)
 events.clear_all()
+
+local queue = require("event.queue")
+local queue_object = queue.create([handler], [handler_context])
+queue_object:push([data], [on_handle], [context])
+queue_object:subscribe(handler, [context])
+queue_object:subscribe_once(handler, [context])
+queue_object:unsubscribe(handler, [context])
+queue_object:process(event_handler, [context])
+queue_object:is_empty()
+queue_object:clear()
+
+local queues = require("event.queues")
+queues.push(queue_id, [data], [on_handle], [context])
+queues.subscribe(queue_id, handler, [context])
+queues.subscribe_once(queue_id, handler, [context])
+queues.unsubscribe(queue_id, handler, [context])
+queues.process(queue_id, event_handler, [context])
+queues.is_empty(queue_id)
+queues.clear(queue_id)
+
+local promise = require("event.promise")
+local promise_object = promise.create([executor], [context])
+promise_object(value) -- Alias for promise_object:resolve(value)
+promise_object:next([on_resolved], [on_rejected], [context])
+promise_object:catch(on_rejected, [context])
+promise_object:finally(on_finally, [context])
+promise_object:resolve([value])
+promise_object:reject([reason])
+promise_object:cancel()
+promise_object:append([task])
+promise.resolved([value])
+promise.rejected([reason])
+promise.all(promises)
+promise.race(promises)
 ```
 
 For detailed API documentation, please refer to:
@@ -148,7 +218,12 @@ For detailed API documentation, please refer to:
 
 ## Use Cases
 
-Read the [Use Cases](USE_CASES.md) file to see several examples of how to use the Event module in your Defold game development projects.
+The [Use Cases](USE_CASES.md) guide walks through practical examples for every module, from basic to advanced:
+
+- **Event**: component events, shared events module, `subscribe_once`, Lua annotations, calling GUI functions from GO scripts.
+- **Global Events**: extending single-callback Defold listeners like `window.set_listener`.
+- **Queues**: communication between `script` and `gui_script` regardless of initialization order, batched processing with `process`, one-at-a-time flows with `process_next`, pending storage that survives failed attempts.
+- **Promise**: wrapping asynchronous operations, chaining with `next`/`catch`/`finally`, parallel execution with `all`/`race`, animation pipelines with `append`, and cancellation.
 
 
 ## License
@@ -269,7 +344,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Added promise cancellation: `promise:cancel()` and `promise:is_cancelled()`.
 	- `promise.create` executor now receives an `on_cancel` event for cleanup subscriptions.
 	- Cancellation is shared across promise chains (`:next`, `:append`, adopted promises).
-	- Cancelled promises reject with an internal sentinel reason; use `promise:is_cancelled()` to detect cancellation.
+	- Cancelled promises reject with an internal sentinel reason; use `promise:is_cancelled()` or `promise.is_cancelled_reason(reason)` to detect cancellation.
 	- `promise.all` and `promise.race` cancel pending input promises when the result promise is cancelled.
 	- Resolve handlers are skipped on cancel; `.catch` and `.finally` still run.
 	- `promise.create` executor errors now reject the promise instead of propagating to the caller.
@@ -277,7 +352,9 @@ If you have any issues, questions or suggestions please [create an issue](https:
 
 ### **V19**
 	- `promise:append(promise)` should wait end of this promise, instead of instant resolve
+	- `promise.is_cancelled_reason` function to check if a reason is a cancellation reason
 	- Fix `event:clear` while `event:trigger` is in progress
+	- Documentation and API pages updates
 
 </details>
 

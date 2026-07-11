@@ -85,6 +85,7 @@ promise.rejected([reason])
 promise.all(promises)
 promise.race(promises)
 promise.is_promise([value])
+promise.is_cancelled_reason(reason)
 
 promise:next([on_resolved], [on_rejected], [context])
 promise:catch(on_rejected, [context])
