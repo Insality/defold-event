@@ -1,17 +1,95 @@
-## Use Cases
+# Use Cases
 
-This section illustrates practical examples of how to use the Event module in your Defold game development projects.
+This guide walks through practical examples of the Event library, ordered from basic to advanced. Start with the **Event** section — everything else in the library is built on top of it. Then move to **Global Events**, **Queues** and **Promise** when you need them.
 
-### 1. Scope Events Management
+| Module | When to use it |
+| ------ | -------------- |
+| [Event](#event) | You want a callback list on an object: subscribe, trigger, unsubscribe. |
+| [Global Events](#global-events) | You want to trigger events from anywhere using a string id. |
+| [Queues](#queues) | The trigger may happen *before* the subscriber exists, and the event must not be lost. |
+| [Promise](#promise) | You have asynchronous operations (animations, HTTP, timers) and want to chain, combine or cancel them. |
 
-You can create a event module that allows events to be triggered from anywhere within your game. This approach requires careful management of subscriptions and unsubscriptions to prevent errors.
+## Table of Contents
+
+- [Event](#event)
+  - [Add events to your components](#add-events-to-your-components)
+  - [Shared events module](#shared-events-module)
+  - [Subscribe for a single invocation](#subscribe-for-a-single-invocation)
+  - [Check the subscribers count](#check-the-subscribers-count)
+  - [Type-safe events with annotations](#type-safe-events-with-annotations)
+  - [Call GUI functions from a GO script](#call-gui-functions-from-a-go-script)
+- [Global Events](#global-events)
+  - [Extend single-callback Defold listeners](#extend-single-callback-defold-listeners)
+- [Queues](#queues)
+  - [Communicate between script and gui_script](#communicate-between-script-and-gui_script)
+- [Promise](#promise)
+  - [Use a promise as a completion callback](#use-a-promise-as-a-completion-callback)
+  - [Wrap an asynchronous operation](#wrap-an-asynchronous-operation)
+  - [Chain steps with next, catch and finally](#chain-steps-with-next-catch-and-finally)
+  - [Run operations in parallel with all and race](#run-operations-in-parallel-with-all-and-race)
+  - [Make an operation cancellable](#make-an-operation-cancellable)
+  - [Queue animations with append](#queue-animations-with-append)
+  - [Cancellation reference](#cancellation-reference)
+
+
+## Event
+
+### Add events to your components
+
+Give your components their own events so users of the component can react to what happens inside it. This is the most common pattern: for UI elements like buttons, for game entities, for anything with a lifecycle.
+
+```lua
+-- button.lua
+local event = require("event.event")
+
+local Button = {}
+
+
+function Button.create()
+	local instance = {
+		on_click = event.create()
+	}
+
+	-- Set up button click behavior
+	return setmetatable(instance, { __index = Button })
+end
+
+
+return Button
+```
+
+**Usage:**
+
+```lua
+local button = require("button")
+
+function init(self)
+	local my_button = button.create()
+
+	-- Subscribe to the button's on_click event
+	my_button.on_click:subscribe(function()
+		print("Button clicked!")
+	end)
+
+	-- Simulate a button click
+	my_button.on_click:trigger()
+end
+```
+
+When the component is destroyed together with its events, you don't need to unsubscribe — the subscriptions die with the event object.
+
+
+### Shared events module
+
+Create a Lua module with events that can be triggered from anywhere in your game. Since the module (and its events) outlives your scripts, remember to unsubscribe in `final` to avoid dangling subscriptions.
 
 ```lua
 -- game_events.lua
 local event = require("event.event")
+
 local M = {}
 
-M.on_game_start = event.create(),
+M.on_game_start = event.create()
 M.on_game_over = event.create()
 
 return M
@@ -23,74 +101,73 @@ return M
 local game_events = require("game_events")
 
 local function on_game_start(self)
-    -- Animate GUI elements somehow
+	-- Animate GUI elements somehow
 end
+
 
 local function on_game_over(self)
-    -- Animate GUI elements somehow
+	-- Animate GUI elements somehow
 end
 
+
 function init(self)
-    game_events.on_game_start:subscribe(on_game_start, self)
-    game_events.on_game_over:subscribe(on_game_over, self)
+	game_events.on_game_start:subscribe(on_game_start, self)
+	game_events.on_game_over:subscribe(on_game_over, self)
 end
+
 
 function final(self)
-    game_events.on_game_start:unsubscribe(on_game_start, self)
-    game_events.on_game_over:unsubscribe(on_game_over, self)
+	game_events.on_game_start:unsubscribe(on_game_start, self)
+	game_events.on_game_over:unsubscribe(on_game_over, self)
 end
 ```
 
+The second argument to `subscribe` is a context: it is passed as the first argument to the callback. Usually it is `self`, so the callback runs like a regular script function.
 
-### 2. Component-specific Events
 
-Design components with built-in events, enabling customizable behavior for instances of the component. This is particularly useful for UI elements like buttons where you want to bind specific actions to events like clicks.
+### Subscribe for a single invocation
+
+Use `subscribe_once` when a handler should run only one time; it is automatically unsubscribed after the first trigger. The same API exists on `event`, `events`, `queue` and `queues`.
 
 ```lua
--- button.lua
+local event = require("event.event")
+local events = require("event.events")
+
+-- Local event: callback runs once, then is removed
+local on_ready = event.create()
+on_ready:subscribe_once(function()
+	print("Ready! This will not run again.")
+end)
+on_ready:trigger() -- prints
+on_ready:trigger() -- does nothing
+
+-- Global event
+events.subscribe_once("game_over", function(self)
+	self:show_game_over_screen()
+end, self)
+```
+
+
+### Check the subscribers count
+
+You can inspect an event to check if there are any subscribers, or for debugging purposes.
+
+```lua
 local event = require("event.event")
 
-local Button = {}
+local my_event = event.create()
 
-function Button.create()
-    local instance = {
-        on_click = event.create()
-    }
-
-    -- Set up button click behavior
-    return setmetatable(instance, {__index = Button})
-end
-
-return Button
-```
-
-**Usage:**
-
-```lua
-local button = require("button")
-
-function init(self)
-    local my_button = button.create()
-
-    -- Subscribe to the button's on_click event
-    my_button.on_click:subscribe(function()
-        print("Button clicked!")
-    end)
-
-    -- If we destroy the scene with the button
-    -- We can do not unsubscribe from the event
-    -- Cause the event will be destroyed with the button
-
-    -- Simulate a button click
-    my_button.on_click:trigger()
-end
-
+print(#my_event) -- 0
+print(my_event:is_empty()) -- true
+print(my_event:subscribe(function() end)) -- true
+print(#my_event) -- 1
+print(my_event:is_empty()) -- false
 ```
 
 
-### 3. Lua annotations
+### Type-safe events with annotations
 
-You can use annotations to document your events and make them easier to understand.
+You can use Lua annotations to document your events, get autocompletion and let the linter check trigger and callback parameters.
 
 ```lua
 ---This event is triggered when the sound button is clicked.
@@ -105,7 +182,7 @@ local on_sound_click = event.create()
 
 -- This callback params will be checked by Lua linter
 on_sound_click:subscribe(function(is_sound_on)
-    print("Sound is on: ", is_sound_on)
+	print("Sound is on: ", is_sound_on)
 end)
 
 -- Trigger params will be checked by Lua linter
@@ -113,31 +190,13 @@ on_sound_click:trigger(true)
 ```
 
 
-### 4. Using Global Events to extend single callback Defold messages
+### Call GUI functions from a GO script
 
-You can use global events to extend single callback Defold messages. This is useful when you need to add multiple callbacks to a single message.
-
-```lua
-function init(self)
-    -- The window set_listener function allows to set only one callback, so we can use global events to extend it
-    window.set_listener(function(_, event, data)
-        events.trigger("window_event", event, data)
-    end)
-
-    -- Now we can subscribe to the window event at any place in the code
-    events.subscribe("window_event", function(event, data)
-        print("Window event: ", event, data)
-    end)
-end
-```
-
-### 5. Wrap GUI/GO functions to call it anywhere
-
-You can wrap a functions to remember it's context. As an example, in GUI we can wrap `gui.set_text` function to call it from attached GO script.
+An event created with a callback remembers the script context it was created in. This means you can wrap GUI functions in events and safely call them from a GO script — the library switches to the GUI context for the call.
 
 > For example I use "global" table to store all wrapped functions, but you can use any other way to store and pass it.
 
-> Instead GUI functions it can be any other your custom function, like "widget:set_color" for your UI components and you will able to call it directly with "Go to Reference" feature in your IDE.
+> Instead of GUI functions it can be any of your custom functions, like `widget:set_color` for your UI components, and you will be able to navigate to it directly with the "Go to Reference" feature in your IDE.
 
 ```lua
 -- GUI script
@@ -145,140 +204,217 @@ local event = require("event.event")
 local global = require("global.data")
 
 function init(self)
-    global.gui_set_text = event.create(gui.set_text)
-    global.gui_get_node = event.create(gui.get_node)
+	global.gui_set_text = event.create(gui.set_text)
+	global.gui_get_node = event.create(gui.get_node)
 end
 ```
-
 
 ```lua
 -- GO script
 local global = require("global.data")
 
 function init(self)
-    local node = global.gui_get_node("text")
-    global.gui_set_text(node, "Hello, World!")
+	local node = global.gui_get_node("text")
+	global.gui_set_text(node, "Hello, World!")
 end
 ```
 
-This one can be useful when you want to make some workarounds or any things what you want will fit in your game architecture. This is not a usual "Defold" way, but it can be useful in some cases.
+This can be useful for workarounds or anything that fits your game architecture. This is not a usual "Defold" way, but it can be handy in some cases.
 
 
-### 6. Get the Event subscribers count
+## Global Events
 
-You can get the count of the events to check if there are any subscribers or for debugging purposes.
+Global events are regular events stored behind string identifiers, so any part of the code can trigger or subscribe to them without sharing a module.
 
-```lua
-local event = require("event.event")
+### Extend single-callback Defold listeners
 
-local my_event = event.create()
-
-print(#my_event) -- 0
-print(my_event:is_empty()) -- true
-print(my_event:subscribe(function() end)) -- true
-print(#my_event) -- 1
-print(my_event:is_empty()) -- false
-```
-
-### 7. Using Queues module to communicate between script and gui_script
-
-Then you add a logic inside `init` function in `script` and `gui_script`, you can't ensure which one will be called first.
-
-With **Queues** module you can subscribe to the event in `script` and call it in `gui_script` or vice versa. The event will be proceed after the subscriber was initialized. So in case the trigger will be called before the subscriber, it will be queued and proceed after the subscriber will be initialized.
-
-Can be useful when you need to use `go` resource functions in `gui_script` or in other cases when you don't know is the subscriber already initialized or not but want to ensure that trigger will be proceed.
+Several Defold APIs accept only a single callback (`window.set_listener`, `sys.set_error_handler`, etc.). Forward that callback into a global event and any number of subscribers can react to it.
 
 ```lua
--- gui_script file
-local queues = require("event.queues")
-
-function on_get_atlas_path(self, data)
-    print("Atlas path: ", data)
-end
-
-function init(self)
-    queues.push("get_atlas_path", {
-        texture_name = gui.get_texture(self.node),
-        sender = msg.url(),
-    }, self.on_get_atlas_path, self)
-end
-```
-
-```lua
--- script file
-local queues = require("event.queues")
-
-local function get_atlas_path(self, request)
-    local my_url = msg.url()
-    my_url.fragment = nil
-
-    local copy_url = msg.url(request.sender)
-    copy_url.fragment = nil
-
-    -- This check should works well
-    if my_url ~= copy_url then
-        return nil
-    end
-
-    return go.get(request.sender, "textures", { key = request.texture_name })
-end
-
-function init(self)
-    queues.subscribe("get_atlas_path", get_atlas_path, self)
-end
-
-function final(self)
-    queues.unsubscribe("get_atlas_path", get_atlas_path, self)
-end
-```
-
-### 8. Using subscribe_once: subscribe for a single invocation
-
-Use `subscribe_once` when you want a handler to run only one time; it is automatically unsubscribed after the first trigger. Same API exists on `event`, `events`, `queue`, and `queues`.
-
-**Event / global events:**
-
-```lua
-local event = require("event.event")
 local events = require("event.events")
 
--- Local event: callback runs once, then is removed
-local on_ready = event.create()
-on_ready:subscribe_once(function()
-    print("Ready! This will not run again.")
-end)
-on_ready:trigger() -- prints
-on_ready:trigger() -- does nothing
+function init(self)
+	-- The window.set_listener function allows to set only one callback,
+	-- so we use a global event to extend it
+	window.set_listener(function(_, event, data)
+		events.trigger("window_event", event, data)
+	end)
 
--- Global event
-events.subscribe_once("game_over", function(self)
-    self:show_game_over_screen()
-end, self)
+	-- Now we can subscribe to the window event at any place in the code
+	events.subscribe("window_event", function(event, data)
+		print("Window event: ", event, data)
+	end)
+end
 ```
 
 
-### 9. Wrap an asynchronous callback with a promise
+## Queues
 
-A promise can be passed directly as a completion callback. Calling the promise resolves it, so this is enough for an asynchronous operation that only reports completion:
+A regular event trigger is lost if nobody is subscribed yet. A **queue** keeps pushed events until a subscriber handles them, so the order of initialization does not matter.
+
+### Communicate between script and gui_script
+
+When you put logic inside `init` of a `script` and a `gui_script`, you can't be sure which one runs first. With queues the request waits until the handler appears.
+
+```lua
+-- my_gui.gui_script
+local queues = require("event.queues")
+
+local function on_player_profile(self, profile)
+	gui.set_text(gui.get_node("name"), profile.name)
+end
+
+
+function init(self)
+	-- Safe to push even if the script below is not initialized yet:
+	-- the request waits in the queue until a subscriber handles it
+	queues.push("get_player_profile", { id = 1 }, on_player_profile, self)
+end
+```
+
+```lua
+-- my_go.script
+local queues = require("event.queues")
+
+local function get_player_profile(self, request)
+	-- A non-nil return value marks the event as handled and removes it
+	-- from the queue. The value is delivered to the on_handle callback of the push.
+	return self.profiles[request.id]
+end
+
+
+function init(self)
+	self.profiles = { { name = "Insality" } }
+	queues.subscribe("get_player_profile", get_player_profile, self)
+end
+
+
+function final(self)
+	queues.unsubscribe("get_player_profile", get_player_profile, self)
+end
+```
+
+This is also useful when a `gui_script` needs data only a `script` can access, for example `go.get` resource properties like texture paths.
+
+
+## Promise
+
+A promise represents a single asynchronous operation. It starts **pending**, then either **resolves** with a value or **rejects** with a reason — exactly once. You attach handlers with `next`, `catch` and `finally`, and you can cancel pending work with `cancel`.
+
+The examples below build on each other, from the simplest form to full pipelines.
+
+### Use a promise as a completion callback
+
+Calling a promise resolves it. So a pending promise can be passed directly to any API that expects a one-shot completion callback:
 
 ```lua
 local promise = require("event.promise")
 
-local task = promise.create()
+function init(self)
+	local task = promise.create()
 
-gui.animate(self.icon, "position.x", 300, gui.EASING_OUTSINE, 0.3, 0, task)
+	gui.animate(gui.get_node("icon"), "position.x", 300, gui.EASING_OUTSINE, 0.3, 0, task)
 
-task:next(function()
-	print("Animation finished")
+	task:next(function()
+		print("Animation finished")
+	end)
+end
+```
+
+This is enough for operations that only report completion. Use the executor form below when the operation can fail or needs cancellation cleanup.
+
+
+### Wrap an asynchronous operation
+
+`promise.create(executor)` calls the executor immediately with `resolve`, `reject` and an `on_cancel` event. Call `resolve(value)` on success and `reject(reason)` on failure:
+
+```lua
+local promise = require("event.promise")
+
+local function load_config(url)
+	return promise.create(function(resolve, reject)
+		http.request(url, "GET", function(_, _, response)
+			if response.status == 200 then
+				resolve(json.decode(response.response))
+			else
+				reject("Request failed with status " .. response.status)
+			end
+		end)
+	end)
+end
+```
+
+Subscribe to `on_cancel` when there is work to stop if the promise is cancelled:
+
+```lua
+local function delay(seconds)
+	return promise.create(function(resolve, reject, on_cancel)
+		local handle = timer.delay(seconds, false, resolve)
+		on_cancel:subscribe(timer.cancel, handle)
+	end)
+end
+```
+
+
+### Chain steps with next, catch and finally
+
+`next` returns a new promise. A handler may return a plain value for the next handler, or another promise — then the chain waits for that promise to finish.
+
+```lua
+load_config("https://example.com/config.json")
+	:next(function(config)
+		-- Returns another promise, the chain waits for it
+		return load_level(config.start_level)
+	end)
+	:next(function(level)
+		print("Level ready:", level.name)
+	end)
+	:catch(function(reason)
+		-- Handles a rejection from any earlier step
+		print("Loading failed:", reason)
+	end)
+	:finally(function()
+		-- Runs after resolve, reject or cancellation
+		hide_loading_spinner()
+	end)
+```
+
+Errors thrown inside handlers reject the chain as well, so one `catch` at the end covers the whole sequence.
+
+
+### Run operations in parallel with all and race
+
+`promise.all` resolves when every promise resolves, with an array of results. If any promise rejects, it rejects with that reason:
+
+```lua
+local promise = require("event.promise")
+
+promise.all({
+	load_config("https://example.com/config.json"),
+	delay(1), -- Show the splash screen at least 1 second
+}):next(function(results)
+	local config = results[1]
+	print("Loaded, starting level:", config.start_level)
 end)
 ```
 
-This pattern also works with other APIs that invoke a callback once. Use the executor form below when the operation can fail or needs cancellation cleanup.
+`promise.race` finishes with the first promise that resolves or rejects. A common use is a timeout:
+
+```lua
+promise.race({
+	load_config("https://example.com/config.json"),
+	delay(5):next(function()
+		return promise.rejected("timeout")
+	end),
+}):catch(function(reason)
+	print("Failed:", reason)
+end)
+```
 
 
-### 10. Promises for animations and other asynchronous work
+### Make an operation cancellable
 
-A promise wraps one asynchronous operation. Resolve it when the operation completes, reject it when the operation fails, and subscribe to `on_cancel` to stop any work that is still running.
+`cancel()` rejects a pending promise with an internal cancellation reason and triggers its `on_cancel` handlers, where you stop timers, animations or other external work.
 
 This small module turns a GUI animation into a cancellable promise:
 
@@ -290,7 +426,7 @@ local M = {}
 
 
 function M.start(node, position, duration)
-	-- You can pass an context as a first argument for the executor function
+	-- You can pass a context as a first argument for the executor function
 	return promise.create(M._animate, {
 		node = node,
 		position = position,
@@ -317,9 +453,7 @@ end
 return M
 ```
 
-#### Build a promise chain
-
-Use `next` to run steps in order. A handler may return a plain value for the next handler, or another promise. When it returns a promise, the chain waits for that promise to finish.
+Cancellation is shared across a chain: promises created by `next`, `catch` and `finally` cancel together, no matter which one you call `cancel()` on.
 
 ```lua
 local promise = require("event.promise")
@@ -335,10 +469,6 @@ local chain = animation
 		return move_animation.start(self.icon, vmath.vector3(300, 200, 0), 0.15)
 	end)
 
-chain:next(function()
-	print("Animation finished")
-end)
-
 chain:catch(function(reason)
 	if not promise.is_cancelled_reason(reason) then
 		print("Animation failed:", reason)
@@ -350,11 +480,12 @@ end)
 animation:cancel()
 ```
 
-Use `catch` for failures and `finally` for cleanup that must run after resolve, reject, or cancellation. If you still have a chain reference, use `chain:is_cancelled()`. If a callback only has the rejection reason, use `promise.is_cancelled_reason(reason)`.
+Cancellation is delivered as a rejection, so `catch` and `finally` handlers still run. If you have a promise reference, check `chain:is_cancelled()`; inside a rejection callback use `promise.is_cancelled_reason(reason)` to tell cancellation apart from a real failure.
 
-#### Queue animations with append
 
-`append` is useful when an object receives animation requests over time. It adds each task to the current tail, so only one queued animation runs at a time.
+### Queue animations with append
+
+`append` is useful when an object receives animation requests over time. It adds each task to the current tail of the promise, so only one queued animation runs at a time.
 
 ```lua
 local promise = require("event.promise")
@@ -402,21 +533,23 @@ pipeline:tail():next(function()
 end)
 ```
 
-#### How cancellation propagates
+A cancelled pipeline cannot be reused; create a new `promise.resolved()` pipeline.
 
-- **Single promise:** `cancel()` rejects a pending promise and triggers its `on_cancel` handlers once. Use those handlers to cancel timers, HTTP requests, animations, or other external work.
-- **Promise chain:** Promises created by `next`, `catch`, and `finally` share cancellation. Cancelling the head, middle, or tail stops pending work and skips later success handlers. Rejection handlers and `finally` still run, so use `promise.is_cancelled_reason(reason)` when no chain reference is available.
-- **Returned promise:** When a handler returns another promise, it joins the chain. Cancelling the chain also triggers that promise's cleanup.
-- **Append pipeline:** Cancelling the pipeline or its tail stops the active task and prevents queued tasks from starting. A cancelled pipeline cannot be reused; create a new `promise.resolved()` pipeline.
-- **`promise.all`:** Cancelling the combined promise cancels every pending input promise.
-- **`promise.race`:** Cancelling the race while it is pending cancels every pending input promise. A normally resolved race does not automatically cancel the other inputs.
-- **Already finished promise:** Its resolved or rejected state does not change, but cancelling it still cancels pending descendants that share its chain.
 
-Cancellation is safe to call more than once. Normal resolve or reject does not invoke `on_cancel`.
+### Cancellation reference
 
-#### Callback order during cancellation
+How `cancel()` propagates:
 
-Cancellation is handled as a rejection with an internal reason. For a pending promise chain, callbacks run synchronously in this order:
+- **Single promise:** a pending promise is rejected and its `on_cancel` handlers run once. Normal resolve or reject does not invoke `on_cancel`.
+- **Promise chain:** promises created by `next`, `catch` and `finally` share cancellation. Cancelling the head, middle or tail stops pending work and skips later success handlers; rejection handlers and `finally` still run.
+- **Returned promise:** when a handler returns another promise, it joins the chain and its cleanup is triggered by chain cancellation too.
+- **Append pipeline:** cancelling the pipeline or its tail stops the active task and prevents queued tasks from starting.
+- **`promise.all` / `promise.race`:** cancelling the combined promise cancels every pending input promise. A normally resolved race does not automatically cancel the other inputs.
+- **Already finished promise:** its state and value do not change, but cancelling it still cancels pending descendants that share its chain.
+
+Cancellation is idempotent — calling `cancel()` again does nothing.
+
+For a pending promise chain, callbacks run synchronously in this order:
 
 1. Every `on_cancel` subscriber runs once. This is where the active asynchronous operation should be stopped.
 2. The promise is rejected with the cancellation reason.
@@ -449,11 +582,3 @@ local chain = task
 
 task:cancel()
 ```
-
-Additional cases:
-
-- **Cancel a pending chain:** Cleanup runs first, then `catch` and `finally`. Later success steps are skipped.
-- **Cancel an active append pipeline:** The active task's cleanup runs, queued task functions are not called, then rejection handlers attached to the pipeline tail run.
-- **Cancel `promise.all` or `promise.race`:** Pending input promises are cancelled synchronously. Their cleanup and rejection handlers run before cancellation finishes.
-- **Cancel an already finished promise:** Its state and value do not change, and handlers that already ran are not called again. Its `on_cancel` cleanup still runs, followed by rejection handlers of any pending descendants.
-- **Call `cancel()` again:** Nothing runs again; cancellation is idempotent.
