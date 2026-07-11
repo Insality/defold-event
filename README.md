@@ -222,7 +222,7 @@ The [Use Cases](USE_CASES.md) guide walks through practical examples for every m
 
 - **Event**: component events, shared events module, `subscribe_once`, Lua annotations, calling GUI functions from GO scripts.
 - **Global Events**: extending single-callback Defold listeners like `window.set_listener`.
-- **Queues**: communication between `script` and `gui_script` regardless of initialization order.
+- **Queues**: communication between `script` and `gui_script` regardless of initialization order, batched processing with `process`, one-at-a-time flows with `process_next`, pending storage that survives failed attempts.
 - **Promise**: wrapping asynchronous operations, chaining with `next`/`catch`/`finally`, parallel execution with `all`/`race`, animation pipelines with `append`, and cancellation.
 
 

@@ -6,7 +6,7 @@ This guide walks through practical examples of the Event library, ordered from b
 | ------ | -------------- |
 | [Event](#event) | You want a callback list on an object: subscribe, trigger, unsubscribe. |
 | [Global Events](#global-events) | You want to trigger events from anywhere using a string id. |
-| [Queues](#queues) | The trigger may happen *before* the subscriber exists, and the event must not be lost. |
+| [Queues](#queues) | Events must not be lost: handle them whenever a subscriber appears, or store them and process on your own schedule. |
 | [Promise](#promise) | You have asynchronous operations (animations, HTTP, timers) and want to chain, combine or cancel them. |
 
 ## Table of Contents
@@ -22,6 +22,9 @@ This guide walks through practical examples of the Event library, ordered from b
   - [Extend single-callback Defold listeners](#extend-single-callback-defold-listeners)
 - [Queues](#queues)
   - [Communicate between script and gui_script](#communicate-between-script-and-gui_script)
+  - [Process events on your own schedule](#process-events-on-your-own-schedule)
+  - [Show popups one at a time](#show-popups-one-at-a-time)
+  - [Use a queue as a pending storage](#use-a-queue-as-a-pending-storage)
 - [Promise](#promise)
   - [Use a promise as a completion callback](#use-a-promise-as-a-completion-callback)
   - [Wrap an asynchronous operation](#wrap-an-asynchronous-operation)
@@ -250,7 +253,12 @@ end
 
 ## Queues
 
-A regular event trigger is lost if nobody is subscribed yet. A **queue** keeps pushed events until a subscriber handles them, so the order of initialization does not matter.
+A regular event trigger is lost if nobody is subscribed yet. A **queue** keeps pushed events until they are handled. There are two ways to consume a queue:
+
+- **Push style** — `subscribe` a handler; it is called for all pending events and for every future push.
+- **Pull style** — no subscribers at all; call `process` or `process_next` whenever *you* decide it is time to consume events.
+
+In both styles the handler must return a non-nil value to mark the event as handled and remove it from the queue. Returning nil keeps the event stored — this is what makes queues usable as a storage for "things to do later".
 
 ### Communicate between script and gui_script
 
@@ -295,6 +303,129 @@ end
 ```
 
 This is also useful when a `gui_script` needs data only a `script` can access, for example `go.get` resource properties like texture paths.
+
+
+### Process events on your own schedule
+
+A queue does not require subscribers. Push events from anywhere and consume them later with `process` — for example once per frame in `update`. This batches the work and decouples producers from the consumer completely.
+
+```lua
+-- Anywhere in the gameplay code: just push, nobody has to be subscribed
+local queues = require("event.queues")
+
+queues.push("damage_numbers", { amount = 10, position = go.get_position() })
+```
+
+```lua
+-- damage_numbers.gui_script
+local queues = require("event.queues")
+
+local function spawn_damage_number(self, data)
+	-- Spawn a floating text node at data.position
+	return true -- Non-nil result: the event is handled and removed
+end
+
+
+function update(self, dt)
+	-- Consume everything accumulated since the last frame
+	queues.process("damage_numbers", spawn_damage_number, self)
+end
+```
+
+
+### Show popups one at a time
+
+`process_next` handles exactly one event from the head of the queue. This makes it easy to build "one at a time" flows: popups, dialog lines, tutorial steps. New requests pile up in the queue and are pulled only when the current one is finished.
+
+```lua
+-- popup_manager.lua
+local queue = require("event.queue")
+
+local M = {}
+
+M.popups = queue.create()
+M.is_showing = false
+
+
+function M.show(popup_id, params)
+	M.popups:push({ popup_id = popup_id, params = params })
+	M._show_next()
+end
+
+
+---Call this when the current popup is closed
+function M.on_popup_closed()
+	M.is_showing = false
+	M._show_next()
+end
+
+
+function M._show_next()
+	if M.is_showing then
+		return
+	end
+
+	M.popups:process_next(M._open_popup)
+end
+
+
+function M._open_popup(data)
+	M.is_showing = true
+	msg.post("main:/popups", "show_popup", data)
+	return true -- Handled: remove the popup request from the queue
+end
+
+
+return M
+```
+
+
+### Use a queue as a pending storage
+
+Since unhandled events stay in the queue, a queue works as a storage of "things to do later". Return nil from the handler to keep an event for the next attempt. A typical example is an analytics batcher that survives failed sends:
+
+```lua
+-- analytics.lua
+local queue = require("event.queue")
+
+local M = {}
+
+M.pending = queue.create()
+
+
+function M.track(event_name, params)
+	M.pending:push({ name = event_name, params = params })
+end
+
+
+function M.flush()
+	-- Try to send everything; failed events stay queued for the next flush
+	M.pending:process(M._send)
+end
+
+
+function M._send(event_data)
+	local is_sent = send_to_server(event_data)
+	-- Non-nil removes the event, nil keeps it in the queue
+	return is_sent or nil
+end
+
+
+return M
+```
+
+You can also inspect the stored events without consuming them, for example to persist them between sessions:
+
+```lua
+-- Save unsent events before the game closes
+local unsent = {}
+for _, event_data in ipairs(M.pending:get_events()) do
+	table.insert(unsent, event_data.data)
+end
+sys.save(save_path, { analytics = unsent })
+```
+
+Related functions: `is_empty()` to check if anything is stored, `clear_events()` to drop the storage, `has_subscribers()` to check for push-style consumers.
 
 
 ## Promise
