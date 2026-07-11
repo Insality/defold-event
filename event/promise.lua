@@ -202,6 +202,18 @@ function M.is_promise(value)
 end
 
 
+---Check whether a rejection reason represents promise cancellation.
+---		p:catch(function(reason)
+---			if promise.is_cancelled_reason(reason) then return end
+---			print("Failed:", reason)
+---		end)
+---@param reason any The rejection reason to check.
+---@return boolean is_cancelled True if the reason represents cancellation.
+function M.is_cancelled_reason(reason)
+	return reason == CANCELLED
+end
+
+
 ---Resolve a promise with a value or another promise
 ---@param target_promise promise The promise to resolve
 ---@param value any The value or promise to resolve with

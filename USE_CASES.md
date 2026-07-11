@@ -255,3 +255,205 @@ events.subscribe_once("game_over", function(self)
     self:show_game_over_screen()
 end, self)
 ```
+
+
+### 9. Wrap an asynchronous callback with a promise
+
+A promise can be passed directly as a completion callback. Calling the promise resolves it, so this is enough for an asynchronous operation that only reports completion:
+
+```lua
+local promise = require("event.promise")
+
+local task = promise.create()
+
+gui.animate(self.icon, "position.x", 300, gui.EASING_OUTSINE, 0.3, 0, task)
+
+task:next(function()
+	print("Animation finished")
+end)
+```
+
+This pattern also works with other APIs that invoke a callback once. Use the executor form below when the operation can fail or needs cancellation cleanup.
+
+
+### 10. Promises for animations and other asynchronous work
+
+A promise wraps one asynchronous operation. Resolve it when the operation completes, reject it when the operation fails, and subscribe to `on_cancel` to stop any work that is still running.
+
+This small module turns a GUI animation into a cancellable promise:
+
+```lua
+-- move_animation.lua
+local promise = require("event.promise")
+
+local M = {}
+
+
+function M.start(node, position, duration)
+	-- You can pass an context as a first argument for the executor function
+	return promise.create(M._animate, {
+		node = node,
+		position = position,
+		duration = duration,
+	})
+end
+
+
+function M:_animate(resolve, reject, on_cancel)
+	on_cancel:subscribe(M._cancel, self)
+
+	gui.animate(self.node, "position", self.position, gui.EASING_OUTSINE, self.duration)
+	-- Context fields are also available to the cancellation callback.
+	self._timer_id = timer.delay(self.duration, false, resolve)
+end
+
+
+function M:_cancel()
+	gui.cancel_animation(self.node, "position")
+	timer.cancel(self._timer_id)
+end
+
+
+return M
+```
+
+#### Build a promise chain
+
+Use `next` to run steps in order. A handler may return a plain value for the next handler, or another promise. When it returns a promise, the chain waits for that promise to finish.
+
+```lua
+local promise = require("event.promise")
+local move_animation = require("move_animation")
+
+local animation = move_animation.start(self.icon, vmath.vector3(300, 200, 0), 0.3)
+
+local chain = animation
+	:next(function()
+		return move_animation.start(self.icon, vmath.vector3(300, 240, 0), 0.15)
+	end)
+	:next(function()
+		return move_animation.start(self.icon, vmath.vector3(300, 200, 0), 0.15)
+	end)
+
+chain:next(function()
+	print("Animation finished")
+end)
+
+chain:catch(function(reason)
+	if not promise.is_cancelled_reason(reason) then
+		print("Animation failed:", reason)
+	end
+end)
+
+-- Cancelling any promise marks the shared chain as cancelled.
+-- The currently running GUI animation is stopped by its on_cancel handler.
+animation:cancel()
+```
+
+Use `catch` for failures and `finally` for cleanup that must run after resolve, reject, or cancellation. If you still have a chain reference, use `chain:is_cancelled()`. If a callback only has the rejection reason, use `promise.is_cancelled_reason(reason)`.
+
+#### Queue animations with append
+
+`append` is useful when an object receives animation requests over time. It adds each task to the current tail, so only one queued animation runs at a time.
+
+```lua
+local promise = require("event.promise")
+local move_animation = require("move_animation")
+
+function init(self)
+	self.animation_pipeline = promise.resolved()
+end
+
+
+function on_message(self, message_id)
+	if message_id == hash("bounce") then
+		self.animation_pipeline:append(function()
+			return move_animation.start(self.icon, vmath.vector3(300, 240, 0), 0.1)
+		end)
+		self.animation_pipeline:append(function()
+			return move_animation.start(self.icon, vmath.vector3(300, 200, 0), 0.1)
+		end)
+	end
+end
+
+
+function final(self)
+	self.animation_pipeline:cancel()
+end
+```
+
+Pass a function that creates and returns the animation promise. Promise executors run immediately, so an already-created promise may start its animation before its turn:
+
+```lua
+-- Starts only when all earlier tasks have finished.
+pipeline:append(function()
+	return move_animation.start(node, target, 0.2)
+end)
+
+-- The move starts now; append only makes the pipeline wait for it.
+pipeline:append(move_animation.start(node, target, 0.2))
+```
+
+Use `pipeline:tail()` to observe all work currently queued:
+
+```lua
+pipeline:tail():next(function()
+	print("Everything currently queued has finished")
+end)
+```
+
+#### How cancellation propagates
+
+- **Single promise:** `cancel()` rejects a pending promise and triggers its `on_cancel` handlers once. Use those handlers to cancel timers, HTTP requests, animations, or other external work.
+- **Promise chain:** Promises created by `next`, `catch`, and `finally` share cancellation. Cancelling the head, middle, or tail stops pending work and skips later success handlers. Rejection handlers and `finally` still run, so use `promise.is_cancelled_reason(reason)` when no chain reference is available.
+- **Returned promise:** When a handler returns another promise, it joins the chain. Cancelling the chain also triggers that promise's cleanup.
+- **Append pipeline:** Cancelling the pipeline or its tail stops the active task and prevents queued tasks from starting. A cancelled pipeline cannot be reused; create a new `promise.resolved()` pipeline.
+- **`promise.all`:** Cancelling the combined promise cancels every pending input promise.
+- **`promise.race`:** Cancelling the race while it is pending cancels every pending input promise. A normally resolved race does not automatically cancel the other inputs.
+- **Already finished promise:** Its resolved or rejected state does not change, but cancelling it still cancels pending descendants that share its chain.
+
+Cancellation is safe to call more than once. Normal resolve or reject does not invoke `on_cancel`.
+
+#### Callback order during cancellation
+
+Cancellation is handled as a rejection with an internal reason. For a pending promise chain, callbacks run synchronously in this order:
+
+1. Every `on_cancel` subscriber runs once. This is where the active asynchronous operation should be stopped.
+2. The promise is rejected with the cancellation reason.
+3. Rejection handlers registered with `next(nil, on_rejected)` or `catch` run in chain order.
+4. `finally` handlers run as the rejection continues through the chain.
+
+Success handlers registered with `next(on_resolved)` do not run.
+
+```lua
+local task = promise.create(function(resolve, reject, on_cancel)
+	on_cancel:subscribe(function()
+		print("1. Stop the asynchronous operation")
+	end)
+end)
+
+local chain = task
+	:next(function()
+		print("This is not called")
+	end)
+	:catch(function(reason)
+		if promise.is_cancelled_reason(reason) then
+			print("2. Handle cancellation")
+			return
+		end
+		print("Handle failure:", reason)
+	end)
+	:finally(function()
+		print("3. Final cleanup")
+	end)
+
+task:cancel()
+```
+
+Additional cases:
+
+- **Cancel a pending chain:** Cleanup runs first, then `catch` and `finally`. Later success steps are skipped.
+- **Cancel an active append pipeline:** The active task's cleanup runs, queued task functions are not called, then rejection handlers attached to the pipeline tail run.
+- **Cancel `promise.all` or `promise.race`:** Pending input promises are cancelled synchronously. Their cleanup and rejection handlers run before cancellation finishes.
+- **Cancel an already finished promise:** Its state and value do not change, and handlers that already ran are not called again. Its `on_cancel` cleanup still runs, followed by rejection handlers of any pending descendants.
+- **Call `cancel()` again:** Nothing runs again; cancellation is idempotent.

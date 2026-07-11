@@ -13,6 +13,7 @@ A promise represents a single asynchronous operation that will either resolve wi
 - [all](#all)
 - [race](#race)
 - [is_promise](#is_promise)
+- [is_cancelled_reason](#is_cancelled_reason)
 - [next](#next)
 - [catch](#catch)
 - [finally](#finally)
@@ -165,6 +166,32 @@ Check if a value is a promise object
 if promise.is_promise(my_value) then
 	my_value:next(handler)
 end
+```
+### is_cancelled_reason
+
+---
+```lua
+promise.is_cancelled_reason(reason)
+```
+
+Check whether a rejection reason represents promise cancellation.
+This is useful in rejection callbacks where the promise instance is not available.
+
+- **Parameters:**
+	- `reason` *(any)*: The rejection reason to check.
+
+- **Returns:**
+	- `is_cancelled` *(boolean)*: True if the reason represents cancellation.
+
+- **Example Usage:**
+
+```lua
+load_data():catch(function(reason)
+	if promise.is_cancelled_reason(reason) then
+		return
+	end
+	print("Failed:", reason)
+end)
 ```
 ### next
 
