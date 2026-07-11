@@ -353,6 +353,7 @@ If you have any issues, questions or suggestions please [create an issue](https:
 ### **V19**
 	- `promise:append(promise)` should wait end of this promise, instead of instant resolve
 	- `promise.is_cancelled_reason` function to check if a reason is a cancellation reason
+	- Fix `event:clear` while `event:trigger` is in progress
 	- Documentation and API pages updates
 
 </details>

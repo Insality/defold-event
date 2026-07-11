@@ -173,6 +173,27 @@ return function()
 			assert(test_event:is_empty() == true)
 		end)
 
+		it("re-entrant trigger: deferred clear does not skip remaining handlers", function()
+			local test_event = event.create()
+			local order = {}
+			local a = function()
+				table.insert(order, "a")
+				test_event:clear()
+			end
+			local b = function()
+				table.insert(order, "b")
+			end
+
+			test_event:subscribe(a)
+			test_event:subscribe(b)
+			test_event:trigger()
+
+			assert(order[1] == "a")
+			assert(order[2] == "b")
+			assert(#order == 2)
+			assert(test_event:is_empty())
+		end)
+
 		it("Event trigger returns result", function()
 			local test_event = event.create()
 			local f = function() return "result" end

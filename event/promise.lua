@@ -446,10 +446,6 @@ function M:reject(reason)
 	-- Clear handlers to prevent memory leaks
 	self.on_resolve:clear()
 	self.on_reject:clear()
-
-	if reason == CANCELLED then
-		self.cancellation.on_cancel:clear()
-	end
 end
 
 
