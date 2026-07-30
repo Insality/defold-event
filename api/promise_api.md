@@ -32,7 +32,7 @@ A promise represents a single asynchronous operation that will either resolve wi
 
 - [state](#state)
 - [value](#value)
-- [cancellation](#cancellation)
+- [on_cancel](#on_cancel)
 
 
 
@@ -442,6 +442,6 @@ pipeline:append(new_step)
 <a name="value"></a>
 - **value** (_any_): The resolved value or rejection reason
 
-<a name="cancellation"></a>
-- **cancellation** (_promise.cancelled_context_): Shared cancelled context for a promise chain
+<a name="on_cancel"></a>
+- **on_cancel** (_event_): Event for cancellation cleanup subscriptions (shared across the promise chain)
 

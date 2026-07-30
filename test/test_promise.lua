@@ -696,6 +696,38 @@ return function()
 			end)
 
 
+			it("Promise.on_cancel is shared with cancellation context", function()
+				local cleanup_called = false
+				local test_promise = promise.create()
+
+				assert(test_promise.on_cancel == test_promise.cancellation.on_cancel)
+
+				test_promise.on_cancel:subscribe(function()
+					cleanup_called = true
+				end)
+				test_promise:cancel()
+
+				assert(cleanup_called)
+			end)
+
+
+			it("Promise.on_cancel stays in sync after next", function()
+				local cleanup_called = false
+				local root = promise.create()
+				local child = root:next(function(value) return value end)
+
+				assert(child.on_cancel == root.on_cancel)
+				assert(child.on_cancel == child.cancellation.on_cancel)
+
+				child.on_cancel:subscribe(function()
+					cleanup_called = true
+				end)
+				root:cancel()
+
+				assert(cleanup_called)
+			end)
+
+
 			it("Promise.create passes on_cancel with context", function()
 				local context = { id = "ctx" }
 				local received_context = nil

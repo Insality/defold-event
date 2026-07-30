@@ -31,10 +31,10 @@ It helps you decouple systems using publish-subscribe patterns, delayed queues, 
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/19.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/20.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/19.zip
+https://github.com/Insality/defold-event/archive/refs/tags/20.zip
 ```
 
 ### Library Size
@@ -355,6 +355,10 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- `promise.is_cancelled_reason` function to check if a reason is a cancellation reason
 	- Fix `event:clear` while `event:trigger` is in progress
 	- Documentation and API pages updates
+
+### **V20**
+	- Added `promise.on_cancel` for cleanup subscriptions (replaces public `promise.cancellation.on_cancel`)
+	- Made `promise.cancellation` private
 
 </details>
 

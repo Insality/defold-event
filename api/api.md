@@ -104,5 +104,5 @@ promise:reset()
 
 promise.state
 promise.value
-promise.cancellation
+promise.on_cancel
 ```

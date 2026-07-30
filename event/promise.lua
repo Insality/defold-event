@@ -12,7 +12,8 @@ local event = require("event.event")
 ---@class promise: function
 ---@field state promise.state Current state of the promise (pending, resolved, rejected)
 ---@field value any The resolved value or rejection reason
----@field cancellation promise.cancelled_context Shared cancelled context for a promise chain
+---@field on_cancel event Event for cancellation cleanup subscriptions (shared across the promise chain)
+---@field private cancellation promise.cancelled_context Shared cancelled context for a promise chain
 ---@field private on_resolve event Event for resolve handlers
 ---@field private on_reject event Event for rejection handlers
 ---@field private _tail promise|nil Internal tail promise for append chaining
@@ -36,10 +37,13 @@ local CANCELLED = { "promise.cancelled" }
 ---@param context any|nil The context to call the executor function with.
 ---@return promise promise_instance A new promise instance.
 function M.create(executor, context)
+	local cancellation = { is_cancelled = false, on_cancel = event.create() }
+
 	local self = setmetatable({
 		state = "pending",
 		value = nil,
-		cancellation = { is_cancelled = false, on_cancel = event.create() },
+		cancellation = cancellation,
+		on_cancel = cancellation.on_cancel,
 		on_resolve = event.create(),
 		on_reject = event.create()
 	}, PROMISE_METATABLE)
@@ -52,9 +56,9 @@ function M.create(executor, context)
 
 		local ok, err
 		if context ~= nil then
-			ok, err = pcall(executor, context, resolve_func, reject_func, self.cancellation.on_cancel)
+			ok, err = pcall(executor, context, resolve_func, reject_func, self.on_cancel)
 		else
-			ok, err = pcall(executor, resolve_func, reject_func, self.cancellation.on_cancel)
+			ok, err = pcall(executor, resolve_func, reject_func, self.on_cancel)
 		end
 
 		if not ok then
@@ -109,7 +113,7 @@ function M.all(promises)
 	local completed_count = 0
 	local total_count = #promises
 
-	result_promise.cancellation.on_cancel:subscribe(function()
+	result_promise.on_cancel:subscribe(function()
 		for _, promise_instance in ipairs(promises) do
 			if promise_instance:is_pending() then
 				promise_instance:cancel()
@@ -158,7 +162,7 @@ function M.race(promises)
 
 	local result_promise = M.create()
 
-	result_promise.cancellation.on_cancel:subscribe(function()
+	result_promise.on_cancel:subscribe(function()
 		for _, promise_instance in ipairs(promises) do
 			if promise_instance:is_pending() then
 				promise_instance:cancel()
@@ -540,8 +544,8 @@ function M:_cancel_promise()
 		return
 	end
 	self.cancellation.is_cancelled = true
-	self.cancellation.on_cancel:trigger()
-	self.cancellation.on_cancel:clear()
+	self.on_cancel:trigger()
+	self.on_cancel:clear()
 end
 
 
@@ -552,9 +556,10 @@ end
 function M._share_cancellation(parent, child)
 	local old_cancellation = child.cancellation
 	child.cancellation = parent.cancellation
-	if old_cancellation.on_cancel ~= child.cancellation.on_cancel then
+	child.on_cancel = parent.on_cancel
+	if old_cancellation.on_cancel ~= child.on_cancel then
 		-- event.subscribe accepts another event and forwards triggers to it
-		child.cancellation.on_cancel:subscribe(old_cancellation.on_cancel)
+		child.on_cancel:subscribe(old_cancellation.on_cancel)
 	end
 	parent._cancel_children = parent._cancel_children or {}
 	parent._cancel_children[child] = true
