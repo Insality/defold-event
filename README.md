@@ -9,7 +9,7 @@
 
 # Event
 
-**Event** is a lightweight event toolkit for the [Defold](https://defold.com/) game engine.
+**Event** is a lightweight signals toolkit for the [Defold](https://defold.com/) game engine.
 It helps you decouple systems using publish-subscribe patterns, delayed queues, and promise-like chains while keeping Defold script context safe.
 
 
