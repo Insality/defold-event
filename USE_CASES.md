@@ -545,7 +545,7 @@ end)
 
 ### Make an operation cancellable
 
-`cancel()` rejects a pending promise with an internal cancellation reason and triggers its `on_cancel` handlers, where you stop timers, animations or other external work.
+`cancel()` rejects a pending promise with an internal cancellation reason and triggers its `on_cancel` handlers, where you stop timers, animations or other external work. A call against a promise that has already finished, with no pending descendants, does nothing — callers do not need to guard with `is_pending()`. If you need work to run after completion as well as cancellation, use `finally`.
 
 This small module turns a GUI animation into a cancellable promise:
 
@@ -676,7 +676,7 @@ How `cancel()` propagates:
 - **Returned promise:** when a handler returns another promise, it joins the chain and its cleanup is triggered by chain cancellation too.
 - **Append pipeline:** cancelling the pipeline or its tail stops the active task and prevents queued tasks from starting.
 - **`promise.all` / `promise.race`:** cancelling the combined promise cancels every pending input promise. A normally resolved race does not automatically cancel the other inputs.
-- **Already finished promise:** its state and value do not change, but cancelling it still cancels pending descendants that share its chain.
+- **Already finished promise:** its state and value do not change. If a descendant is still pending, cancelling the finished promise stops that work. If the whole chain has already settled, `cancel()` is a no-op: `on_cancel` does not run and `is_cancelled()` stays false. Use `finally` for cleanup that must run after completion.
 
 Cancellation is idempotent — calling `cancel()` again does nothing.
 

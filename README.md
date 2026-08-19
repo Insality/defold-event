@@ -360,6 +360,10 @@ If you have any issues, questions or suggestions please [create an issue](https:
 	- Added `promise.on_cancel` for cleanup subscriptions (replaces public `promise.cancellation.on_cancel`)
 	- Made `promise.cancellation` private
 
+### **V21**
+	- `promise:cancel()` no longer runs `on_cancel` or marks the chain cancelled when the promise and all of its descendants have already settled. Cancelling a settled head still stops a pending tail.
+	- Call sites that guarded with `if p:is_pending() then p:cancel() end` can drop the guard. Cleanup that must run after a normal resolve belongs in `finally`, not `on_cancel`.
+
 </details>
 
 ## ❤️ Support project ❤️

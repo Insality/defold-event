@@ -453,7 +453,11 @@ function M:reject(reason)
 end
 
 
----Cancel the promise chain. Triggers cleanup and rejects if still pending.
+---Cancel in-progress work in this promise chain.
+---A pending promise is rejected with the cancelled reason and `on_cancel` runs.
+---A settled promise is left as-is; pending descendants linked via `next` / `append` / adopt
+---are still rejected, and they trigger the shared `on_cancel`.
+---If nothing is still pending, this is a no-op.
 ---		my_promise:cancel()
 function M:cancel()
 	if self.cancellation.is_cancelled then
@@ -462,8 +466,6 @@ function M:cancel()
 
 	if self:is_pending() then
 		self:reject(CANCELLED)
-	else
-		self:_cancel_promise()
 	end
 
 	self:_reject_cancel_children()

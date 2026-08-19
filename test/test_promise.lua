@@ -561,6 +561,65 @@ return function()
 			assert(promise2:is_cancelled())
 		end)
 
+		it("Promise.all cancel skips settled members", function()
+			local settled_cleanup = false
+			local pending_cleanup = false
+			local settled = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					settled_cleanup = true
+				end)
+				resolve("done")
+			end)
+			local pending = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					pending_cleanup = true
+				end)
+			end)
+
+			local all_promise = promise.all({ settled, pending })
+			all_promise:cancel()
+
+			assert(all_promise:is_cancelled())
+			assert(pending_cleanup)
+			assert(pending:is_cancelled())
+			assert(not settled_cleanup)
+			assert(not settled:is_cancelled())
+			assert(settled:is_resolved())
+			assert(settled.value == "done")
+		end)
+
+		it("Promise.race cancel skips settled members", function()
+			local settled_cleanup = false
+			local pending_cleanup = false
+			local settled = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					settled_cleanup = true
+				end)
+				resolve("done")
+			end)
+			local pending = promise.create(function(resolve, reject, on_cancel)
+				on_cancel:subscribe(function()
+					pending_cleanup = true
+				end)
+			end)
+
+			local race_promise = promise.race({ settled, pending })
+			assert(race_promise:is_resolved())
+
+			-- After the race has settled, cancel the inputs directly. Settled
+			-- members are a no-op; pending members still clean up.
+			settled:cancel()
+			pending:cancel()
+
+			assert(pending_cleanup)
+			assert(pending:is_cancelled())
+			assert(not settled_cleanup)
+			assert(not settled:is_cancelled())
+			assert(settled:is_resolved())
+			assert(race_promise:is_resolved())
+			assert(not race_promise:is_cancelled())
+		end)
+
 		it("Promise.create rejects when executor throws", function()
 			local test_promise = promise.create(function()
 				error("executor_error")
@@ -771,6 +830,24 @@ return function()
 				test_promise:cancel()
 
 				assert(cleanup_count == 1)
+			end)
+
+
+			it("Promise cancel on settled promise without children is a no-op", function()
+				local cleanup_called = false
+				local test_promise = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_called = true
+					end)
+					resolve("done")
+				end)
+
+				test_promise:cancel()
+
+				assert(not cleanup_called)
+				assert(not test_promise:is_cancelled())
+				assert(test_promise:is_resolved())
+				assert(test_promise.value == "done")
 			end)
 
 
@@ -1007,6 +1084,59 @@ return function()
 				assert(root:is_cancelled())
 				assert(tail:is_rejected())
 				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise cancel twice on settled head with pending tail runs on_cancel once", function()
+				local cleanup_count = 0
+				local root = promise.create()
+				local tail = root:next(function()
+					return promise.create(function(resolve, reject, on_cancel)
+						on_cancel:subscribe(function()
+							cleanup_count = cleanup_count + 1
+						end)
+					end)
+				end)
+
+				root:resolve("go")
+				root:cancel()
+				root:cancel()
+
+				assert(cleanup_count == 1)
+				assert(tail:is_cancelled())
+			end)
+
+
+			it("Promise cancel on fully settled chain is a no-op", function()
+				local cleanup_count = 0
+				local root = promise.create(function(resolve, reject, on_cancel)
+					on_cancel:subscribe(function()
+						cleanup_count = cleanup_count + 1
+					end)
+					resolve(1)
+				end)
+				local middle = root:next(function(value)
+					return value + 1
+				end)
+				local tail = middle:next(function(value)
+					return value + 1
+				end)
+
+				assert(root:is_resolved())
+				assert(middle:is_resolved())
+				assert(tail:is_resolved())
+
+				root:cancel()
+				middle:cancel()
+				tail:cancel()
+
+				assert(cleanup_count == 0)
+				assert(not root:is_cancelled())
+				assert(not middle:is_cancelled())
+				assert(not tail:is_cancelled())
+				assert(root:is_resolved())
+				assert(middle:is_resolved())
+				assert(tail:is_resolved())
 			end)
 
 

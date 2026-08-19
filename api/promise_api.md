@@ -362,7 +362,10 @@ my_promise:reject("failed")
 promise:cancel()
 ```
 
-Cancel the promise chain. Triggers cleanup and rejects if still pending.
+Cancel in-progress work in this promise chain.
+A pending promise is rejected with the cancelled reason and `on_cancel` runs.
+A settled promise is left as-is; pending descendants in the chain are still cancelled.
+If nothing is still pending, this is a no-op.
 
 - **Example Usage:**
 
