@@ -4,14 +4,17 @@
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/insality/defold-event/ci_workflow.yml?style=for-the-badge)](https://github.com/Insality/defold-event/actions)
 [![codecov](https://img.shields.io/codecov/c/github/Insality/defold-event?style=for-the-badge)](https://codecov.io/gh/Insality/defold-event)
 
-[![Github-sponsors](https://img.shields.io/badge/sponsor-30363D?style=for-the-badge&logo=GitHub-Sponsors&logoColor=#EA4AAA)](https://github.com/sponsors/insality) [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/insality) [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/insality)
-
-
-# Event
 
 **Event** is a lightweight signals toolkit for the [Defold](https://defold.com/) game engine.
 It helps you decouple systems using publish-subscribe patterns, delayed queues, and promise-like chains while keeping Defold script context safe.
 
+
+```lua
+on_click:subscribe(handler, self)           -- Event: local pub-sub
+events.trigger("player_died")               -- Events: global by id
+queue:push(item)                            -- Queue: kept until handled
+delay(1):next(show):catch(fail)             -- Promise: async chain
+```
 
 ## Features
 
