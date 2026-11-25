@@ -787,6 +787,32 @@ return function()
 			end)
 
 
+			it("Promise next does not add subscribers to shared on_cancel", function()
+				local root = promise.create()
+				local tail = root
+				for _ = 1, 10 do
+					tail = tail:next(function(value) return value end)
+				end
+				root:next(function(value) return value end)
+
+				assert(root.on_cancel:is_empty())
+				assert(tail.on_cancel == root.on_cancel)
+				assert(tail.cancellation == root.cancellation)
+
+				local cleanup_count = 0
+				root.on_cancel:subscribe(function()
+					cleanup_count = cleanup_count + 1
+				end)
+				tail:cancel()
+
+				assert(cleanup_count == 1)
+				assert(root:is_cancelled())
+				assert(root:is_pending())
+				assert(tail:is_rejected())
+				assert(promise.is_cancelled_reason(tail.value))
+			end)
+
+
 			it("Promise.create passes on_cancel with context", function()
 				local context = { id = "ctx" }
 				local received_context = nil

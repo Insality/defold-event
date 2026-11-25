@@ -37,16 +37,7 @@ local CANCELLED = { "promise.cancelled" }
 ---@param context any|nil The context to call the executor function with.
 ---@return promise promise_instance A new promise instance.
 function M.create(executor, context)
-	local cancellation = { is_cancelled = false, on_cancel = event.create() }
-
-	local self = setmetatable({
-		state = "pending",
-		value = nil,
-		cancellation = cancellation,
-		on_cancel = cancellation.on_cancel,
-		on_resolve = event.create(),
-		on_reject = event.create()
-	}, PROMISE_METATABLE)
+	local self = M._create_pending({ is_cancelled = false, on_cancel = event.create() })
 
 	if executor then
 		---@cast executor function
@@ -289,8 +280,9 @@ end
 ---@param context any|nil The context to call the handlers with.
 ---@return promise new_promise A new promise representing the result of the handlers.
 function M:next(on_resolved, on_rejected, context)
-	local new_promise = M.create()
-	M._share_cancellation(self, new_promise)
+	-- The new promise uses the parent cancellation from the start: nothing holds its own on_cancel to forward
+	local new_promise = M._create_pending(self.cancellation)
+	M._add_cancel_child(self, new_promise)
 
 	if self:is_resolved() then
 		handle_callback_result(new_promise, on_resolved, self.value, false, context)
@@ -563,8 +555,33 @@ function M._share_cancellation(parent, child)
 		-- event.subscribe accepts another event and forwards triggers to it
 		child.on_cancel:subscribe(old_cancellation.on_cancel)
 	end
+	M._add_cancel_child(parent, child)
+end
+
+
+---Link the child promise to be rejected when the parent chain is cancelled.
+---@private
+---@param parent promise The parent promise
+---@param child promise The child promise
+function M._add_cancel_child(parent, child)
 	parent._cancel_children = parent._cancel_children or {}
 	parent._cancel_children[child] = true
+end
+
+
+---Create a pending promise without executor that uses the given cancellation context.
+---@private
+---@param cancellation promise.cancelled_context The cancellation context of the promise chain
+---@return promise promise_instance A new pending promise.
+function M._create_pending(cancellation)
+	return setmetatable({
+		state = "pending",
+		value = nil,
+		cancellation = cancellation,
+		on_cancel = cancellation.on_cancel,
+		on_resolve = event.create(),
+		on_reject = event.create()
+	}, PROMISE_METATABLE)
 end
 
 
