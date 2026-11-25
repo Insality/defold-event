@@ -258,5 +258,133 @@ return function()
 
 			go.delete(object)
 		end)
+
+		for _, mode in ipairs({ "pcall", "xpcall", "none" }) do
+			it(mode .. ": trigger keeps args count with trailing nil, with and without context", function()
+				event.set_mode(mode)
+
+				local test_event = event.create()
+				local ctx = {}
+				local count_with_context, count_without_context
+				local context_arg
+				test_event:subscribe(function(self, ...)
+					context_arg = self
+					count_with_context = select("#", ...)
+				end, ctx)
+				test_event:subscribe(function(...)
+					count_without_context = select("#", ...)
+				end)
+
+				test_event:trigger(nil, 2, nil, nil)
+				assert(context_arg == ctx)
+				assert(count_with_context == 4)
+				assert(count_without_context == 4)
+
+				test_event:trigger()
+				assert(count_with_context == 0)
+				assert(count_without_context == 0)
+			end)
+
+			it(mode .. ": trigger returns only the first value of the last callback", function()
+				event.set_mode(mode)
+
+				local test_event = event.create()
+				test_event:subscribe(function() return "first", "skipped" end)
+				test_event:subscribe(function(self) return self, "skipped" end, "last")
+
+				assert(select("#", test_event:trigger()) == 1)
+				assert(test_event:trigger() == "last")
+			end)
+
+			it(mode .. ": callback subscribed during trigger is not called in the same trigger", function()
+				event.set_mode(mode)
+
+				local test_event = event.create()
+				local count_new = 0
+				local on_new = function() count_new = count_new + 1 end
+				test_event:subscribe(function() test_event:subscribe(on_new) end)
+
+				test_event:trigger()
+				assert(count_new == 0)
+				test_event:trigger()
+				assert(count_new == 1)
+			end)
+
+			it(mode .. ": callback unsubscribed during trigger is still called in the same trigger", function()
+				event.set_mode(mode)
+
+				local test_event = event.create()
+				local count_b = 0
+				local b = function() count_b = count_b + 1 end
+				test_event:subscribe(function() test_event:unsubscribe(b) end)
+				test_event:subscribe(b)
+
+				test_event:trigger()
+				assert(count_b == 1)
+				assert(#test_event == 1)
+				test_event:trigger()
+				assert(count_b == 1)
+			end)
+
+			it(mode .. ": nested trigger of the same event passes own args to all callbacks", function()
+				event.set_mode(mode)
+
+				local test_event = event.create()
+				local calls = {}
+				test_event:subscribe(function(self, value)
+					table.insert(calls, self .. value)
+					if value == "outer" then
+						test_event:trigger("inner")
+					end
+				end, "a:")
+				test_event:subscribe(function(value)
+					table.insert(calls, "b:" .. value)
+				end)
+
+				test_event:trigger("outer")
+				assert(#calls == 4)
+				assert(calls[1] == "a:outer")
+				assert(calls[2] == "a:inner")
+				assert(calls[3] == "b:inner")
+				assert(calls[4] == "b:outer")
+			end)
+		end
+
+		it("xpcall mode: error in callback with context does not stop next callbacks", function()
+			event.set_mode("xpcall")
+			event.set_logger({
+				trace = function() end,
+				debug = function() end,
+				info = function() end,
+				warn = function() end,
+				error = function() end,
+			})
+
+			local test_event = event.create()
+			local received
+			test_event:subscribe(function(self) error("xpcall error") end, {})
+			test_event:subscribe(function(self, value) received = value end, {})
+
+			test_event:trigger("value")
+			assert(received == "value")
+		end)
+
+		it("none mode: rethrown error has message and traceback, deferred unsubscribe is applied", function()
+			event.set_mode("none")
+
+			local test_event = event.create()
+			local b = function() end
+			test_event:subscribe(function(self)
+				test_event:unsubscribe(b)
+				error("none mode context error")
+			end, {})
+			test_event:subscribe(b)
+
+			local ok, err = pcall(test_event.trigger, test_event)
+			assert(ok == false)
+			assert(tostring(err):find("none mode context error"))
+			assert(tostring(err):find("stack traceback"))
+			assert(#test_event == 1)
+		end)
 	end)
 end

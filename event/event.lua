@@ -38,6 +38,9 @@ local table_remove = table.remove
 --- Use empty function to save a bit of memory
 local EMPTY_FUNCTION = function(_, message, context) end
 
+--- LuaJIT xpcall passes extra arguments to the function, Lua 5.1 xpcall does not
+local IS_XPCALL_WITH_ARGS = select(2, xpcall(function(value) return value end, EMPTY_FUNCTION, true)) == true
+
 ---@type event.logger
 local empty_logger = {
 	trace = EMPTY_FUNCTION,
@@ -318,6 +321,8 @@ function M:trigger(...)
 		if event_callback_context ~= nil then
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, event_callback_context, ...)
+			elseif IS_XPCALL_WITH_ARGS then
+				ok, result_or_error = xpcall(event_callback, event_error_handler, event_callback_context, ...)
 			else
 				local args = { event_callback_context }
 				local n = select("#", ...)
@@ -332,6 +337,8 @@ function M:trigger(...)
 		else
 			if USE_PCALL then
 				ok, result_or_error = pcall(event_callback, ...)
+			elseif IS_XPCALL_WITH_ARGS then
+				ok, result_or_error = xpcall(event_callback, event_error_handler, ...)
 			else
 				local args = {}
 				local n = select("#", ...)
