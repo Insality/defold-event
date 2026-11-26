@@ -34,10 +34,10 @@ delay(1):next(show):catch(fail)             -- Promise: async chain
 
 Open your `game.project` file and add the following line to the dependencies field under the project section:
 
-**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/21.zip)**
+**[Defold Event](https://github.com/Insality/defold-event/archive/refs/tags/22.zip)**
 
 ```
-https://github.com/Insality/defold-event/archive/refs/tags/21.zip
+https://github.com/Insality/defold-event/archive/refs/tags/22.zip
 ```
 
 ### Library Size
@@ -366,6 +366,10 @@ If you have any issues, questions or suggestions please [create an issue](https:
 ### **V21**
 	- `promise:cancel()` no longer runs `on_cancel` or marks the chain cancelled when the promise and all of its descendants have already settled. Cancelling a settled head still stops a pending tail.
 	- Call sites that guarded with `if p:is_pending() then p:cancel() end` can drop the guard. Cleanup that must run after a normal resolve belongs in `finally`, not `on_cancel`.
+
+### **V22**
+	- `event:trigger` allocates nothing per subscriber: arguments go straight to `xpcall` (LuaJIT). Lua 5.1 (HTML5) keeps the previous path.
+	- `promise:next` creates the child promise with the parent cancellation at once, no `on_cancel` forwarder per link.
 
 </details>
 
